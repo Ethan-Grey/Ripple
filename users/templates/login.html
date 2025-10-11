@@ -25,26 +25,37 @@
     </section>
     <section class="auth-right">
       <h3>User Login</h3>
-      <form method="post" action="{% url 'login' %}" class="auth-form">
+      <form method="post" action="{% url 'users:login' %}" class="auth-form">
         {% csrf_token %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="auth-alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
         {% if form.non_field_errors %}
-          <div class="auth-alert">{{ form.non_field_errors }}</div>
+          {% for error in form.non_field_errors %}
+            <div class="auth-alert">{{ error }}</div>
+          {% endfor %}
+        {% elif form.errors %}
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <div class="auth-alert">{{ error }}</div>
+            {% endfor %}
+          {% endfor %}
         {% endif %}
         <div class="form-group">
-          {% if form.username.errors %}<div class="auth-alert">{{ form.username.errors }}</div>{% endif %}
-          <input class="input" type="text" name="username" placeholder="Username" required>
+          <input class="input" type="text" name="username" placeholder="Username" value="{{ request.POST.username }}" required>
         </div>
         <div class="form-group">
-          {% if form.password.errors %}<div class="auth-alert">{{ form.password.errors }}</div>{% endif %}
           <input class="input" type="password" name="password" placeholder="Password" required>
         </div>
         <div class="form-row">
           <label class="remember"><input type="checkbox" name="remember"> Remember me</label>
-          <a class="link" href="#">Forgot password?</a>
+          <a class="link" href="{% url 'users:password_reset' %}">Forgot password?</a>
         </div>
         <button type="submit" class="cta">Login</button>
       </form>
-      <div class="muted">No account? <a class="link" href="{% url 'register' %}">Register</a></div>
+      <div class="muted">No account? <a class="link" href="{% url 'users:register' %}">Register</a></div>
     </section>
   </div>
   <script>

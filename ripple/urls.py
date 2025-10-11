@@ -19,9 +19,15 @@ from . import views
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib.auth import views as auth_views
 
 urlpatterns = [
+    # auth
+    path('accounts/', include('allauth.urls')),
+    
+    # User authentication URLs
+    path('', include('users.urls')),
+    
+    # Main app URLs
     path('', views.home, name='home'),
     path('swipe/', views.swipe, name='swipe'),
     path('communities/', views.communities_page, name='communities'),
@@ -29,8 +35,4 @@ urlpatterns = [
     path('profile/', views.profile_page, name='profile'),
     path('search/', views.search, name='search'),
     path('admin/', admin.site.urls),
-    # Auth
-    path('login/', auth_views.LoginView.as_view(template_name='auth/login.html', redirect_authenticated_user=True, next_page='/'), name='login'),
-    path('logout/', views.logout_direct, name='logout'),
-    path('register/', views.register, name='register'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

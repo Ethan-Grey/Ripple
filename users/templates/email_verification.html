@@ -1,0 +1,13 @@
+{% autoescape off %}
+Hi {{ username }},
+
+Thank you for registering with Ripple. Please click the link below to verify your email address:
+
+{{ verification_url }}
+
+If you didn't create an account with Ripple, you can safely ignore this email.
+In case the provided link does not work, please copy and paste the URL in a new browser window.
+
+Best regards,
+The Ripple Team
+{% endautoescape %}

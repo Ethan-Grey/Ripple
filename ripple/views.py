@@ -2,10 +2,6 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from skills.models import Skill, UserSkill, Match
 from communities.models import Community
-from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import redirect
-from django.contrib.auth import login as auth_login, logout as auth_logout
-from django.contrib.auth.models import User
 
 def home(request):
     user = request.user if request.user.is_authenticated else None
@@ -62,31 +58,3 @@ def search(request):
         'community_results': community_results,
     })
 
-
-def register(request):
-    if request.user.is_authenticated:
-        return redirect('home')
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user: User = form.save()
-            # Save email if provided
-            email_value = request.POST.get('email')
-            if email_value:
-                user.email = email_value
-                user.save(update_fields=['email'])
-            # Auto-login after registration
-            auth_login(request, user)
-            return redirect('home')
-    else:
-        form = UserCreationForm()
-    # Add email field dynamically for a simple UX
-    if not hasattr(form.fields, 'email'):
-        from django import forms
-        form.fields['email'] = forms.EmailField(required=False)
-    return render(request, 'auth/register.html', {'form': form})
-
-
-def logout_direct(request):
-    auth_logout(request)
-    return redirect('login')

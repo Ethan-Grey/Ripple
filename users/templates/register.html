@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register · Ripple</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-body">
+  <div class="auth-split">
+    <section class="auth-left">
+      <div class="welcome">
+        <h1>Create your account</h1>
+        <p>Join communities and swap skills today.</p>
+      </div>
+      <div class="shapes">
+        <div class="s1"></div>
+        <div class="s2"></div>
+        <div class="s3"></div>
+      </div>
+    </section>
+    <section class="auth-right">
+      <h3>Register</h3>
+      <form method="post" action="{% url 'users:register' %}" class="auth-form">
+        {% csrf_token %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="auth-alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+        {% if form.errors %}
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <div class="auth-alert">{{ error }}</div>
+            {% endfor %}
+          {% endfor %}
+        {% endif %}
+        <div class="form-group">
+          <input class="input" type="text" name="username" placeholder="Username" value="{{ request.POST.username }}" required>
+        </div>
+        <div class="form-group">
+          <input class="input" type="text" name="email" placeholder="Email" value="{{ request.POST.email }}" required>
+        </div>
+        <div class="form-group">
+          <input class="input" type="password" name="password1" placeholder="Password" required>
+        </div>
+        <div class="form-group">
+          <input class="input" type="password" name="password2" placeholder="Confirm Password" required>
+        </div>
+        <button type="submit" class="cta">Create account</button>
+      </form>
+      <div class="muted">Already have an account? <a class="link" href="{% url 'users:login' %}">Login</a></div>
+    </section>
+  </div>
+</body>
+</html>
+
