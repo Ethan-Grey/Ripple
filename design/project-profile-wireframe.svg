@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1280" height="2000" viewBox="0 0 1280 2000" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .card { fill: #f6f7f9; stroke: #d8dee6; }
+      .muted { fill: #e9ecf1; }
+      .text { fill: #2b2f36; font-family: Arial, Helvetica, sans-serif; }
+      .h1 { font-size: 28px; font-weight: bold; }
+      .h2 { font-size: 18px; font-weight: bold; }
+      .p { font-size: 14px; }
+      .chip { fill: #e6f0ff; stroke: #b3d1ff; }
+      .kbd { fill: #fff; stroke: #bbb; }
+      .btn { fill: #1f6feb; }
+      .btn-secondary { fill: #e9ecf1; }
+      .btn-text { fill: #ffffff; font-size: 14px; font-weight: bold; }
+      .btn-secondary-text { fill: #2b2f36; font-size: 14px; font-weight: bold; }
+      .divider { stroke: #e1e4e8; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" x="0" y="0" width="1280" height="2000" />
+
+  <!-- Header / Hero -->
+  <rect class="card" x="80" y="40" width="1120" height="200" rx="12" />
+  <circle class="muted" cx="140" cy="140" r="48" />
+  <text class="text h1" x="210" y="110">Project Name</text>
+  <text class="text p" x="210" y="140">One-line pitch for what this project does.</text>
+  <rect class="chip" x="210" y="160" width="90" height="24" rx="12" />
+  <text class="text p" x="235" y="176">Public</text>
+  <rect class="chip" x="310" y="160" width="110" height="24" rx="12" />
+  <text class="text p" x="335" y="176">Active</text>
+  <rect class="chip" x="430" y="160" width="140" height="24" rx="12" />
+  <text class="text p" x="450" y="176">TypeScript</text>
+  <rect class="btn" x="940" y="100" width="120" height="36" rx="8" />
+  <text class="btn-text" x="975" y="123">Get started</text>
+  <rect class="btn-secondary" x="1070" y="100" width="120" height="36" rx="8" />
+  <text class="btn-secondary-text" x="1105" y="123">View docs</text>
+
+  <!-- Stats Sidebar -->
+  <rect class="card" x="940" y="260" width="260" height="420" rx="12" />
+  <text class="text h2" x="960" y="290">Project stats</text>
+  <rect class="muted" x="960" y="310" width="220" height="48" rx="8" />
+  <text class="text p" x="970" y="340">⭐ 1,247   🍴 214   👤 36</text>
+  <line class="divider" x1="960" y1="374" x2="1180" y2="374" />
+  <text class="text p" x="960" y="402">License: MIT</text>
+  <text class="text p" x="960" y="430">Last updated: 2025-10-12</text>
+  <text class="text p" x="960" y="458">Languages</text>
+  <rect class="muted" x="960" y="468" width="220" height="12" rx="6" />
+  <rect fill="#3178c6" x="960" y="468" width="140" height="12" rx="6" />
+  <rect fill="#f1e05a" x="1100" y="468" width="40" height="12" />
+  <rect fill="#563d7c" x="1140" y="468" width="40" height="12" />
+  <text class="text p" x="960" y="498">TS 63% · JS 18% · CSS 19%</text>
+  <line class="divider" x1="960" y1="512" x2="1180" y2="512" />
+  <rect class="btn-secondary" x="960" y="530" width="100" height="30" rx="6" />
+  <text class="btn-secondary-text" x="985" y="550">Star</text>
+  <rect class="btn-secondary" x="1070" y="530" width="110" height="30" rx="6" />
+  <text class="btn-secondary-text" x="1095" y="550">Watch</text>
+  <rect class="btn-secondary" x="960" y="572" width="220" height="30" rx="6" />
+  <text class="btn-secondary-text" x="1040" y="592">Share</text>
+
+  <!-- Main Content Left Column -->
+  <rect class="card" x="80" y="260" width="840" height="220" rx="12" />
+  <text class="text h2" x="100" y="290">Quickstart</text>
+  <rect class="kbd" x="100" y="310" width="800" height="60" rx="8" />
+  <text class="text p" x="120" y="346">npm i project && npx project init</text>
+  <rect class="kbd" x="100" y="380" width="800" height="80" rx="8" />
+  <text class="text p" x="120" y="416"># Example usage snippet appears here</text>
+
+  <rect class="card" x="80" y="500" width="840" height="220" rx="12" />
+  <text class="text h2" x="100" y="530">Health</text>
+  <text class="text p" x="100" y="560">CI: Passing · Coverage: 87% · Open issues: 42 · Open PRs: 7</text>
+  <rect class="muted" x="100" y="580" width="800" height="120" rx="8" />
+
+  <rect class="card" x="80" y="740" width="840" height="260" rx="12" />
+  <text class="text h2" x="100" y="770">Roadmap</text>
+  <rect class="muted" x="100" y="790" width="800" height="180" rx="8" />
+
+  <rect class="card" x="80" y="1020" width="840" height="300" rx="12" />
+  <text class="text h2" x="100" y="1050">Releases</text>
+  <rect class="muted" x="100" y="1070" width="800" height="230" rx="8" />
+
+  <!-- Secondary Right Column Below Stats -->
+  <rect class="card" x="940" y="700" width="260" height="260" rx="12" />
+  <text class="text h2" x="960" y="730">Security</text>
+  <text class="text p" x="960" y="760">Policy, advisories, SBOM</text>
+  <rect class="muted" x="960" y="780" width="220" height="160" rx="8" />
+
+  <rect class="card" x="940" y="980" width="260" height="260" rx="12" />
+  <text class="text h2" x="960" y="1010">Contributors</text>
+  <rect class="muted" x="960" y="1030" width="220" height="190" rx="8" />
+
+  <!-- Footer Meta -->
+  <text class="text p" x="80" y="1360">License: MIT · Version: v1.2.3 · Last updated: 2025-10-12</text>
+</svg>
