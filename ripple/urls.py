@@ -27,12 +27,14 @@ urlpatterns = [
     # User authentication URLs
     path('', include('users.urls')),
     
+    # Admin URLs
+    path('admin-panel/', include('skill_admin.urls')),
+    
     # Main app URLs
     path('', views.home, name='home'),
     path('swipe/', views.swipe, name='swipe'),
     path('communities/', views.communities_page, name='communities'),
     path('messages/', views.messages_page, name='messages'),
-    path('profile/', views.profile_page, name='profile'),
     path('search/', views.search, name='search'),
     path('admin/', admin.site.urls),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

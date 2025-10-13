@@ -20,7 +20,10 @@
                 <a class="nav-item" href="/swipe/">Skill Swipe</a>
                 <a class="nav-item" href="/communities/">Communities</a>
                 <a class="nav-item" href="/messages/">Messages</a>
-                <a class="nav-item" href="/profile/">Profile</a>
+                <a class="nav-item" href="{% url 'users:profile' %}">Profile</a>
+                {% if user.is_staff %}
+                <a class="nav-item" href="{% url 'skill_admin:skill_review' %}" style="background:#f59e0b;color:#92400e">Admin Review</a>
+                {% endif %}
                 <div style="flex:1"></div>
                 <a class="nav-item" href="{% url 'users:logout' %}" style="margin-top:auto;background:#2b3a57;color:#e6ecf5">Logout</a>
             </nav>

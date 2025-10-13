@@ -44,8 +44,6 @@ def messages_page(request):
     return render(request, 'messages.html')
 
 
-def profile_page(request):
-    return render(request, 'profile.html')
 
 
 def search(request):

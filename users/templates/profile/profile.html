@@ -1,0 +1,989 @@
+{% extends 'base.html' %}
+{% block title %} · Profile{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-container">
+        <!-- Left Column - Main Profile -->
+        <div class="profile-main">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    {% if profile.avatar %}
+                        <img src="{{ profile.avatar.url }}" alt="{{ profile.user.username }}" class="avatar-image">
+                    {% else %}
+                        <div class="avatar-placeholder">
+                            <span>{{ profile.user.username|first|upper }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="profile-info">
+                    <div class="name-section">
+                        <h1 class="profile-name">{{ profile.user.username }}</h1>
+                        {% if profile.verification_status == 'verified' %}
+                            <span class="verified-badge">✓</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="rating-section">
+                        <div class="stars">★★★★★</div>
+                    </div>
+                    
+                    <div class="bio-section">
+                        <p class="profile-bio">
+                            {% if profile.bio %}
+                                {{ profile.bio }}
+                            {% else %}
+                                Welcome to my profile! I'm passionate about sharing knowledge and learning new skills.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="profile-nav">
+                <button class="nav-tab active" data-tab="about">About Me</button>
+                <button class="nav-tab" data-tab="teaching">Teaching Skills</button>
+                <button class="nav-tab" data-tab="learning">Learning Skills</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- About Me Tab -->
+                <div id="about-tab" class="tab-panel active">
+                    <div class="about-section">
+                        <h2 class="section-title">About Me</h2>
+                        <div class="about-content">
+                            {% if profile.bio %}
+                                <p class="bio-text">{{ profile.bio|truncatewords:50 }}</p>
+                            {% else %}
+                                <p class="bio-text">No bio added yet. Tell others about yourself, your interests, and what makes you unique!</p>
+                            {% endif %}
+                            
+                            <div class="about-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Location:</span>
+                                    <span class="detail-value">
+                                        {% if profile.location %}
+                                            {{ profile.location }}
+                                        {% else %}
+                                            Not specified
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Email:</span>
+                                    <span class="detail-value">{{ profile.user.email }}</span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Member since:</span>
+                                    <span class="detail-value">{{ profile.user.date_joined|date:"F Y" }}</span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Verification:</span>
+                                    <span class="detail-value">
+                                        {% if profile.verification_status == 'verified' %}
+                                            <span class="status-badge verified">✓ Verified</span>
+                                        {% elif profile.verification_status == 'pending' %}
+                                            <span class="status-badge pending">⏳ Pending</span>
+                                        {% else %}
+                                            <span class="status-badge unverified">⚠ Unverified</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="about-actions">
+                                <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">Edit Profile</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teaching Skills Tab -->
+                <div id="teaching-tab" class="tab-panel">
+                    <div class="skills-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Teaching Skills</h2>
+                            <button class="btn btn-primary btn-small" onclick="toggleAddSkillForm('teach')">+ Add Skill</button>
+                        </div>
+                        {% if teaching_skills %}
+                            <div class="skills-list">
+                                {% for user_skill in teaching_skills %}
+                                <div class="skill-item">
+                                    <div class="skill-icon">
+                                        {% if 'guitar' in user_skill.skill.name|lower %}
+                                            🎸
+                                        {% elif 'piano' in user_skill.skill.name|lower %}
+                                            🎹
+                                        {% elif 'web' in user_skill.skill.name|lower or 'react' in user_skill.skill.name|lower or 'vue' in user_skill.skill.name|lower %}
+                                            💻
+                                        {% elif 'design' in user_skill.skill.name|lower or 'ui' in user_skill.skill.name|lower %}
+                                            🎨
+                                        {% elif 'data' in user_skill.skill.name|lower or 'sql' in user_skill.skill.name|lower or 'python' in user_skill.skill.name|lower %}
+                                            📊
+                                        {% else %}
+                                            🔧
+                                        {% endif %}
+                                    </div>
+                                    <div class="skill-content">
+                                        <span class="skill-name">{{ user_skill.skill.name }}</span>
+                                        <div class="skill-tags">
+                                            {% if user_skill.verification_status == 'verified' %}
+                                                <span class="tag verified">Verified</span>
+                                            {% elif user_skill.verification_status == 'pending' %}
+                                                <span class="tag pending">Pending</span>
+                                            {% elif user_skill.verification_status == 'rejected' %}
+                                                <span class="tag rejected">Rejected</span>
+                                            {% else %}
+                                                <span class="tag unverified">Unverified</span>
+                                            {% endif %}
+                                            <span class="tag level">{{ user_skill.level|title }}</span>
+                                        </div>
+                                    </div>
+                                    {% if user_skill.verification_status != 'verified' %}
+                                    <div class="skill-actions">
+                                        <a href="{% url 'users:verify_skill' user_skill.skill.id %}" class="btn btn-primary btn-small">Verify Teaching</a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="empty-skills">
+                                <p>No teaching skills added yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Learning Skills Tab -->
+                <div id="learning-tab" class="tab-panel">
+                    <div class="skills-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Learning Skills</h2>
+                            <button class="btn btn-primary btn-small" onclick="toggleAddSkillForm('learn')">+ Add Skill</button>
+                        </div>
+                        {% if learning_skills %}
+                            <div class="skills-list">
+                                {% for user_skill in learning_skills %}
+                                <div class="skill-item">
+                                    <div class="skill-icon">
+                                        {% if 'guitar' in user_skill.skill.name|lower %}
+                                            🎸
+                                        {% elif 'piano' in user_skill.skill.name|lower %}
+                                            🎹
+                                        {% elif 'web' in user_skill.skill.name|lower or 'react' in user_skill.skill.name|lower or 'vue' in user_skill.skill.name|lower %}
+                                            💻
+                                        {% elif 'design' in user_skill.skill.name|lower or 'ui' in user_skill.skill.name|lower %}
+                                            🎨
+                                        {% elif 'data' in user_skill.skill.name|lower or 'sql' in user_skill.skill.name|lower or 'python' in user_skill.skill.name|lower %}
+                                            📊
+                                        {% else %}
+                                            🔧
+                                        {% endif %}
+                                    </div>
+                                    <div class="skill-content">
+                                        <span class="skill-name">{{ user_skill.skill.name }}</span>
+                                        <div class="skill-tags">
+                                            <span class="tag level">{{ user_skill.level|title }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="empty-skills">
+                                <p>No learning skills added yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Add Skill Form -->
+            <div id="add-skill-form" class="add-skill-form" style="display: none;">
+                <form method="post" action="{% url 'users:add_skill' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="skill_type" id="skill_type" value="teach">
+                    <div class="form-header">
+                        <h3 id="form-title">Add New Teaching Skill</h3>
+                        <button type="button" class="close-btn" onclick="toggleAddSkillForm()">×</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="skill_name">Skill Name</label>
+                        <input type="text" name="skill_name" id="skill_name" placeholder="e.g., Guitar, Piano, Python" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="level">Skill Level</label>
+                        <select name="level" id="level">
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate" selected>Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                            <option value="expert">Expert</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submit-btn">Add Teaching Skill</button>
+                        <button type="button" class="btn btn-secondary" onclick="toggleAddSkillForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column - Sidebar -->
+        <div class="profile-sidebar">
+            <!-- Communities Section -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Communities</h3>
+                <div class="communities-list">
+                    {% if profile.user.communities.all %}
+                        {% for community in profile.user.communities.all %}
+                        <div class="community-item">
+                            <span class="community-name">{{ community.name }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-communities">
+                            <p>No communities joined yet.</p>
+                            <a href="{% url 'communities' %}" class="btn btn-outline btn-small">Browse Communities</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Matches Section -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Matches</h3>
+                <div class="matches-container">
+                    <div class="empty-matches">
+                        <p>No matches yet.</p>
+                        <p class="matches-hint">Start adding skills to find potential matches!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verification Status -->
+            {% if profile.verification_status != 'verified' %}
+            <div class="sidebar-section verification-prompt">
+                <div class="verification-content">
+                    <div class="verification-icon">🔒</div>
+                    <div class="verification-text">
+                        <h4>Get Verified</h4>
+                        <p>Upload evidence to become a verified teacher and start earning.</p>
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary btn-small">Upload Evidence</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Main Container */
+.profile-page {
+    min-height: 100vh;
+    background: #f5f5f5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding: 1rem;
+}
+
+.profile-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    width: 100%;
+}
+
+/* Left Column - Main Profile */
+.profile-main {
+    background: white;
+    border-radius: 16px;
+    padding: 3rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-height: 80vh;
+}
+
+/* Profile Header */
+.profile-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.profile-avatar {
+    flex-shrink: 0;
+}
+
+.avatar-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e5e7eb;
+}
+
+.avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    font-weight: bold;
+    border: 3px solid #e5e7eb;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.name-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-name {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.verified-badge {
+    background: #10b981;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.rating-section {
+    margin-bottom: 1rem;
+}
+
+.stars {
+    color: #fbbf24;
+    font-size: 1.2rem;
+}
+
+.bio-section {
+    margin-bottom: 0;
+}
+
+.profile-bio {
+    margin: 0;
+    color: #6b7280;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* Navigation Tabs */
+.profile-nav {
+    display: flex;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 2rem;
+}
+
+.nav-tab {
+    background: none;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.nav-tab:hover {
+    color: #3b82f6;
+    background: #f8fafc;
+}
+
+.nav-tab.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+    background: #f8fafc;
+}
+
+/* Tab Content */
+.tab-content {
+    position: relative;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* About Section */
+.about-section {
+    margin-bottom: 3rem;
+}
+
+.about-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.bio-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #374151;
+    margin: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+    overflow: hidden;
+}
+
+.about-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-size: 1rem;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.verified {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.unverified {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.about-actions {
+    margin-top: 1rem;
+}
+
+/* Skills Sections */
+.skills-section {
+    margin-bottom: 3rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.skills-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.skill-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: #f9fafb;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.skill-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 50%;
+    border: 1px solid #e5e7eb;
+}
+
+.skill-content {
+    flex: 1;
+}
+
+.skill-name {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.75rem;
+}
+
+.skill-tags {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tag {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tag.verified {
+    background: #3b82f6;
+    color: white;
+}
+
+.tag.pending {
+    background: #f59e0b;
+    color: white;
+}
+
+.tag.rejected {
+    background: #ef4444;
+    color: white;
+}
+
+.tag.unverified {
+    background: #6b7280;
+    color: white;
+}
+
+.tag.level {
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
+.skill-actions {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+
+.empty-skills {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.empty-skills p {
+    margin: 0 0 1rem 0;
+}
+
+
+/* Add Skill Form */
+.add-skill-form {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 400px;
+    max-width: 500px;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.form-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.close-btn:hover {
+    background: #f3f4f6;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Right Column - Sidebar */
+.profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.sidebar-section {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-height: 200px;
+}
+
+.sidebar-title {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.communities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.community-item {
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.community-name {
+    font-weight: 500;
+    color: #374151;
+}
+
+.empty-communities {
+    text-align: center;
+    padding: 1rem;
+    color: #6b7280;
+}
+
+.empty-communities p {
+    margin: 0 0 1rem 0;
+}
+
+.matches-container {
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-matches {
+    text-align: center;
+    color: #6b7280;
+}
+
+.empty-matches p {
+    margin: 0 0 0.5rem 0;
+}
+
+.matches-hint {
+    font-size: 0.9rem;
+    color: #9ca3af;
+}
+
+.verification-prompt {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #f59e0b;
+}
+
+.verification-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.verification-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.verification-text {
+    flex: 1;
+}
+
+.verification-text h4 {
+    margin: 0 0 0.5rem 0;
+    color: #92400e;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.verification-text p {
+    margin: 0 0 1rem 0;
+    color: #92400e;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+    background: #5a67d8;
+    color: white;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #4a5568;
+    color: white;
+    box-shadow: 0 2px 8px rgba(74, 85, 104, 0.3);
+}
+
+.btn-secondary:hover {
+    background: #2d3748;
+    color: white;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(74, 85, 104, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .profile-container {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+}
+
+@media (max-width: 768px) {
+    .profile-page {
+        padding: 0.5rem;
+    }
+    
+    .profile-main {
+        padding: 2rem;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+    
+    
+    .add-skill-form {
+        min-width: 90vw;
+        margin: 1rem;
+    }
+}
+</style>
+
+<script>
+function toggleAddSkillForm(skillType = 'teach') {
+    const form = document.getElementById('add-skill-form');
+    const skillTypeInput = document.getElementById('skill_type');
+    const formTitle = document.getElementById('form-title');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    if (form.style.display === 'none') {
+        // Update form based on skill type
+        skillTypeInput.value = skillType;
+        
+        if (skillType === 'teach') {
+            formTitle.textContent = 'Add New Teaching Skill';
+            submitBtn.textContent = 'Add Teaching Skill';
+        } else {
+            formTitle.textContent = 'Add New Learning Skill';
+            submitBtn.textContent = 'Add Learning Skill';
+        }
+        
+        form.style.display = 'block';
+        // Add overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        `;
+        overlay.onclick = toggleAddSkillForm;
+        document.body.appendChild(overlay);
+        form.overlay = overlay;
+    } else {
+        form.style.display = 'none';
+        if (form.overlay) {
+            document.body.removeChild(form.overlay);
+            form.overlay = null;
+        }
+    }
+}
+
+// Tab switching functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.nav-tab');
+    const panels = document.querySelectorAll('.tab-panel');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetTab = this.dataset.tab;
+            
+            // Remove active class from all tabs and panels
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding panel
+            this.classList.add('active');
+            document.getElementById(targetTab + '-tab').classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}

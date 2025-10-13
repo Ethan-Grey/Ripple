@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -11,6 +11,8 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
 from django.contrib import messages
+from .models import Profile, Evidence
+from skills.models import UserSkill, Skill, SkillEvidence
 
 # Create your views here.
 
@@ -120,3 +122,206 @@ def verify_email(request, uidb64, token):
 def logout_direct(request):
     auth_logout(request)
     return redirect('users:login')
+
+
+# Profile Views
+@login_required
+def profile_view(request):
+    """Display user's profile"""
+    profile = get_object_or_404(Profile, user=request.user)
+    evidence = profile.evidence.all()
+    
+    # Get user's skills
+    teaching_skills = UserSkill.objects.filter(
+        user=request.user, 
+        can_teach=True
+    ).select_related('skill')
+    
+    learning_skills = UserSkill.objects.filter(
+        user=request.user, 
+        wants_to_learn=True
+    ).select_related('skill')
+    
+    context = {
+        'profile': profile,
+        'evidence': evidence,
+        'teaching_skills': teaching_skills,
+        'learning_skills': learning_skills,
+    }
+    return render(request, 'profile/profile.html', context)
+
+
+@login_required
+def profile_edit(request):
+    """Edit user's profile"""
+    profile = get_object_or_404(Profile, user=request.user)
+    
+    if request.method == 'POST':
+        # Update profile fields
+        profile.bio = request.POST.get('bio', '')
+        profile.location = request.POST.get('location', '')
+        
+        # Handle avatar upload
+        if 'avatar' in request.FILES:
+            profile.avatar = request.FILES['avatar']
+        
+        profile.save()
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('users:profile')
+    
+    context = {
+        'profile': profile,
+    }
+    return render(request, 'profile/profile_edit.html', context)
+
+
+@login_required
+def verify_skill(request, skill_id):
+    """Verify ability to teach a specific skill"""
+    skill = get_object_or_404(Skill, id=skill_id)
+    user_skill, created = UserSkill.objects.get_or_create(
+        user=request.user,
+        skill=skill,
+        defaults={'level': 'intermediate', 'can_teach': True}
+    )
+    
+    if not created:
+        user_skill.can_teach = True
+        user_skill.save()
+    
+    messages.success(request, f'You can now teach {skill.name}!')
+    return redirect('users:profile')
+
+
+@login_required
+def unverify_skill(request, skill_id):
+    """Remove ability to teach a specific skill"""
+    user_skill = get_object_or_404(UserSkill, user=request.user, skill_id=skill_id)
+    user_skill.can_teach = False
+    user_skill.save()
+    
+    messages.info(request, f'You are no longer teaching {user_skill.skill.name}.')
+    return redirect('users:profile')
+
+
+@login_required
+def add_skill(request):
+    """Add a new skill to user's profile"""
+    if request.method == 'POST':
+        skill_name = request.POST.get('skill_name', '').strip()
+        level = request.POST.get('level', 'intermediate')
+        skill_type = request.POST.get('skill_type', 'teach')  # 'teach' or 'learn'
+        
+        if skill_name:
+            skill, created = Skill.objects.get_or_create(name=skill_name)
+            
+            # Determine skill type based on form data
+            can_teach = skill_type == 'teach'
+            wants_to_learn = skill_type == 'learn'
+            
+            user_skill, created = UserSkill.objects.get_or_create(
+                user=request.user,
+                skill=skill,
+                defaults={
+                    'level': level,
+                    'can_teach': can_teach,
+                    'wants_to_learn': wants_to_learn
+                }
+            )
+            
+            if not created:
+                # Update existing skill
+                user_skill.level = level
+                if skill_type == 'teach':
+                    user_skill.can_teach = True
+                elif skill_type == 'learn':
+                    user_skill.wants_to_learn = True
+                user_skill.save()
+            
+            messages.success(request, f'Added {skill.name} to your {skill_type}ing skills!')
+        else:
+            messages.error(request, 'Please enter a skill name.')
+    
+    return redirect('users:profile')
+
+
+@login_required
+def verify_skill(request, skill_id):
+    """Show skill verification form"""
+    skill = get_object_or_404(Skill, id=skill_id)
+    user_skill = get_object_or_404(UserSkill, user=request.user, skill=skill)
+    
+    if not user_skill.can_teach:
+        messages.error(request, 'You must be able to teach this skill to verify it.')
+        return redirect('users:profile')
+    
+    evidence_list = user_skill.evidence.all()
+    
+    context = {
+        'skill': skill,
+        'user_skill': user_skill,
+        'evidence_list': evidence_list,
+    }
+    return render(request, 'profile/verify_skill.html', context)
+
+
+@login_required
+def submit_evidence(request, skill_id):
+    """Submit evidence for skill verification"""
+    skill = get_object_or_404(Skill, id=skill_id)
+    user_skill = get_object_or_404(UserSkill, user=request.user, skill=skill)
+    
+    if not user_skill.can_teach:
+        messages.error(request, 'You must be able to teach this skill to verify it.')
+        return redirect('users:profile')
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        evidence_type = request.POST.get('evidence_type', 'document')
+        description = request.POST.get('description', '').strip()
+        link = request.POST.get('link', '').strip()
+        is_primary = request.POST.get('is_primary') == 'on'
+        
+        if not title:
+            messages.error(request, 'Please provide a title for your evidence.')
+            return redirect('users:verify_skill', skill_id=skill_id)
+        
+        # Check if file or link is provided
+        file = request.FILES.get('file')
+        if not file and not link:
+            messages.error(request, 'Please upload a file or provide a link.')
+            return redirect('users:verify_skill', skill_id=skill_id)
+        
+        # Create evidence
+        evidence = SkillEvidence.objects.create(
+            user_skill=user_skill,
+            title=title,
+            evidence_type=evidence_type,
+            file=file,
+            link=link,
+            description=description,
+            is_primary=is_primary
+        )
+        
+        # If this is the first evidence, mark skill as pending verification
+        if user_skill.verification_status == UserSkill.UNVERIFIED:
+            user_skill.verification_status = UserSkill.PENDING
+            user_skill.save()
+        
+        messages.success(request, f'Evidence submitted for {skill.name}! Your skill is now pending verification.')
+        return redirect('users:verify_skill', skill_id=skill_id)
+    
+    return redirect('users:verify_skill', skill_id=skill_id)
+
+
+@login_required
+def remove_evidence(request, evidence_id):
+    """Remove evidence from skill verification"""
+    evidence = get_object_or_404(SkillEvidence, id=evidence_id, user_skill__user=request.user)
+    skill_id = evidence.user_skill.skill.id
+    
+    evidence.delete()
+    messages.success(request, 'Evidence removed successfully.')
+    return redirect('users:verify_skill', skill_id=skill_id)
+
+

@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users',
     'skills',
-    'communities', 
+    'communities',
+    'skill_admin', 
     # email auth
     'allauth',
     'allauth.account',

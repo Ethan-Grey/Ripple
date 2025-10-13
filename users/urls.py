@@ -39,4 +39,16 @@ urlpatterns = [
              template_name='password_reset_complete.html'
          ), 
          name='password_reset_complete'),
+    
+    # Profile URLs
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.profile_edit, name='profile_edit'),
+    
+    # Skill verification URLs
+    path('profile/verify-skill/<int:skill_id>/', views.verify_skill, name='verify_skill'),
+    path('profile/submit-evidence/<int:skill_id>/', views.submit_evidence, name='submit_evidence'),
+    path('profile/remove-evidence/<int:evidence_id>/', views.remove_evidence, name='remove_evidence'),
+    path('profile/unverify-skill/<int:skill_id>/', views.unverify_skill, name='unverify_skill'),
+    path('profile/add-skill/', views.add_skill, name='add_skill'),
+    
 ]
