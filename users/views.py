@@ -11,8 +11,10 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
 from django.contrib import messages
-from .models import Profile, Evidence
+from .models import Profile, Evidence, IdentitySubmission
 from skills.models import UserSkill, Skill, SkillEvidence
+from django.views.decorators.http import require_http_methods
+from django.contrib.admin.views.decorators import staff_member_required
 
 # Create your views here.
 
@@ -325,3 +327,134 @@ def remove_evidence(request, evidence_id):
     return redirect('users:verify_skill', skill_id=skill_id)
 
 
+@login_required
+def delete_skill(request, skill_id):
+    """Delete a skill from user's profile"""
+    skill = get_object_or_404(Skill, id=skill_id)
+    user_skill = get_object_or_404(UserSkill, user=request.user, skill=skill)
+    user_skill.delete()
+    messages.success(request, f'{skill.name} has been removed from your profile.')
+    return redirect('users:profile')
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def verify_identity(request):
+    """Simple identity verification intake: first/last name, DOB, address, country, and ID upload.
+    Sets profile.verification_status to 'pending' when submitted.
+    """
+    profile = get_object_or_404(Profile, user=request.user)
+    if request.method == 'POST':
+        # Store minimal identity fields on the Django User/Profile
+        request.user.first_name = request.POST.get('first_name', '').strip()
+        request.user.last_name = request.POST.get('last_name', '').strip()
+        request.user.save()
+
+        profile.location = request.POST.get('country', profile.location)
+        # Mark as pending
+        profile.verification_status = 'pending'
+        profile.save()
+
+        # Persist identity submission snapshot for admin review
+        IdentitySubmission.objects.create(
+            profile=profile,
+            first_name=request.user.first_name,
+            last_name=request.user.last_name,
+            dob=request.POST.get('dob') or None,
+            nationality=request.POST.get('nationality',''),
+            address1=request.POST.get('address1',''),
+            address2=request.POST.get('address2',''),
+            state=request.POST.get('state',''),
+            postal=request.POST.get('postal',''),
+            country=request.POST.get('country','')
+        )
+
+        uploaded_labels = []
+        # Government ID
+        if 'id_document' in request.FILES:
+            Evidence.objects.create(
+                profile=profile,
+                title='Identity Document',
+                file=request.FILES['id_document']
+            )
+            uploaded_labels.append('Government ID')
+        # Selfie
+        if 'selfie' in request.FILES:
+            Evidence.objects.create(
+                profile=profile,
+                title='Selfie',
+                file=request.FILES['selfie']
+            )
+            uploaded_labels.append('Selfie')
+        # Proof of Address / Additional
+        if 'address_doc' in request.FILES:
+            Evidence.objects.create(
+                profile=profile,
+                title='Proof of Address',
+                file=request.FILES['address_doc']
+            )
+            uploaded_labels.append('Proof of Address')
+
+        if uploaded_labels:
+            messages.success(request, 'Verification submitted with: ' + ', '.join(uploaded_labels) + '.')
+        else:
+            messages.success(request, 'Verification submitted. We will review your information shortly.')
+        return redirect('users:profile')
+
+    return render(request, 'profile/verify_identity.html', { 'profile': profile })
+
+
+@staff_member_required
+def admin_user_verifications(request):
+    """List users with filter by verification status for admin review."""
+    status = request.GET.get('status', 'pending')
+    allowed = ['pending', 'verified', 'unverified', 'all']
+    if status not in allowed:
+        status = 'pending'
+    qs = Profile.objects.select_related('user')
+    if status != 'all':
+        qs = qs.filter(verification_status=status)
+    profiles = qs.order_by('user__username')
+    # Build grouped evidence per profile for easier templating
+    rows = []
+    for p in profiles:
+        docs = list(p.evidence.all())
+        # mark image evidence for thumbnail rendering
+        for d in docs:
+            try:
+                name = (d.file.name or '').lower()
+            except Exception:
+                name = ''
+            d.is_image = name.endswith('.png') or name.endswith('.jpg') or name.endswith('.jpeg') or name.endswith('.webp') or name.endswith('.gif')
+        latest_submission = p.identity_submissions.order_by('-created_at').first()
+        rows.append({
+            'profile': p,
+            'id_docs': [e for e in docs if e.title == 'Identity Document'],
+            'selfies': [e for e in docs if e.title == 'Selfie'],
+            'proofs': [e for e in docs if e.title == 'Proof of Address'],
+            'submission': latest_submission,
+        })
+    return render(request, 'profile/admin_user_verifications.html', { 'rows': rows, 'status': status })
+
+
+@staff_member_required
+def admin_user_verification_action(request, profile_id, action):
+    """Approve or reject a user's identity verification."""
+    profile = get_object_or_404(Profile, id=profile_id)
+    if action == 'approve':
+        profile.verification_status = 'verified'
+        messages.success(request, f"{profile.user.username} has been verified.")
+    elif action == 'reject':
+        # Wipe identity evidence and submitted info on rejection
+        for ev in list(profile.evidence.all()):
+            try:
+                if ev.file:
+                    ev.file.delete(save=False)
+            except Exception:
+                pass
+            ev.delete()
+        profile.identity_submissions.all().delete()
+        profile.verification_status = 'unverified'
+        messages.info(request, f"{profile.user.username}'s verification was rejected and related documents have been removed.")
+    profile.save()
+    return redirect('users:admin_user_verifications')

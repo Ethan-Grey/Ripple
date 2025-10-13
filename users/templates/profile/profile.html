@@ -39,6 +39,10 @@
                             {% endif %}
                         </p>
                     </div>
+
+                    <div class="about-actions">
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary btn-small">Edit Profile</a>
+                    </div>
                 </div>
             </div>
 
@@ -98,9 +102,7 @@
                                 </div>
                             </div>
                             
-                            <div class="about-actions">
-                                <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">Edit Profile</a>
-                            </div>
+                            
                         </div>
                     </div>
                 </div>
@@ -146,6 +148,13 @@
                                             <span class="tag level">{{ user_skill.level|title }}</span>
                                         </div>
                                     </div>
+
+
+                                    <div class="skill-actions">
+                                        <a href="{% url 'users:delete_skill' user_skill.skill.id %}" class="btn btn-outline btn-small">Delete</a>
+                                    </div>
+
+
                                     {% if user_skill.verification_status != 'verified' %}
                                     <div class="skill-actions">
                                         <a href="{% url 'users:verify_skill' user_skill.skill.id %}" class="btn btn-primary btn-small">Verify Teaching</a>
@@ -272,15 +281,15 @@
                 </div>
             </div>
 
-            <!-- Verification Status -->
-            {% if profile.verification_status != 'verified' %}
+            <!-- Verification Status card (only for unverified/pending users) -->
+            {% if profile.verification_status == 'unverified' %}
             <div class="sidebar-section verification-prompt">
                 <div class="verification-content">
                     <div class="verification-icon">🔒</div>
                     <div class="verification-text">
-                        <h4>Get Verified</h4>
-                        <p>Upload evidence to become a verified teacher and start earning.</p>
-                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary btn-small">Upload Evidence</a>
+                        <h4>Identity Verification</h4>
+                        <p>Verify your identity to increase trust and unlock more features.</p>
+                        <a href="{% url 'users:verify_identity' %}" class="btn btn-primary btn-small">Start Verification</a>
                     </div>
                 </div>
             </div>

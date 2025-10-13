@@ -26,6 +26,23 @@ class Evidence(models.Model):
         return f"Evidence({self.title})"
 
 
+class IdentitySubmission(models.Model):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='identity_submissions')
+    first_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
+    dob = models.DateField(blank=True, null=True)
+    nationality = models.CharField(max_length=120, blank=True)
+    address1 = models.CharField(max_length=255, blank=True)
+    address2 = models.CharField(max_length=255, blank=True)
+    state = models.CharField(max_length=120, blank=True)
+    postal = models.CharField(max_length=40, blank=True)
+    country = models.CharField(max_length=120, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"IdentitySubmission({self.profile.user.username} @ {self.created_at:%Y-%m-%d})"
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:

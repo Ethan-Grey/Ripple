@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %} · Verify Identity{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 980px;">
+    <div class="p-0 p-md-1">
+        <div class="p-2 p-md-0">
+            <h1 class="fw-bold mb-1" style="letter-spacing:-0.3px;">Identity Verification</h1>
+            <p class="text-muted mb-4">Verify your identity to help others trust your profile. Please provide accurate information and a valid government-issued ID.</p>
+
+            <form method="post" enctype="multipart/form-data" class="mt-2">
+                {% csrf_token %}
+
+                <!-- Step 1: Personal Information -->
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-primary">Step 1</span>
+                        <h2 class="h5 m-0">Personal Information</h2>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" name="first_name" class="form-control" value="{{ request.user.first_name }}" placeholder="Enter first name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" name="last_name" class="form-control" value="{{ request.user.last_name }}" placeholder="Enter last name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Date of Birth</label>
+                            <input type="date" name="dob" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nationality</label>
+                            <input type="text" name="nationality" class="form-control" placeholder="Country of citizenship" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Residential Address</label>
+                            <input type="text" name="address1" class="form-control" placeholder="Street address" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Street Address 2</label>
+                            <input type="text" name="address2" class="form-control" placeholder="Apartment, suite, etc. (optional)">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Country</label>
+                            <input type="text" name="country" class="form-control" value="{{ profile.location }}" placeholder="Country" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State/Province</label>
+                            <input type="text" name="state" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Postal Code</label>
+                            <input type="text" name="postal" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Upload Identification Document -->
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-primary">Step 2</span>
+                        <h2 class="h5 m-0">Upload Identification Document</h2>
+                    </div>
+                    <div class="d-flex flex-column flex-md-row align-items-start gap-3">
+                        <label class="btn btn-outline-primary d-inline-flex align-items-center gap-2 mb-2 mb-md-0">
+                            <span>📤</span>
+                            <span>Upload Document</span>
+                            <input type="file" name="id_document" accept="image/*,application/pdf" hidden required>
+                        </label>
+                        <div id="id-preview" class="border rounded p-2 small text-muted" style="min-width:200px; max-width:320px;"></div>
+                        <ul class="text-muted small mb-0">
+                            <li>Passport, Driver's License, or National ID Card</li>
+                            <li>Clear, readable image or PDF. Max 10MB</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 3: Selfie Verification -->
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-primary">Step 3</span>
+                        <h2 class="h5 m-0">Selfie Verification</h2>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <label class="btn btn-outline-secondary mb-0">Upload Selfie<input type="file" name="selfie" accept="image/*" hidden required></label>
+                        <div id="selfie-preview" class="border rounded p-1" style="min-width:120px;">
+                            <img id="selfie-img" src="" alt="Selfie preview" style="display:none;max-width:140px;max-height:140px;border-radius:8px;"/>
+                            <div id="selfie-name" class="text-muted small"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Additional Documents (Optional) -->
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-secondary">Step 4</span>
+                        <h2 class="h6 m-0 text-muted">Additional Documents (Optional)</h2>
+                    </div>
+                    <div class="d-flex gap-3 align-items-start">
+                        <label class="btn btn-light border">Upload Certificate/License<input type="file" name="address_doc" hidden></label>
+                        <div id="address-preview" class="border rounded p-2 small text-muted" style="min-width:200px; max-width:320px;"></div>
+                    </div>
+                </div>
+
+                <!-- Consent -->
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" value="1" id="agree" required>
+                    <label class="form-check-label" for="agree">
+                        I have read and agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+                    </label>
+                </div>
+
+                <button class="btn btn-primary btn-lg px-4" type="submit">Submit for Verification</button>
+                <a href="{% url 'users:profile' %}" class="btn btn-secondary btn-lg ms-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('change', function(e){
+    if(e.target && e.target.name === 'id_document'){
+        e.target.closest('label').classList.add('btn-primary');
+        e.target.closest('label').classList.remove('btn-outline-primary');
+        const file = e.target.files && e.target.files[0];
+        const box = document.getElementById('id-preview');
+        if(box){
+            if(file){
+                if(file.type.startsWith('image/')){
+                    const img = new Image();
+                    img.style.maxWidth = '140px';
+                    img.style.maxHeight = '140px';
+                    img.style.borderRadius = '8px';
+                    img.src = URL.createObjectURL(file);
+                    box.innerHTML = '';
+                    box.appendChild(img);
+                } else {
+                    box.textContent = 'Selected: ' + file.name;
+                }
+            } else {
+                box.textContent = '';
+            }
+        }
+    }
+    if(e.target && e.target.name === 'selfie'){
+        const file = e.target.files && e.target.files[0];
+        const imgEl = document.getElementById('selfie-img');
+        const nameEl = document.getElementById('selfie-name');
+        if(file && imgEl){
+            imgEl.src = URL.createObjectURL(file);
+            imgEl.style.display = 'block';
+            if(nameEl){ nameEl.textContent = ''; }
+        } else if(nameEl) {
+            nameEl.textContent = file ? ('Selected: ' + file.name) : '';
+        }
+    }
+    if(e.target && e.target.name === 'address_doc'){
+        e.target.closest('label').classList.add('btn-success');
+        const file = e.target.files && e.target.files[0];
+        const box = document.getElementById('address-preview');
+        if(box){
+            if(file){
+                if(file.type.startsWith('image/')){
+                    const img = new Image();
+                    img.style.maxWidth = '140px';
+                    img.style.maxHeight = '140px';
+                    img.style.borderRadius = '8px';
+                    img.src = URL.createObjectURL(file);
+                    box.innerHTML = '';
+                    box.appendChild(img);
+                } else {
+                    box.textContent = 'Selected: ' + file.name;
+                }
+            } else {
+                box.textContent = '';
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+
