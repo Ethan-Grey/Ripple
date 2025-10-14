@@ -43,6 +43,8 @@ urlpatterns = [
     # Profile URLs
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.profile_edit, name='profile_edit'),
+    path('profile/delete-skill/<int:skill_id>/', views.delete_skill, name='delete_skill'),
+    path('profile/verify-identity/', views.verify_identity, name='verify_identity'),
     
     # Skill verification URLs
     path('profile/verify-skill/<int:skill_id>/', views.verify_skill, name='verify_skill'),
@@ -50,5 +52,9 @@ urlpatterns = [
     path('profile/remove-evidence/<int:evidence_id>/', views.remove_evidence, name='remove_evidence'),
     path('profile/unverify-skill/<int:skill_id>/', views.unverify_skill, name='unverify_skill'),
     path('profile/add-skill/', views.add_skill, name='add_skill'),
+    
+    # Admin: User identity verification review
+    path('admin/verification/', views.admin_user_verifications, name='admin_user_verifications'),
+    path('admin/verification/<int:profile_id>/<str:action>/', views.admin_user_verification_action, name='admin_user_verification_action'),
     
 ]

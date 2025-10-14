@@ -20,7 +20,13 @@
                 
                 <div class="profile-info">
                     <div class="name-section">
-                        <h1 class="profile-name">{{ profile.user.username }}</h1>
+                        <h1 class="profile-name">
+                            {% if profile.user.first_name and profile.user.last_name %}
+                                {{ profile.user.first_name }} {{ profile.user.last_name }}
+                            {% else %}
+                                {{ profile.user.username }}
+                            {% endif %}
+                        </h1>
                         {% if profile.verification_status == 'verified' %}
                             <span class="verified-badge">✓</span>
                         {% endif %}
@@ -38,6 +44,10 @@
                                 Welcome to my profile! I'm passionate about sharing knowledge and learning new skills.
                             {% endif %}
                         </p>
+                    </div>
+
+                    <div class="about-actions">
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary btn-small">Edit Profile</a>
                     </div>
                 </div>
             </div>
@@ -64,19 +74,42 @@
                             
                             <div class="about-details">
                                 <div class="detail-item">
-                                    <span class="detail-label">Location:</span>
-                                    <span class="detail-value">
-                                        {% if profile.location %}
-                                            {{ profile.location }}
-                                        {% else %}
-                                            Not specified
-                                        {% endif %}
-                                    </span>
+                                    <span class="detail-label">Username:</span>
+                                    <span class="detail-value">{{ profile.user.username }}</span>
                                 </div>
                                 
                                 <div class="detail-item">
                                     <span class="detail-label">Email:</span>
                                     <span class="detail-value">{{ profile.user.email }}</span>
+                                </div>
+                                
+                                {% if latest_submission %}
+                                    {% if latest_submission.dob %}
+                                    <div class="detail-item">
+                                        <span class="detail-label">Date of Birth:</span>
+                                        <span class="detail-value">{{ latest_submission.dob|date:"F j, Y" }}</span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if latest_submission.nationality %}
+                                    <div class="detail-item">
+                                        <span class="detail-label">Nationality:</span>
+                                        <span class="detail-value">{{ latest_submission.nationality }}</span>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Location:</span>
+                                    <span class="detail-value">
+                                        {% if latest_submission and latest_submission.country %}
+                                            {{ latest_submission.country }}
+                                        {% elif profile.location %}
+                                            {{ profile.location }}
+                                        {% else %}
+                                            Not specified
+                                        {% endif %}
+                                    </span>
                                 </div>
                                 
                                 <div class="detail-item">
@@ -98,9 +131,7 @@
                                 </div>
                             </div>
                             
-                            <div class="about-actions">
-                                <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">Edit Profile</a>
-                            </div>
+                            
                         </div>
                     </div>
                 </div>
@@ -146,6 +177,13 @@
                                             <span class="tag level">{{ user_skill.level|title }}</span>
                                         </div>
                                     </div>
+
+
+                                    <div class="skill-actions">
+                                        <a href="{% url 'users:delete_skill' user_skill.skill.id %}" class="btn btn-outline btn-small">Delete</a>
+                                    </div>
+
+
                                     {% if user_skill.verification_status != 'verified' %}
                                     <div class="skill-actions">
                                         <a href="{% url 'users:verify_skill' user_skill.skill.id %}" class="btn btn-primary btn-small">Verify Teaching</a>
@@ -272,15 +310,15 @@
                 </div>
             </div>
 
-            <!-- Verification Status -->
-            {% if profile.verification_status != 'verified' %}
+            <!-- Verification Status card (only for unverified/pending users) -->
+            {% if profile.verification_status == 'unverified' %}
             <div class="sidebar-section verification-prompt">
                 <div class="verification-content">
                     <div class="verification-icon">🔒</div>
                     <div class="verification-text">
-                        <h4>Get Verified</h4>
-                        <p>Upload evidence to become a verified teacher and start earning.</p>
-                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary btn-small">Upload Evidence</a>
+                        <h4>Identity Verification</h4>
+                        <p>Verify your identity to increase trust and unlock more features.</p>
+                        <a href="{% url 'users:verify_identity' %}" class="btn btn-primary btn-small">Start Verification</a>
                     </div>
                 </div>
             </div>
