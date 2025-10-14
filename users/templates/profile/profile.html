@@ -20,7 +20,13 @@
                 
                 <div class="profile-info">
                     <div class="name-section">
-                        <h1 class="profile-name">{{ profile.user.username }}</h1>
+                        <h1 class="profile-name">
+                            {% if profile.user.first_name and profile.user.last_name %}
+                                {{ profile.user.first_name }} {{ profile.user.last_name }}
+                            {% else %}
+                                {{ profile.user.username }}
+                            {% endif %}
+                        </h1>
                         {% if profile.verification_status == 'verified' %}
                             <span class="verified-badge">✓</span>
                         {% endif %}
@@ -68,19 +74,42 @@
                             
                             <div class="about-details">
                                 <div class="detail-item">
-                                    <span class="detail-label">Location:</span>
-                                    <span class="detail-value">
-                                        {% if profile.location %}
-                                            {{ profile.location }}
-                                        {% else %}
-                                            Not specified
-                                        {% endif %}
-                                    </span>
+                                    <span class="detail-label">Username:</span>
+                                    <span class="detail-value">{{ profile.user.username }}</span>
                                 </div>
                                 
                                 <div class="detail-item">
                                     <span class="detail-label">Email:</span>
                                     <span class="detail-value">{{ profile.user.email }}</span>
+                                </div>
+                                
+                                {% if latest_submission %}
+                                    {% if latest_submission.dob %}
+                                    <div class="detail-item">
+                                        <span class="detail-label">Date of Birth:</span>
+                                        <span class="detail-value">{{ latest_submission.dob|date:"F j, Y" }}</span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if latest_submission.nationality %}
+                                    <div class="detail-item">
+                                        <span class="detail-label">Nationality:</span>
+                                        <span class="detail-value">{{ latest_submission.nationality }}</span>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Location:</span>
+                                    <span class="detail-value">
+                                        {% if latest_submission and latest_submission.country %}
+                                            {{ latest_submission.country }}
+                                        {% elif profile.location %}
+                                            {{ profile.location }}
+                                        {% else %}
+                                            Not specified
+                                        {% endif %}
+                                    </span>
                                 </div>
                                 
                                 <div class="detail-item">

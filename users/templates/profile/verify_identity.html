@@ -62,17 +62,14 @@
                         <span class="badge bg-primary">Step 2</span>
                         <h2 class="h5 m-0">Upload Identification Document</h2>
                     </div>
-                    <div class="d-flex flex-column flex-md-row align-items-start gap-3">
-                        <label class="btn btn-outline-primary d-inline-flex align-items-center gap-2 mb-2 mb-md-0">
-                            <span>📤</span>
-                            <span>Upload Document</span>
-                            <input type="file" name="id_document" accept="image/*,application/pdf" hidden required>
-                        </label>
-                        <div id="id-preview" class="border rounded p-2 small text-muted" style="min-width:200px; max-width:320px;"></div>
-                        <ul class="text-muted small mb-0">
-                            <li>Passport, Driver's License, or National ID Card</li>
-                            <li>Clear, readable image or PDF. Max 10MB</li>
-                        </ul>
+                    <div class="verification-uploads">
+                        <div class="upload-group">
+                            <label for="id_document" class="file-input-label">
+                                <span class="file-input-text">📤 Upload ID Document</span>
+                                <input type="file" name="id_document" id="id_document" accept="image/*,application/pdf" class="file-input" required>
+                            </label>
+                            <small class="form-help">Passport, Driver's License, or National ID Card</small>
+                        </div>
                     </div>
                 </div>
 
@@ -82,11 +79,13 @@
                         <span class="badge bg-primary">Step 3</span>
                         <h2 class="h5 m-0">Selfie Verification</h2>
                     </div>
-                    <div class="d-flex gap-3 align-items-start">
-                        <label class="btn btn-outline-secondary mb-0">Upload Selfie<input type="file" name="selfie" accept="image/*" hidden required></label>
-                        <div id="selfie-preview" class="border rounded p-1" style="min-width:120px;">
-                            <img id="selfie-img" src="" alt="Selfie preview" style="display:none;max-width:140px;max-height:140px;border-radius:8px;"/>
-                            <div id="selfie-name" class="text-muted small"></div>
+                    <div class="verification-uploads">
+                        <div class="upload-group">
+                            <label for="id_selfie" class="file-input-label">
+                                <span class="file-input-text">📸 Upload Selfie</span>
+                                <input type="file" name="selfie" id="id_selfie" accept="image/*" class="file-input" required>
+                            </label>
+                            <small class="form-help">Clear photo of yourself</small>
                         </div>
                     </div>
                 </div>
@@ -97,9 +96,14 @@
                         <span class="badge bg-secondary">Step 4</span>
                         <h2 class="h6 m-0 text-muted">Additional Documents (Optional)</h2>
                     </div>
-                    <div class="d-flex gap-3 align-items-start">
-                        <label class="btn btn-light border">Upload Certificate/License<input type="file" name="address_doc" hidden></label>
-                        <div id="address-preview" class="border rounded p-2 small text-muted" style="min-width:200px; max-width:320px;"></div>
+                    <div class="verification-uploads">
+                        <div class="upload-group">
+                            <label for="id_address_doc" class="file-input-label">
+                                <span class="file-input-text">📄 Upload Address Proof</span>
+                                <input type="file" name="address_doc" id="id_address_doc" accept="image/*,application/pdf" class="file-input">
+                            </label>
+                            <small class="form-help">Utility bill, bank statement, etc.</small>
+                        </div>
                     </div>
                 </div>
 
@@ -120,63 +124,76 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+.verification-uploads {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.upload-group {
+    text-align: center;
+}
+
+.upload-group .file-input-label {
+    display: block;
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.upload-group .file-input-label:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-input-text {
+    color: #495057;
+    font-weight: 500;
+}
+
+.form-help {
+    display: block;
+    margin-top: 0.25rem;
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .verification-uploads {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 <script>
 document.addEventListener('change', function(e){
     if(e.target && e.target.name === 'id_document'){
-        e.target.closest('label').classList.add('btn-primary');
-        e.target.closest('label').classList.remove('btn-outline-primary');
         const file = e.target.files && e.target.files[0];
-        const box = document.getElementById('id-preview');
-        if(box){
-            if(file){
-                if(file.type.startsWith('image/')){
-                    const img = new Image();
-                    img.style.maxWidth = '140px';
-                    img.style.maxHeight = '140px';
-                    img.style.borderRadius = '8px';
-                    img.src = URL.createObjectURL(file);
-                    box.innerHTML = '';
-                    box.appendChild(img);
-                } else {
-                    box.textContent = 'Selected: ' + file.name;
-                }
-            } else {
-                box.textContent = '';
-            }
+        if(file){
+            e.target.closest('label').querySelector('.file-input-text').textContent = '✓ ' + file.name;
         }
     }
+    
     if(e.target && e.target.name === 'selfie'){
         const file = e.target.files && e.target.files[0];
-        const imgEl = document.getElementById('selfie-img');
-        const nameEl = document.getElementById('selfie-name');
-        if(file && imgEl){
-            imgEl.src = URL.createObjectURL(file);
-            imgEl.style.display = 'block';
-            if(nameEl){ nameEl.textContent = ''; }
-        } else if(nameEl) {
-            nameEl.textContent = file ? ('Selected: ' + file.name) : '';
+        if(file){
+            e.target.closest('label').querySelector('.file-input-text').textContent = '✓ ' + file.name;
         }
     }
+    
     if(e.target && e.target.name === 'address_doc'){
-        e.target.closest('label').classList.add('btn-success');
         const file = e.target.files && e.target.files[0];
-        const box = document.getElementById('address-preview');
-        if(box){
-            if(file){
-                if(file.type.startsWith('image/')){
-                    const img = new Image();
-                    img.style.maxWidth = '140px';
-                    img.style.maxHeight = '140px';
-                    img.style.borderRadius = '8px';
-                    img.src = URL.createObjectURL(file);
-                    box.innerHTML = '';
-                    box.appendChild(img);
-                } else {
-                    box.textContent = 'Selected: ' + file.name;
-                }
-            } else {
-                box.textContent = '';
-            }
+        if(file){
+            e.target.closest('label').querySelector('.file-input-text').textContent = '✓ ' + file.name;
         }
     }
 });

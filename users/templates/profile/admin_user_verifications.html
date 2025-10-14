@@ -7,8 +7,8 @@
         <div class="d-flex align-items-center gap-2">
             <input id="search-input" type="text" class="form-control form-control-sm" placeholder="Search user or name">
             <form method="get" class="d-flex align-items-center gap-2">
-                <label class="text-muted small">Status</label>
-                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                <label class="text-muted small ms-3">Status</label>
+                <select name="status" style="width: 100px;" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
                     <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
                     <option value="verified" {% if status == 'verified' %}selected{% endif %}>Verified</option>
@@ -33,30 +33,29 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge {% if row.profile.verification_status == 'verified' %}text-bg-success{% elif row.profile.verification_status == 'pending' %}text-bg-warning{% else %}text-bg-secondary{% endif %}">{{ row.profile.verification_status|title }}</span>
                         <a class="btn btn-sm btn-success" href="{% url 'users:admin_user_verification_action' row.profile.id 'approve' %}">Approve</a>
                         <a class="btn btn-sm btn-outline-danger" href="{% url 'users:admin_user_verification_action' row.profile.id 'reject' %}">Reject</a>
                     </div>
                 </div>
 
                 <div class="section-divider"></div>
-                <div class="row mt-2 g-5">
+                <div class="row g-5">
                     <div class="col-12 col-xl-6">
                         <div class="section-title">Submitted Info</div>
                         {% if row.submission %}
-                        <div class="row g-3 small-info">
+                        <div class="row g-3 text-center">
                             <div class="col-12 col-md-6">
-                                <div class="info-grid">
-                                    <div class="label">Full Name</div><div>{{ row.submission.first_name }} {{ row.submission.last_name }}</div>
-                                    <div class="label">DOB</div><div>{{ row.submission.dob|date:'Y-m-d' }}</div>
-                                    <div class="label">Nationality</div><div>{{ row.submission.nationality }}</div>
+                                <div class="row">
+                                    <div class="label mt-3">Full Name: {{ row.submission.first_name }} {{ row.submission.last_name }}</div>
+                                    <div class="label mt-3">DOB: {{ row.submission.dob|date:'Y-m-d' }}</div>
+                                    <div class="label mt-3">Nationality: {{ row.submission.nationality }}</div>
                                 </div>
                             </div>
                             <div class="col-12 col-md-6">
-                                <div class="info-grid">
-                                    <div class="label">Address</div><div>{{ row.submission.address1 }}{% if row.submission.address2 %}, {{ row.submission.address2 }}{% endif %}</div>
-                                    <div class="label">Region</div><div>{{ row.submission.state }} {{ row.submission.postal }}</div>
-                                    <div class="label">Country</div><div>{{ row.submission.country }}</div>
+                                <div class="">
+                                    <div class="label mt-3">Address: {{ row.submission.address1 }}{% if row.submission.address2 %}, {{ row.submission.address2 }}{% endif %}</div>
+                                    <div class="label mt-3">Region: {{ row.submission.state }} {{ row.submission.postal }}</div>
+                                    <div class="label mt-3">Country: {{ row.submission.country }}</div>
                                 </div>
                             </div>
                         </div>
@@ -69,7 +68,7 @@
                         <div class="evi-grid">
                             {% if row.id_docs %}
                             <div class="evi-row">
-                                <span class="chip chip-blue">Government ID</span>
+                                <span class="chip chip-blue mt-3">Government ID</span>
                                 {% for ev in row.id_docs %}
                                     <a href="{{ ev.file.url }}" target="_blank" class="evi-link">{{ ev.title }}</a>
                                 {% endfor %}

@@ -133,6 +133,9 @@ def profile_view(request):
     profile = get_object_or_404(Profile, user=request.user)
     evidence = profile.evidence.all()
     
+    # Get latest identity submission for verification info
+    latest_submission = profile.identity_submissions.order_by('-created_at').first()
+    
     # Get user's skills
     teaching_skills = UserSkill.objects.filter(
         user=request.user, 
@@ -147,6 +150,7 @@ def profile_view(request):
     context = {
         'profile': profile,
         'evidence': evidence,
+        'latest_submission': latest_submission,
         'teaching_skills': teaching_skills,
         'learning_skills': learning_skills,
     }
@@ -155,10 +159,15 @@ def profile_view(request):
 
 @login_required
 def profile_edit(request):
-    """Edit user's profile"""
+    """Edit user's profile with verification information"""
     profile = get_object_or_404(Profile, user=request.user)
     
     if request.method == 'POST':
+        # Update user fields (first_name, last_name are stored on User model)
+        request.user.first_name = request.POST.get('first_name', '').strip()
+        request.user.last_name = request.POST.get('last_name', '').strip()
+        request.user.save()
+        
         # Update profile fields
         profile.bio = request.POST.get('bio', '')
         profile.location = request.POST.get('location', '')
@@ -168,11 +177,48 @@ def profile_edit(request):
             profile.avatar = request.FILES['avatar']
         
         profile.save()
+        
+        # Create or update identity submission for verification data
+        # Get the latest submission or create a new one
+        latest_submission = profile.identity_submissions.order_by('-created_at').first()
+        
+        if latest_submission:
+            # Update existing submission
+            latest_submission.first_name = request.user.first_name
+            latest_submission.last_name = request.user.last_name
+            latest_submission.dob = request.POST.get('dob') or None
+            latest_submission.nationality = request.POST.get('nationality', '')
+            latest_submission.address1 = request.POST.get('address1', '')
+            latest_submission.address2 = request.POST.get('address2', '')
+            latest_submission.state = request.POST.get('state', '')
+            latest_submission.postal = request.POST.get('postal', '')
+            latest_submission.country = request.POST.get('country', '')
+            latest_submission.save()
+        else:
+            # Create new submission
+            IdentitySubmission.objects.create(
+                profile=profile,
+                first_name=request.user.first_name,
+                last_name=request.user.last_name,
+                dob=request.POST.get('dob') or None,
+                nationality=request.POST.get('nationality', ''),
+                address1=request.POST.get('address1', ''),
+                address2=request.POST.get('address2', ''),
+                state=request.POST.get('state', ''),
+                postal=request.POST.get('postal', ''),
+                country=request.POST.get('country', '')
+            )
+        
         messages.success(request, 'Profile updated successfully!')
+        
         return redirect('users:profile')
+    
+    # Get latest identity submission for pre-filling form
+    latest_submission = profile.identity_submissions.order_by('-created_at').first()
     
     context = {
         'profile': profile,
+        'latest_submission': latest_submission,
     }
     return render(request, 'profile/profile_edit.html', context)
 
