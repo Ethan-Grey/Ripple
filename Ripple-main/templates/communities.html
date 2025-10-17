@@ -2,6 +2,7 @@
 {% block title %} · Communities{% endblock %}
 {% block content %}
 
+
 <!-- Communities Header -->
 <div class="flex items-center justify-between mb-6">
     <h2 class="text-2xl font-bold text-gray-900">All Communities</h2>
@@ -10,6 +11,7 @@
         {% comment %} Add skill filter options dynamically {% endcomment %}
     </select>
 </div>
+
 
 <!-- Communities Grid -->
 <div class="bg-white rounded-lg border border-gray-200 p-6">
@@ -32,17 +34,17 @@
                         </div>
                     </div>
                 </div>
-                
+               
                 {% if c.description %}
                 <p class="text-sm text-gray-600 mb-3">{{ c.description|truncatewords:15 }}</p>
                 {% else %}
                 <p class="text-sm text-gray-600 mb-3">A community for {{ c.skill.name }} enthusiasts.</p>
                 {% endif %}
-                
+               
                 <div class="flex flex-wrap gap-1 mb-3">
                     <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">{{ c.skill.name }}</span>
                 </div>
-                
+               
                 <div class="flex items-center justify-between text-xs text-gray-500">
                     <span class="flex items-center gap-1">
                         <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,5 +73,6 @@
         </div>
     {% endif %}
 </div>
+
 
 {% endblock %}
