@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login · Ripple</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-body">
+  <div class="auth-split">
+    <section class="auth-left">
+      <div class="welcome">
+        <h1>Welcome to Ripple</h1>
+        <p>Swap skills, learn faster, join communities.</p>
+      </div>
+      <div class="shapes">
+        <div class="s1"></div>
+        <div class="s2"></div>
+        <div class="s3"></div>
+      </div>
+    </section>
+    <section class="auth-right">
+      <h3>User Login</h3>
+      <form method="post" action="{% url 'users:login' %}" class="auth-form">
+        {% csrf_token %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="auth-alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+        {% if form.non_field_errors %}
+          {% for error in form.non_field_errors %}
+            <div class="auth-alert">{{ error }}</div>
+          {% endfor %}
+        {% elif form.errors %}
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <div class="auth-alert">{{ error }}</div>
+            {% endfor %}
+          {% endfor %}
+        {% endif %}
+        <div class="form-group">
+          <input class="input" type="text" name="username" placeholder="Username" value="{{ request.POST.username }}" required>
+        </div>
+        <div class="form-group">
+          <input class="input" type="password" name="password" placeholder="Password" required>
+        </div>
+        <div class="form-row">
+          <label class="remember"><input type="checkbox" name="remember"> Remember me</label>
+          <a class="link" href="{% url 'users:password_reset' %}">Forgot password?</a>
+        </div>
+        <button type="submit" class="cta">Login</button>
+      </form>
+      <div class="muted">No account? <a class="link" href="{% url 'users:register' %}">Register</a></div>
+    </section>
+  </div>
+  <script>
+    // keep focus on first field
+    document.addEventListener('DOMContentLoaded',()=>{const i=document.querySelector('input[name="username"]'); if(i) i.focus();});
+  </script>
+</body>
+</html>
+

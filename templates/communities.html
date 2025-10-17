@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %} · Communities{% endblock %}
+{% block content %}
+<div class="card">
+  <h3>All Communities</h3>
+  <ul>
+    {% for c in communities %}
+      <li>{{ c.name }} — {{ c.skill.name }}</li>
+    {% empty %}
+      <li>No communities yet.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
+

@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %} · Review Verifications{% endblock %}
+{% block content %}
+<div class="container" style="max-width:1280px;">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h2 class="h4 m-0">User Identity Verifications</h2>
+        <div class="d-flex align-items-center gap-2">
+            <input id="search-input" type="text" class="form-control form-control-sm" placeholder="Search user or name">
+            <form method="get" class="d-flex align-items-center gap-2">
+                <label class="text-muted small ms-3">Status</label>
+                <select name="status" style="width: 100px;" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
+                    <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="verified" {% if status == 'verified' %}selected{% endif %}>Verified</option>
+                    <option value="unverified" {% if status == 'unverified' %}selected{% endif %}>Unverified</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    {% if rows %}
+    <div class="row g-4" id="cards">
+        {% for row in rows %}
+        <div class="col-12 search-card" data-keywords="{{ row.profile.user.username }} {{ row.profile.user.first_name }} {{ row.profile.user.last_name }}">
+            <div class="verify-card border rounded-4 p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="user-pill">{{ row.profile.user.username|first|upper }}</div>
+                        <div>
+                            <div class="fw-semibold">@{{ row.profile.user.username }}</div>
+                            <div class="text-muted small">{{ row.profile.user.first_name }} {{ row.profile.user.last_name }}</div>
+                            <div class="text-muted xsmall">Submitted: {% if row.submission %}{{ row.submission.created_at|date:'Y-m-d H:i' }}{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a class="btn btn-sm btn-success" href="{% url 'users:admin_user_verification_action' row.profile.id 'approve' %}">Approve</a>
+                        <a class="btn btn-sm btn-outline-danger" href="{% url 'users:admin_user_verification_action' row.profile.id 'reject' %}">Reject</a>
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+                <div class="row g-5">
+                    <div class="col-12 col-xl-6">
+                        <div class="section-title">Submitted Info</div>
+                        {% if row.submission %}
+                        <div class="row g-3 text-center">
+                            <div class="col-12 col-md-6">
+                                <div class="row">
+                                    <div class="label mt-3">Full Name: {{ row.submission.first_name }} {{ row.submission.last_name }}</div>
+                                    <div class="label mt-3">DOB: {{ row.submission.dob|date:'Y-m-d' }}</div>
+                                    <div class="label mt-3">Nationality: {{ row.submission.nationality }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="">
+                                    <div class="label mt-3">Address: {{ row.submission.address1 }}{% if row.submission.address2 %}, {{ row.submission.address2 }}{% endif %}</div>
+                                    <div class="label mt-3">Region: {{ row.submission.state }} {{ row.submission.postal }}</div>
+                                    <div class="label mt-3">Country: {{ row.submission.country }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <span class="text-muted">No submission details</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-12 col-xl-6">
+                        <div class="section-title">Evidence</div>
+                        <div class="evi-grid">
+                            {% if row.id_docs %}
+                            <div class="evi-row">
+                                <span class="chip chip-blue mt-3">Government ID</span>
+                                {% for ev in row.id_docs %}
+                                    <a href="{{ ev.file.url }}" target="_blank" class="evi-link">{{ ev.title }}</a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if row.selfies %}
+                            <div class="evi-row">
+                                <span class="chip chip-gray">Selfie</span>
+                                {% for ev in row.selfies %}
+                                    <a href="{{ ev.file.url }}" target="_blank" class="evi-link">{{ ev.title }}</a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if row.proofs %}
+                            <div class="evi-row">
+                                <span class="chip chip-green">Proof of Address</span>
+                                {% for ev in row.proofs %}
+                                    <a href="{{ ev.file.url }}" target="_blank" class="evi-link">{{ ev.title }}</a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if not row.id_docs and not row.selfies and not row.proofs %}
+                                <span class="text-muted">No evidence uploaded</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p class="text-muted">No users waiting for verification.</p>
+    {% endif %}
+</div>
+{% endblock %}
+{% block extra_head %}
+<style>
+.verify-card{background:#fff}
+.user-pill{width:44px;height:44px;border-radius:999px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#4f46e5}
+.section-title{font-weight:600;margin-bottom:8px;text-align:center}
+.info-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 24px;text-align:center}
+.info-grid .label{color:#6b7280}
+.info-grid > div{line-height:1.5;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+.small-info .info-grid{grid-template-columns:140px 1fr}
+.thumb{display:none}
+.chip{display:inline-block;padding:.25rem .5rem;border-radius:999px;font-size:.75rem;font-weight:600;margin-right:.25rem}
+.chip-blue{background:#e0e7ff;color:#3730a3}
+.chip-gray{background:#e5e7eb;color:#374151}
+.chip-green{background:#dcfce7;color:#065f46}
+.xsmall{font-size:.75rem}
+.section-divider{height:1px;background:#e5e7eb;margin:18px 0}
+.evi-grid{display:flex;flex-direction:column;gap:14px;align-items:center}
+.evi-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;text-align:center}
+.evi-link{margin-right:8px}
+</style>
+<script>
+const input=document.getElementById('search-input');
+if(input){
+  input.addEventListener('input',()=>{
+    const q=input.value.toLowerCase();
+    document.querySelectorAll('.search-card').forEach(card=>{
+      const k=(card.getAttribute('data-keywords')||'').toLowerCase();
+      card.style.display=k.includes(q)?'':'none';
+    });
+  });
+}
+</script>
+{% endblock %}
+

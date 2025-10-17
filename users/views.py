@@ -1,0 +1,506 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.contrib.auth.models import User
+from django import forms
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.conf import settings
+from django.contrib import messages
+from .models import Profile, Evidence, IdentitySubmission
+from skills.models import UserSkill, Skill, SkillEvidence
+from django.views.decorators.http import require_http_methods
+from django.contrib.admin.views.decorators import staff_member_required
+
+# Create your views here.
+
+def register(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            # Get form data
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password1']
+            email_value = request.POST.get('email', '').strip()
+            
+            # Validate email is provided
+            if not email_value:
+                messages.error(request, 'Email is required for registration.')
+                return render(request, 'register.html', {'form': form})
+            
+            # Validate email format
+            from django.core.validators import validate_email
+            from django.core.exceptions import ValidationError
+            try:
+                validate_email(email_value)
+            except ValidationError:
+                messages.error(request, 'Please enter a valid email address.')
+                return render(request, 'register.html', {'form': form})
+            
+            # Check if email already exists
+            if User.objects.filter(email=email_value).exists():
+                messages.error(request, 'This email is already registered. Please use a different email or sign in.')
+                return render(request, 'register.html', {'form': form})
+            
+            # Check if username already exists
+            if User.objects.filter(username=username).exists():
+                messages.error(request, 'This username is already taken. Please choose a different one.')
+                return render(request, 'register.html', {'form': form})
+            
+            # Store data in session for verification
+            request.session['user_data'] = {
+                'username': username,
+                'password': password,
+                'email': email_value,
+            }
+            request.session.modified = True
+            
+            # Generate verification token
+            token = default_token_generator.make_token(User(username=username))
+            uid = urlsafe_base64_encode(force_bytes(username))
+            
+            verification_url = request.build_absolute_uri(
+                f'/verify-email/{uid}/{token}/'
+            )
+            
+            # Send verification email
+            subject = 'Verify your email address - Ripple'
+            message = render_to_string('email_verification.html', {
+                'username': username,
+                'verification_url': verification_url,
+            })
+            
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email_value],
+                fail_silently=False,
+            )
+            
+            return render(request, 'registration_success.html', {
+                'email': email_value
+            })
+    else:
+        form = UserCreationForm()
+    # Add email field dynamically for a simple UX
+    if not hasattr(form.fields, 'email'):
+        form.fields['email'] = forms.EmailField(required=True, label='Email')
+    return render(request, 'register.html', {'form': form})
+
+
+def verify_email(request, uidb64, token):
+    try:
+        username = force_str(urlsafe_base64_decode(uidb64))
+        user_data = request.session.get('user_data')
+        
+        if not user_data or user_data['username'] != username:
+            return render(request, 'email_verification_failed.html')
+            
+        # Create the user only after email verification
+        user = User.objects.create_user(
+            username=user_data['username'],
+            email=user_data['email'],
+            password=user_data['password']
+        )
+        
+        # Clean up session data
+        if 'user_data' in request.session:
+            del request.session['user_data']
+            
+        return render(request, 'email_verification_success.html')
+        
+    except Exception as e:
+        print(f"Error in email verification: {e}")
+        return render(request, 'email_verification_failed.html')
+
+
+def logout_direct(request):
+    auth_logout(request)
+    return redirect('users:login')
+
+
+# Profile Views
+@login_required
+def profile_view(request):
+    """Display user's profile"""
+    profile = get_object_or_404(Profile, user=request.user)
+    evidence = profile.evidence.all()
+    
+    # Get latest identity submission for verification info
+    latest_submission = profile.identity_submissions.order_by('-created_at').first()
+    
+    # Get user's skills
+    teaching_skills = UserSkill.objects.filter(
+        user=request.user, 
+        can_teach=True
+    ).select_related('skill')
+    
+    learning_skills = UserSkill.objects.filter(
+        user=request.user, 
+        wants_to_learn=True
+    ).select_related('skill')
+    
+    context = {
+        'profile': profile,
+        'evidence': evidence,
+        'latest_submission': latest_submission,
+        'teaching_skills': teaching_skills,
+        'learning_skills': learning_skills,
+    }
+    return render(request, 'profile/profile.html', context)
+
+
+@login_required
+def profile_edit(request):
+    """Edit user's profile with verification information"""
+    profile = get_object_or_404(Profile, user=request.user)
+    
+    if request.method == 'POST':
+        # Update user fields (first_name, last_name are stored on User model)
+        request.user.first_name = request.POST.get('first_name', '').strip()
+        request.user.last_name = request.POST.get('last_name', '').strip()
+        request.user.save()
+        
+        # Update profile fields
+        profile.bio = request.POST.get('bio', '')
+        profile.location = request.POST.get('location', '')
+        
+        # Handle avatar upload
+        if 'avatar' in request.FILES:
+            profile.avatar = request.FILES['avatar']
+        
+        profile.save()
+        
+        # Create or update identity submission for verification data
+        # Get the latest submission or create a new one
+        latest_submission = profile.identity_submissions.order_by('-created_at').first()
+        
+        if latest_submission:
+            # Update existing submission
+            latest_submission.first_name = request.user.first_name
+            latest_submission.last_name = request.user.last_name
+            latest_submission.dob = request.POST.get('dob') or None
+            latest_submission.nationality = request.POST.get('nationality', '')
+            latest_submission.address1 = request.POST.get('address1', '')
+            latest_submission.address2 = request.POST.get('address2', '')
+            latest_submission.state = request.POST.get('state', '')
+            latest_submission.postal = request.POST.get('postal', '')
+            latest_submission.country = request.POST.get('country', '')
+            latest_submission.save()
+        else:
+            # Create new submission
+            IdentitySubmission.objects.create(
+                profile=profile,
+                first_name=request.user.first_name,
+                last_name=request.user.last_name,
+                dob=request.POST.get('dob') or None,
+                nationality=request.POST.get('nationality', ''),
+                address1=request.POST.get('address1', ''),
+                address2=request.POST.get('address2', ''),
+                state=request.POST.get('state', ''),
+                postal=request.POST.get('postal', ''),
+                country=request.POST.get('country', '')
+            )
+        
+        messages.success(request, 'Profile updated successfully!')
+        
+        return redirect('users:profile')
+    
+    # Get latest identity submission for pre-filling form
+    latest_submission = profile.identity_submissions.order_by('-created_at').first()
+    
+    context = {
+        'profile': profile,
+        'latest_submission': latest_submission,
+    }
+    return render(request, 'profile/profile_edit.html', context)
+
+
+@login_required
+def verify_skill(request, skill_id):
+    """Verify ability to teach a specific skill"""
+    skill = get_object_or_404(Skill, id=skill_id)
+    user_skill, created = UserSkill.objects.get_or_create(
+        user=request.user,
+        skill=skill,
+        defaults={'level': 'intermediate', 'can_teach': True}
+    )
+    
+    if not created:
+        user_skill.can_teach = True
+        user_skill.save()
+    
+    messages.success(request, f'You can now teach {skill.name}!')
+    return redirect('users:profile')
+
+
+@login_required
+def unverify_skill(request, skill_id):
+    """Remove ability to teach a specific skill"""
+    user_skill = get_object_or_404(UserSkill, user=request.user, skill_id=skill_id)
+    user_skill.can_teach = False
+    user_skill.save()
+    
+    messages.info(request, f'You are no longer teaching {user_skill.skill.name}.')
+    return redirect('users:profile')
+
+
+@login_required
+def add_skill(request):
+    """Add a new skill to user's profile"""
+    if request.method == 'POST':
+        skill_name = request.POST.get('skill_name', '').strip()
+        level = request.POST.get('level', 'intermediate')
+        skill_type = request.POST.get('skill_type', 'teach')  # 'teach' or 'learn'
+        
+        if skill_name:
+            skill, created = Skill.objects.get_or_create(name=skill_name)
+            
+            # Determine skill type based on form data
+            can_teach = skill_type == 'teach'
+            wants_to_learn = skill_type == 'learn'
+            
+            user_skill, created = UserSkill.objects.get_or_create(
+                user=request.user,
+                skill=skill,
+                defaults={
+                    'level': level,
+                    'can_teach': can_teach,
+                    'wants_to_learn': wants_to_learn
+                }
+            )
+            
+            if not created:
+                # Update existing skill
+                user_skill.level = level
+                if skill_type == 'teach':
+                    user_skill.can_teach = True
+                elif skill_type == 'learn':
+                    user_skill.wants_to_learn = True
+                user_skill.save()
+            
+            messages.success(request, f'Added {skill.name} to your {skill_type}ing skills!')
+        else:
+            messages.error(request, 'Please enter a skill name.')
+    
+    return redirect('users:profile')
+
+
+@login_required
+def verify_skill(request, skill_id):
+    """Show skill verification form"""
+    skill = get_object_or_404(Skill, id=skill_id)
+    user_skill = get_object_or_404(UserSkill, user=request.user, skill=skill)
+    
+    if not user_skill.can_teach:
+        messages.error(request, 'You must be able to teach this skill to verify it.')
+        return redirect('users:profile')
+    
+    evidence_list = user_skill.evidence.all()
+    
+    context = {
+        'skill': skill,
+        'user_skill': user_skill,
+        'evidence_list': evidence_list,
+    }
+    return render(request, 'profile/verify_skill.html', context)
+
+
+@login_required
+def submit_evidence(request, skill_id):
+    """Submit evidence for skill verification"""
+    skill = get_object_or_404(Skill, id=skill_id)
+    user_skill = get_object_or_404(UserSkill, user=request.user, skill=skill)
+    
+    if not user_skill.can_teach:
+        messages.error(request, 'You must be able to teach this skill to verify it.')
+        return redirect('users:profile')
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        evidence_type = request.POST.get('evidence_type', 'document')
+        description = request.POST.get('description', '').strip()
+        link = request.POST.get('link', '').strip()
+        is_primary = request.POST.get('is_primary') == 'on'
+        
+        if not title:
+            messages.error(request, 'Please provide a title for your evidence.')
+            return redirect('users:verify_skill', skill_id=skill_id)
+        
+        # Check if file or link is provided
+        file = request.FILES.get('file')
+        if not file and not link:
+            messages.error(request, 'Please upload a file or provide a link.')
+            return redirect('users:verify_skill', skill_id=skill_id)
+        
+        # Create evidence
+        evidence = SkillEvidence.objects.create(
+            user_skill=user_skill,
+            title=title,
+            evidence_type=evidence_type,
+            file=file,
+            link=link,
+            description=description,
+            is_primary=is_primary
+        )
+        
+        # If this is the first evidence, mark skill as pending verification
+        if user_skill.verification_status == UserSkill.UNVERIFIED:
+            user_skill.verification_status = UserSkill.PENDING
+            user_skill.save()
+        
+        messages.success(request, f'Evidence submitted for {skill.name}! Your skill is now pending verification.')
+        return redirect('users:verify_skill', skill_id=skill_id)
+    
+    return redirect('users:verify_skill', skill_id=skill_id)
+
+
+@login_required
+def remove_evidence(request, evidence_id):
+    """Remove evidence from skill verification"""
+    evidence = get_object_or_404(SkillEvidence, id=evidence_id, user_skill__user=request.user)
+    skill_id = evidence.user_skill.skill.id
+    
+    evidence.delete()
+    messages.success(request, 'Evidence removed successfully.')
+    return redirect('users:verify_skill', skill_id=skill_id)
+
+
+@login_required
+def delete_skill(request, skill_id):
+    """Delete a skill from user's profile"""
+    skill = get_object_or_404(Skill, id=skill_id)
+    user_skill = get_object_or_404(UserSkill, user=request.user, skill=skill)
+    user_skill.delete()
+    messages.success(request, f'{skill.name} has been removed from your profile.')
+    return redirect('users:profile')
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def verify_identity(request):
+    """Simple identity verification intake: first/last name, DOB, address, country, and ID upload.
+    Sets profile.verification_status to 'pending' when submitted.
+    """
+    profile = get_object_or_404(Profile, user=request.user)
+    if request.method == 'POST':
+        # Store minimal identity fields on the Django User/Profile
+        request.user.first_name = request.POST.get('first_name', '').strip()
+        request.user.last_name = request.POST.get('last_name', '').strip()
+        request.user.save()
+
+        profile.location = request.POST.get('country', profile.location)
+        # Mark as pending
+        profile.verification_status = 'pending'
+        profile.save()
+
+        # Persist identity submission snapshot for admin review
+        IdentitySubmission.objects.create(
+            profile=profile,
+            first_name=request.user.first_name,
+            last_name=request.user.last_name,
+            dob=request.POST.get('dob') or None,
+            nationality=request.POST.get('nationality',''),
+            address1=request.POST.get('address1',''),
+            address2=request.POST.get('address2',''),
+            state=request.POST.get('state',''),
+            postal=request.POST.get('postal',''),
+            country=request.POST.get('country','')
+        )
+
+        uploaded_labels = []
+        # Government ID
+        if 'id_document' in request.FILES:
+            Evidence.objects.create(
+                profile=profile,
+                title='Identity Document',
+                file=request.FILES['id_document']
+            )
+            uploaded_labels.append('Government ID')
+        # Selfie
+        if 'selfie' in request.FILES:
+            Evidence.objects.create(
+                profile=profile,
+                title='Selfie',
+                file=request.FILES['selfie']
+            )
+            uploaded_labels.append('Selfie')
+        # Proof of Address / Additional
+        if 'address_doc' in request.FILES:
+            Evidence.objects.create(
+                profile=profile,
+                title='Proof of Address',
+                file=request.FILES['address_doc']
+            )
+            uploaded_labels.append('Proof of Address')
+
+        if uploaded_labels:
+            messages.success(request, 'Verification submitted with: ' + ', '.join(uploaded_labels) + '.')
+        else:
+            messages.success(request, 'Verification submitted. We will review your information shortly.')
+        return redirect('users:profile')
+
+    return render(request, 'profile/verify_identity.html', { 'profile': profile })
+
+
+@staff_member_required
+def admin_user_verifications(request):
+    """List users with filter by verification status for admin review."""
+    status = request.GET.get('status', 'pending')
+    allowed = ['pending', 'verified', 'unverified', 'all']
+    if status not in allowed:
+        status = 'pending'
+    qs = Profile.objects.select_related('user')
+    if status != 'all':
+        qs = qs.filter(verification_status=status)
+    profiles = qs.order_by('user__username')
+    # Build grouped evidence per profile for easier templating
+    rows = []
+    for p in profiles:
+        docs = list(p.evidence.all())
+        # mark image evidence for thumbnail rendering
+        for d in docs:
+            try:
+                name = (d.file.name or '').lower()
+            except Exception:
+                name = ''
+            d.is_image = name.endswith('.png') or name.endswith('.jpg') or name.endswith('.jpeg') or name.endswith('.webp') or name.endswith('.gif')
+        latest_submission = p.identity_submissions.order_by('-created_at').first()
+        rows.append({
+            'profile': p,
+            'id_docs': [e for e in docs if e.title == 'Identity Document'],
+            'selfies': [e for e in docs if e.title == 'Selfie'],
+            'proofs': [e for e in docs if e.title == 'Proof of Address'],
+            'submission': latest_submission,
+        })
+    return render(request, 'profile/admin_user_verifications.html', { 'rows': rows, 'status': status })
+
+
+@staff_member_required
+def admin_user_verification_action(request, profile_id, action):
+    """Approve or reject a user's identity verification."""
+    profile = get_object_or_404(Profile, id=profile_id)
+    if action == 'approve':
+        profile.verification_status = 'verified'
+        messages.success(request, f"{profile.user.username} has been verified.")
+    elif action == 'reject':
+        # Wipe identity evidence and submitted info on rejection
+        for ev in list(profile.evidence.all()):
+            try:
+                if ev.file:
+                    ev.file.delete(save=False)
+            except Exception:
+                pass
+            ev.delete()
+        profile.identity_submissions.all().delete()
+        profile.verification_status = 'unverified'
+        messages.info(request, f"{profile.user.username}'s verification was rejected and related documents have been removed.")
+    profile.save()
+    return redirect('users:admin_user_verifications')
