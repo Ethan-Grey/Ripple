@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %} · Communities{% endblock %}
+{% block content %}
+
+<!-- Communities Header -->
+<div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold text-gray-900">All Communities</h2>
+    <select class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+        <option value="all">All Skills</option>
+        {% comment %} Add skill filter options dynamically {% endcomment %}
+    </select>
+</div>
+
+<!-- Communities Grid -->
+<div class="bg-white rounded-lg border border-gray-200 p-6">
+    {% if communities %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for c in communities %}
+            <!-- Community Card -->
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-semibold">{{ c.name|first|upper }}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg font-semibold truncate">{{ c.name }}</h3>
+                        <div class="flex items-center gap-1 text-sm text-gray-500 mt-1">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                            <span>{% if c.member_count %}{{ c.member_count }}{% else %}0{% endif %} members</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if c.description %}
+                <p class="text-sm text-gray-600 mb-3">{{ c.description|truncatewords:15 }}</p>
+                {% else %}
+                <p class="text-sm text-gray-600 mb-3">A community for {{ c.skill.name }} enthusiasts.</p>
+                {% endif %}
+                
+                <div class="flex flex-wrap gap-1 mb-3">
+                    <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">{{ c.skill.name }}</span>
+                </div>
+                
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span class="flex items-center gap-1">
+                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        {% if c.created_at %}{{ c.created_at|timesince }} ago{% else %}Recently{% endif %}
+                    </span>
+                    <button class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">Join</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No communities yet</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by creating a new community.</p>
+            <div class="mt-6">
+                <button class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Create Community
+                </button>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

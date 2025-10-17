@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ripple{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_head %}{% endblock %}
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">Ripple</div>
+            <nav class="nav">
+                <a class="nav-item" href="/">Dashboard</a>
+                <a class="nav-item" href="/swipe/">Skill Swipe</a>
+                <a class="nav-item" href="/communities/">Communities</a>
+                <a class="nav-item" href="/messages/">Messages</a>
+                <a class="nav-item" href="/profile/">Profile</a>
+                <div style="flex:1"></div>
+                <a class="nav-item" href="{% url 'users:logout' %}" style="margin-top:auto;background:#2b3a57;color:#e6ecf5">Logout</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <header class="topbar">
+                <form class="search" action="/search/" method="get">
+                    <input type="text" name="q" placeholder="Search" value="{{ request.GET.q }}"/>
+                </form>
+                <div class="user-pill">User</div>
+            </header>
+
+            <section class="page-body">
+                {% block content %}{% endblock %}
+            </section>
+        </main>
+    </div>
+
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+    </body>
+    </html>
+
