@@ -2,6 +2,13 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from skills.models import Skill, UserSkill, Match
 from communities.models import Community
+from django.shortcuts import render, redirect
+
+def landing(request):
+    # If user is already logged in, redirect to dashboard
+    if request.user.is_authenticated:
+        return redirect('/')
+    return render(request, 'landing.html')
 
 def home(request):
     user = request.user if request.user.is_authenticated else None
