@@ -1,0 +1,97 @@
+from django.db import models
+from django.conf import settings
+from django.utils import timezone
+
+
+class Conversation(models.Model):
+    """Represents a conversation between users"""
+    participants = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, 
+        related_name='conversations'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        ordering = ['-updated_at']
+    
+    def __str__(self):
+        return f"Conversation {self.id} - {self.participants.count()} participants"
+    
+    def get_other_participant(self, user):
+        """Get the other participant in a 1-on-1 conversation"""
+        return self.participants.exclude(id=user.id).first()
+    
+    def get_latest_message(self):
+        """Get the most recent message in this conversation"""
+        return self.messages.first()
+
+
+class Message(models.Model):
+    """Represents a single message in a conversation"""
+    MESSAGE_TYPES = [
+        ('text', 'Text'),
+        ('image', 'Image'),
+        ('file', 'File'),
+    ]
+    
+    conversation = models.ForeignKey(
+        Conversation, 
+        on_delete=models.CASCADE, 
+        related_name='messages'
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        related_name='sent_messages'
+    )
+    content = models.TextField()
+    message_type = models.CharField(
+        max_length=20, 
+        choices=MESSAGE_TYPES, 
+        default='text'
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['timestamp']
+    
+    def __str__(self):
+        return f"Message from {self.sender.username} in conversation {self.conversation.id}"
+    
+    def mark_as_read(self, user):
+        """Mark this message as read by a specific user"""
+        if not self.is_read and self.sender != user:
+            self.is_read = True
+            self.save()
+
+
+class MessageStatus(models.Model):
+    """Tracks read status of messages for each user"""
+    message = models.ForeignKey(
+        Message, 
+        on_delete=models.CASCADE, 
+        related_name='statuses'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        related_name='message_statuses'
+    )
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ['message', 'user']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.message.id} - {'Read' if self.is_read else 'Unread'}"
+    
+    def mark_as_read(self):
+        """Mark this message as read for this user"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()

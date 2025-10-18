@@ -1,0 +1,18 @@
+Welcome to Ripple!
+
+Hello {{ username }}!
+
+Thank you for registering with Ripple. To complete your registration and start connecting with other learners and teachers, please verify your email address by visiting this link:
+
+{{ verification_url }}
+
+Important: This verification link will expire in 24 hours for security reasons.
+
+If you didn't create an account with Ripple, please ignore this email.
+
+Welcome to the community!
+
+The Ripple Team
+
+---
+This email was sent from Ripple. If you have any questions, please contact our support team.

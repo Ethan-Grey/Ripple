@@ -18,10 +18,10 @@
         <aside class="sidebar" style="position: sticky; top: 0; height: 100dvh; overflow: auto;">
             <div class="brand">Ripple</div>
             <nav class="nav">
-                <a class="nav-item" href="/">Dashboard</a>
-                <a class="nav-item" href="/swipe/">Skill Swipe</a>
-                <a class="nav-item" href="/communities/">Communities</a>
-                <a class="nav-item" href="/messages/">Messages</a>
+                <a class="nav-item" href="{% url 'core:home' %}">Dashboard</a>
+                <a class="nav-item" href="{% url 'core:swipe' %}">Skill Swipe</a>
+                <a class="nav-item" href="{% url 'communities:communities' %}">Communities</a>
+                <a class="nav-item" href="{% url 'chat:messages' %}">Messages</a>
                 <a class="nav-item" href="{% url 'users:profile' %}">Profile</a>
                 {% if user.is_staff %}
                 <a class="nav-item" href="{% url 'skill_admin:skill_review' %}" style="background:#f59e0b;color:#92400e">Admin Review</a>
@@ -34,7 +34,7 @@
 
         <main class="content">
             <header class="topbar">
-                <form class="search" action="/search/" method="get">
+                <form class="search" action="{% url 'core:search' %}" method="get">
                     <input type="text" name="q" placeholder="Search" value="{{ request.GET.q }}"/>
                 </form>
                 <div class="user-pill">User</div>

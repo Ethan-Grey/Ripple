@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verification Failed · Ripple</title>
+  <title>Email Verified · Ripple</title>
   <link rel="stylesheet" href="{% static 'css/auth.css' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,8 +14,8 @@
   <div class="auth-split">
     <section class="auth-left">
       <div class="welcome">
-        <h1>Verification Failed</h1>
-        <p>The verification link is invalid or has expired. Please try registering again.</p>
+        <h1>Account Activated</h1>
+        <p>Your email has been verified and your account is now active. Welcome to Ripple!</p>
       </div>
       <div class="shapes">
         <div class="s1"></div>
@@ -24,18 +24,23 @@
       </div>
     </section>
     <section class="auth-right">
-      <h3>Invalid Verification Link</h3>
+      <h3>Verification Complete</h3>
       <div class="auth-form">
         <div class="form-group">
-          <div class="auth-alert">
-            <strong>⚠ Error:</strong> The verification link is invalid or has expired.
+          <div class="success-message">
+            <strong>✓ Success!</strong> Your email has been verified and your account is now active.
           </div>
         </div>
         <div class="form-group">
-          <p style="color: var(--muted); font-size: 16px; text-align: center;">Please try registering again or contact support if the problem persists.</p>
+          <p style="color: var(--muted); font-size: 16px; text-align: center;">You can now log in to your Ripple account and start connecting with others.</p>
         </div>
         <div class="form-group">
-          <a href="{% url 'users:register' %}" class="cta" style="display: block; text-align: center; text-decoration: none;">Register Again</a>
+          <a href="{% url 'users:login' %}" class="cta" style="display: block; text-align: center; text-decoration: none;">Proceed to Login</a>
+          <div class="muted" style="margin-top: 16px; text-align: center;">
+            <a href="{% url 'core:landing' %}" class="link" style="font-size: 14px; opacity: 0.7;">
+              ← Back to Home
+            </a>
+          </div>
         </div>
         <div class="muted">Back to <a class="link" href="/">Home</a></div>
       </div>

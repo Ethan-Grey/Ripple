@@ -43,9 +43,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'core',
     'users',
     'skills',
     'communities',
+    'chat',
     'skill_admin', 
     # email auth
     'allauth',

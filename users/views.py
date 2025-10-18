@@ -20,7 +20,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 def register(request):
     if request.user.is_authenticated:
-        return redirect('home')
+        return redirect('core:home')
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
@@ -32,7 +32,7 @@ def register(request):
             # Validate email is provided
             if not email_value:
                 messages.error(request, 'Email is required for registration.')
-                return render(request, 'register.html', {'form': form})
+                return render(request, 'users/register.html', {'form': form})
             
             # Validate email format
             from django.core.validators import validate_email
@@ -41,17 +41,17 @@ def register(request):
                 validate_email(email_value)
             except ValidationError:
                 messages.error(request, 'Please enter a valid email address.')
-                return render(request, 'register.html', {'form': form})
+                return render(request, 'users/register.html', {'form': form})
             
             # Check if email already exists
             if User.objects.filter(email=email_value).exists():
                 messages.error(request, 'This email is already registered. Please use a different email or sign in.')
-                return render(request, 'register.html', {'form': form})
+                return render(request, 'users/register.html', {'form': form})
             
             # Check if username already exists
             if User.objects.filter(username=username).exists():
                 messages.error(request, 'This username is already taken. Please choose a different one.')
-                return render(request, 'register.html', {'form': form})
+                return render(request, 'users/register.html', {'form': form})
             
             # Store data in session for verification
             request.session['user_data'] = {
@@ -71,20 +71,25 @@ def register(request):
             
             # Send verification email
             subject = 'Verify your email address - Ripple'
-            message = render_to_string('email_verification.html', {
+            html_message = render_to_string('users/email_verification.html', {
+                'username': username,
+                'verification_url': verification_url,
+            })
+            text_message = render_to_string('users/email_verification.txt', {
                 'username': username,
                 'verification_url': verification_url,
             })
             
             send_mail(
                 subject,
-                message,
+                text_message,
                 settings.DEFAULT_FROM_EMAIL,
                 [email_value],
                 fail_silently=False,
+                html_message=html_message,
             )
             
-            return render(request, 'registration_success.html', {
+            return render(request, 'users/registration_success.html', {
                 'email': email_value
             })
     else:
@@ -92,7 +97,7 @@ def register(request):
     # Add email field dynamically for a simple UX
     if not hasattr(form.fields, 'email'):
         form.fields['email'] = forms.EmailField(required=True, label='Email')
-    return render(request, 'register.html', {'form': form})
+    return render(request, 'users/register.html', {'form': form})
 
 
 def verify_email(request, uidb64, token):
@@ -101,7 +106,7 @@ def verify_email(request, uidb64, token):
         user_data = request.session.get('user_data')
         
         if not user_data or user_data['username'] != username:
-            return render(request, 'email_verification_failed.html')
+            return render(request, 'users/email_verification_failed.html')
             
         # Create the user only after email verification
         user = User.objects.create_user(
@@ -114,16 +119,16 @@ def verify_email(request, uidb64, token):
         if 'user_data' in request.session:
             del request.session['user_data']
             
-        return render(request, 'email_verification_success.html')
+        return render(request, 'users/email_verification_success.html')
         
     except Exception as e:
         print(f"Error in email verification: {e}")
-        return render(request, 'email_verification_failed.html')
+        return render(request, 'users/email_verification_failed.html')
 
 
 def logout_direct(request):
     auth_logout(request)
-    return redirect('users:login')
+    return redirect('core:landing')
 
 
 # Profile Views
@@ -154,7 +159,7 @@ def profile_view(request):
         'teaching_skills': teaching_skills,
         'learning_skills': learning_skills,
     }
-    return render(request, 'profile/profile.html', context)
+    return render(request, 'users/profile/profile.html', context)
 
 
 @login_required
@@ -220,25 +225,7 @@ def profile_edit(request):
         'profile': profile,
         'latest_submission': latest_submission,
     }
-    return render(request, 'profile/profile_edit.html', context)
-
-
-@login_required
-def verify_skill(request, skill_id):
-    """Verify ability to teach a specific skill"""
-    skill = get_object_or_404(Skill, id=skill_id)
-    user_skill, created = UserSkill.objects.get_or_create(
-        user=request.user,
-        skill=skill,
-        defaults={'level': 'intermediate', 'can_teach': True}
-    )
-    
-    if not created:
-        user_skill.can_teach = True
-        user_skill.save()
-    
-    messages.success(request, f'You can now teach {skill.name}!')
-    return redirect('users:profile')
+    return render(request, 'users/profile/profile_edit.html', context)
 
 
 @login_required
@@ -310,7 +297,7 @@ def verify_skill(request, skill_id):
         'user_skill': user_skill,
         'evidence_list': evidence_list,
     }
-    return render(request, 'profile/verify_skill.html', context)
+    return render(request, 'skills/verify_skill.html', context)
 
 
 @login_required
@@ -447,7 +434,7 @@ def verify_identity(request):
             messages.success(request, 'Verification submitted. We will review your information shortly.')
         return redirect('users:profile')
 
-    return render(request, 'profile/verify_identity.html', { 'profile': profile })
+    return render(request, 'users/profile/verify_identity.html', { 'profile': profile })
 
 
 @staff_member_required
@@ -480,7 +467,7 @@ def admin_user_verifications(request):
             'proofs': [e for e in docs if e.title == 'Proof of Address'],
             'submission': latest_submission,
         })
-    return render(request, 'profile/admin_user_verifications.html', { 'rows': rows, 'status': status })
+    return render(request, 'users/profile/admin_user_verifications.html', { 'rows': rows, 'status': status })
 
 
 @staff_member_required

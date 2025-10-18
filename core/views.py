@@ -8,7 +8,7 @@ def landing(request):
     # If user is already logged in, redirect to dashboard
     if request.user.is_authenticated:
         return redirect('/')
-    return render(request, 'landing.html')
+    return render(request, 'core/landing.html')
 
 def home(request):
     user = request.user if request.user.is_authenticated else None
@@ -30,7 +30,7 @@ def home(request):
         'user_communities': user_communities,
         'recent_matches': recent_matches,
     }
-    return render(request, 'home.html', context)
+    return render(request, 'core/home.html', context)
 
 
 def swipe(request):
@@ -39,27 +39,15 @@ def swipe(request):
     context = {
         'card_skill': skill,
     }
-    return render(request, 'swipe.html', context)
-
-
-def communities_page(request):
-    communities = Community.objects.select_related('skill').all().order_by('name')
-    return render(request, 'communities.html', {'communities': communities})
-
-
-def messages_page(request):
-    return render(request, 'messages.html')
-
-
+    return render(request, 'core/swipe.html', context)
 
 
 def search(request):
     q = request.GET.get('q', '').strip()
     skill_results = Skill.objects.filter(name__icontains=q)[:10] if q else []
     community_results = Community.objects.filter(name__icontains=q)[:10] if q else []
-    return render(request, 'search.html', {
+    return render(request, 'core/search.html', {
         'q': q,
         'skill_results': skill_results,
         'community_results': community_results,
     })
-
