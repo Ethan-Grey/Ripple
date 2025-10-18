@@ -6,7 +6,7 @@ app_name = 'users'
 
 urlpatterns = [
     # Authentication URLs
-    path('login/', auth_views.LoginView.as_view(template_name='login.html', redirect_authenticated_user=True, next_page='/', success_url='/'), name='login'),
+    path('login/', auth_views.LoginView.as_view(template_name='login.html', redirect_authenticated_user=True, next_page='/dashboard/', success_url='/dashboard/'), name='login'),
     path('logout/', views.logout_direct, name='logout'),
     path('register/', views.register, name='register'),
     path('verify-email/<str:uidb64>/<str:token>/', views.verify_email, name='verify_email'),
