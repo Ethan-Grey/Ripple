@@ -1,0 +1,337 @@
+#!/usr/bin/env python
+"""
+Realistic user population script using Faker library
+Generates real-looking names, emails, addresses, and profiles
+Run this from the project root: python populate_realistic.py
+"""
+import os
+import sys
+import django
+from faker import Faker
+import random
+from datetime import date, timedelta
+
+# Setup Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ripple.settings')
+django.setup()
+
+from django.contrib.auth.models import User
+from users.models import Profile, Evidence, IdentitySubmission
+from skills.models import Skill, UserSkill, SkillEvidence
+from django.db import transaction
+
+# Initialize Faker with multiple locales for diverse data
+fake = Faker(['en_US', 'en_GB', 'en_CA', 'en_AU', 'es_ES', 'fr_FR', 'de_DE'])
+
+def create_realistic_skills():
+    """Create realistic skills with proper descriptions"""
+    skills_data = [
+        # Technology Skills
+        {'name': 'Python Programming', 'description': 'Master Python for web development, data science, and automation'},
+        {'name': 'JavaScript', 'description': 'Learn modern JavaScript, ES6+, and frontend frameworks'},
+        {'name': 'React Development', 'description': 'Build dynamic user interfaces with React and Redux'},
+        {'name': 'Django Web Development', 'description': 'Create robust web applications with Django framework'},
+        {'name': 'Node.js', 'description': 'Server-side JavaScript development with Node.js and Express'},
+        {'name': 'Machine Learning', 'description': 'AI and machine learning with Python, TensorFlow, and scikit-learn'},
+        {'name': 'Data Analysis', 'description': 'Analyze data with Python, R, and statistical methods'},
+        {'name': 'SQL Database Design', 'description': 'Design and optimize databases with SQL and NoSQL'},
+        {'name': 'Git Version Control', 'description': 'Master Git workflows and collaborative development'},
+        {'name': 'Docker & DevOps', 'description': 'Containerization and deployment with Docker and cloud platforms'},
+        
+        # Design & Creative
+        {'name': 'UI/UX Design', 'description': 'Create intuitive user interfaces and user experiences'},
+        {'name': 'Graphic Design', 'description': 'Design logos, branding, and visual communications'},
+        {'name': 'Digital Photography', 'description': 'Professional photography techniques and post-processing'},
+        {'name': 'Video Editing', 'description': 'Edit videos with Adobe Premiere, Final Cut, and DaVinci Resolve'},
+        {'name': 'Adobe Photoshop', 'description': 'Advanced photo editing and digital art creation'},
+        {'name': 'Adobe Illustrator', 'description': 'Vector graphics and illustration design'},
+        {'name': 'Figma Design', 'description': 'Collaborative design and prototyping with Figma'},
+        
+        # Business & Marketing
+        {'name': 'Digital Marketing', 'description': 'SEO, social media marketing, and online advertising'},
+        {'name': 'Content Writing', 'description': 'Professional writing for blogs, websites, and marketing'},
+        {'name': 'Project Management', 'description': 'Agile methodologies, Scrum, and team leadership'},
+        {'name': 'Public Speaking', 'description': 'Confident presentation and communication skills'},
+        {'name': 'Business Strategy', 'description': 'Strategic planning and business development'},
+        
+        # Languages
+        {'name': 'Spanish Language', 'description': 'Learn Spanish for business, travel, and cultural exchange'},
+        {'name': 'French Language', 'description': 'Master French conversation and cultural nuances'},
+        {'name': 'German Language', 'description': 'German language skills for business and travel'},
+        {'name': 'Mandarin Chinese', 'description': 'Learn Mandarin for global business opportunities'},
+        {'name': 'Japanese Language', 'description': 'Japanese language and cultural understanding'},
+        
+        # Arts & Music
+        {'name': 'Guitar Playing', 'description': 'Acoustic and electric guitar techniques and music theory'},
+        {'name': 'Piano Playing', 'description': 'Classical and contemporary piano performance'},
+        {'name': 'Music Production', 'description': 'Digital audio workstations and music creation'},
+        {'name': 'Drawing & Sketching', 'description': 'Traditional and digital drawing techniques'},
+        {'name': 'Painting', 'description': 'Watercolor, oil, and acrylic painting methods'},
+        
+        # Lifestyle & Wellness
+        {'name': 'Cooking & Culinary Arts', 'description': 'Professional cooking techniques and international cuisine'},
+        {'name': 'Baking & Pastry', 'description': 'Artisan bread, pastries, and dessert creation'},
+        {'name': 'Fitness Training', 'description': 'Personal training, strength training, and exercise science'},
+        {'name': 'Yoga & Meditation', 'description': 'Yoga practice, meditation, and mindfulness techniques'},
+        {'name': 'Nutrition & Wellness', 'description': 'Healthy eating, meal planning, and wellness coaching'},
+        
+        # Professional Skills
+        {'name': 'Excel & Data Analysis', 'description': 'Advanced Excel functions, pivot tables, and data visualization'},
+        {'name': 'PowerPoint Presentations', 'description': 'Create compelling presentations and visual storytelling'},
+        {'name': 'Sales & Negotiation', 'description': 'Sales techniques, negotiation strategies, and client relations'},
+        {'name': 'Leadership & Management', 'description': 'Team leadership, conflict resolution, and organizational skills'},
+        {'name': 'Financial Planning', 'description': 'Personal finance, investment strategies, and budgeting'},
+    ]
+    
+    skills = []
+    for skill_data in skills_data:
+        skill, created = Skill.objects.get_or_create(
+            name=skill_data['name'],
+            defaults={'description': skill_data['description']}
+        )
+        skills.append(skill)
+    
+    return skills
+
+def generate_realistic_profile_data():
+    """Generate realistic profile information"""
+    return {
+        'bio': fake.paragraph(nb_sentences=3),
+        'location': f"{fake.city()}, {fake.state_abbr()}" if fake.boolean() else f"{fake.city()}, {fake.country()}",
+        'verification_status': random.choices(
+            ['unverified', 'pending', 'verified'],
+            weights=[40, 20, 40]
+        )[0]
+    }
+
+def generate_realistic_identity_data():
+    """Generate realistic identity information"""
+    return {
+        'first_name': fake.first_name(),
+        'last_name': fake.last_name(),
+        'dob': fake.date_of_birth(minimum_age=18, maximum_age=65),
+        'nationality': fake.country(),
+        'address1': fake.street_address(),
+        'address2': fake.secondary_address() if fake.boolean() else '',
+        'state': fake.state(),
+        'postal': fake.postcode(),
+        'country': fake.country()
+    }
+
+def create_realistic_users(count=50):
+    """Create realistic users with authentic-looking data"""
+    print(f"Creating {count} realistic users...")
+    
+    skills = create_realistic_skills()
+    users = []
+    
+    with transaction.atomic():
+        for i in range(count):
+            # Generate realistic identity data
+            identity_data = generate_realistic_identity_data()
+            profile_data = generate_realistic_profile_data()
+            
+            # Create unique username
+            username = f"{identity_data['first_name'].lower()}{identity_data['last_name'].lower()}{random.randint(1, 999)}"
+            
+            # Generate realistic email
+            email_domains = [
+                'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com',
+                'protonmail.com', 'fastmail.com', 'zoho.com', 'mail.com', 'yandex.com'
+            ]
+            email = f"{identity_data['first_name'].lower()}.{identity_data['last_name'].lower()}@{random.choice(email_domains)}"
+            
+            # Create user
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'email': email,
+                    'first_name': identity_data['first_name'],
+                    'last_name': identity_data['last_name'],
+                    'date_joined': fake.date_time_between(start_date='-2y', end_date='now')
+                }
+            )
+            
+            if created:
+                user.set_password('demo123')  # Simple password for demo
+                user.save()
+                
+                # Create profile
+                profile = Profile.objects.get(user=user)
+                profile.bio = profile_data['bio']
+                profile.location = profile_data['location']
+                profile.verification_status = profile_data['verification_status']
+                profile.save()
+                
+                # Create identity submission for verified users
+                if profile.verification_status == 'verified':
+                    IdentitySubmission.objects.create(
+                        profile=profile,
+                        first_name=identity_data['first_name'],
+                        last_name=identity_data['last_name'],
+                        dob=identity_data['dob'],
+                        nationality=identity_data['nationality'],
+                        address1=identity_data['address1'],
+                        address2=identity_data['address2'],
+                        state=identity_data['state'],
+                        postal=identity_data['postal'],
+                        country=identity_data['country']
+                    )
+                
+                # Assign realistic skills
+                assign_realistic_skills(user, skills)
+                
+                users.append(user)
+                print(f"Created user: {user.username} ({user.email})")
+    
+    return users, skills
+
+def assign_realistic_skills(user, skills):
+    """Assign realistic skills based on user profile"""
+    # Each user gets 2-6 skills
+    num_skills = random.randint(2, 6)
+    user_skills = random.sample(skills, num_skills)
+    
+    skill_levels = ['beginner', 'intermediate', 'advanced', 'expert']
+    
+    for skill in user_skills:
+        level = random.choices(
+            skill_levels,
+            weights=[30, 40, 25, 5]  # Most users are intermediate
+        )[0]
+        
+        can_teach = random.choices([True, False], weights=[60, 40])[0]
+        wants_to_learn = random.choices([True, False], weights=[70, 30])[0]
+        
+        # Ensure at least one teaching or learning skill
+        if skill == user_skills[0]:
+            can_teach = True
+        elif skill == user_skills[1]:
+            wants_to_learn = True
+        
+        user_skill, created = UserSkill.objects.get_or_create(
+            user=user,
+            skill=skill,
+            defaults={
+                'level': level,
+                'can_teach': can_teach,
+                'wants_to_learn': wants_to_learn,
+                'verification_status': random.choices(
+                    ['unverified', 'pending', 'verified'],
+                    weights=[50, 20, 30]
+                )[0]
+            }
+        )
+        
+        # Add realistic evidence for teaching skills
+        if user_skill.can_teach and random.random() < 0.6:  # 60% chance
+            evidence_types = ['link', 'document', 'image']
+            evidence_type = random.choice(evidence_types)
+            
+            if evidence_type == 'link':
+                portfolio_domains = [
+                    'github.com', 'behance.net', 'dribbble.com', 'codepen.io',
+                    'linkedin.com', 'medium.com', 'dev.to', 'stackoverflow.com'
+                ]
+                link = f"https://{random.choice(portfolio_domains)}/{user.username}"
+                title = f"My {skill.name} Portfolio"
+                description = f"Check out my work and projects in {skill.name}"
+            else:
+                link = ''
+                title = f"{skill.name} Certification"
+                description = f"Certificate and documentation for {skill.name}"
+            
+            SkillEvidence.objects.get_or_create(
+                user_skill=user_skill,
+                title=title,
+                defaults={
+                    'evidence_type': evidence_type,
+                    'link': link,
+                    'description': description,
+                    'is_primary': True
+                }
+            )
+
+def create_realistic_matches(users, skills):
+    """Create realistic matches between users"""
+    from skills.models import Match
+    
+    print("Creating realistic matches...")
+    matches_created = 0
+    
+    # Create 15-30 matches
+    num_matches = random.randint(15, 30)
+    
+    for _ in range(num_matches):
+        user_a = random.choice(users)
+        user_b = random.choice(users)
+        
+        if user_a == user_b:
+            continue
+            
+        # Find compatible skills
+        user_a_teaching = UserSkill.objects.filter(
+            user=user_a, can_teach=True
+        ).values_list('skill', flat=True)
+        
+        user_b_learning = UserSkill.objects.filter(
+            user=user_b, wants_to_learn=True
+        ).values_list('skill', flat=True)
+        
+        user_b_teaching = UserSkill.objects.filter(
+            user=user_b, can_teach=True
+        ).values_list('skill', flat=True)
+        
+        user_a_learning = UserSkill.objects.filter(
+            user=user_a, wants_to_learn=True
+        ).values_list('skill', flat=True)
+        
+        # Check for potential matches
+        teach_a_learn_b = set(user_a_teaching) & set(user_b_learning)
+        teach_b_learn_a = set(user_b_teaching) & set(user_a_learning)
+        
+        if teach_a_learn_b and teach_b_learn_a:
+            skill_a_id = random.choice(list(teach_a_learn_b))
+            skill_b_id = random.choice(list(teach_b_learn_a))
+            
+            skill_a = Skill.objects.get(id=skill_a_id)
+            skill_b = Skill.objects.get(id=skill_b_id)
+            
+            match, created = Match.objects.get_or_create(
+                user_a=user_a,
+                user_b=user_b,
+                teach_a_learn_b=skill_a,
+                teach_b_learn_a=skill_b
+            )
+            
+            if created:
+                matches_created += 1
+    
+    print(f"Created {matches_created} matches between users")
+
+def main():
+    """Main function to populate realistic data"""
+    print("Starting realistic user population...")
+    
+    # Create realistic users
+    users, skills = create_realistic_users(50)
+    
+    # Create matches
+    create_realistic_matches(users, skills)
+    
+    print(f"\nSuccessfully created {len(users)} realistic users with {len(skills)} skills!")
+    print("\nSample login credentials:")
+    print("Username: [firstname][lastname][number] (e.g., johnsmith123)")
+    print("Password: demo123")
+    print("\nSample users created:")
+    for user in users[:5]:
+        print(f"- {user.username} ({user.email}) - {user.first_name} {user.last_name}")
+    
+    print(f"\nStatistics:")
+    print(f"- Total users: {len(users)}")
+    print(f"- Total skills: {len(skills)}")
+    print(f"- Verified users: {Profile.objects.filter(verification_status='verified').count()}")
+    print(f"- Users with teaching skills: {UserSkill.objects.filter(can_teach=True).count()}")
+
+if __name__ == '__main__':
+    main()

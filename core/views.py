@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect
 def landing(request):
     # If user is already logged in, redirect to dashboard
     if request.user.is_authenticated:
-        return redirect('/')
+        return redirect('core:home')
     return render(request, 'core/landing.html')
 
 def home(request):

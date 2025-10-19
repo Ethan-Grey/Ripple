@@ -172,16 +172,16 @@ else:
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
 
 # AllAuth settings
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # Enable email verification
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_USERNAME_MIN_LENGTH = 3
-ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5  # Prevent spam
-ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 300  # 5 minutes
+
+# New AllAuth settings format
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*']
+ACCOUNT_RATE_LIMITS = {
+    'login_failed': '5/5m',  # 5 attempts per 5 minutes
+}
 
 # Password reset settings
 PASSWORD_RESET_TIMEOUT = 86400  # 24 hours

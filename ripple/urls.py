@@ -11,10 +11,10 @@ urlpatterns = [
     # Auth URLs
     path('accounts/', include('allauth.urls')),
     
-    # App URLs
+    # App URLs - Core handles the root path
     path('', include('core.urls')),
-    path('', include('users.urls')),
-    path('', include('communities.urls')),
-    path('', include('chat.urls')),
+    path('users/', include('users.urls')),
+    path('communities/', include('communities.urls')),
+    path('chat/', include('chat.urls')),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

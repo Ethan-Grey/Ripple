@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
 from django import forms
@@ -15,12 +15,35 @@ from .models import Profile, Evidence, IdentitySubmission
 from skills.models import UserSkill, Skill, SkillEvidence
 from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
+from .message_utils import clear_all_messages
 
 # Create your views here.
+
+def custom_login(request):
+    """Custom login view that clears irrelevant messages"""
+    if request.user.is_authenticated:
+        return redirect('core:home')
+    
+    # Clear all existing messages to prevent showing unrelated messages
+    clear_all_messages(request)
+    
+    if request.method == 'POST':
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            auth_login(request, form.get_user())
+            return redirect('core:home')
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'users/login.html', {'form': form})
 
 def register(request):
     if request.user.is_authenticated:
         return redirect('core:home')
+    
+    # Clear all existing messages to prevent showing unrelated messages
+    clear_all_messages(request)
+    
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():

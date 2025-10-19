@@ -1,0 +1,22 @@
+# Django Settings
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Email Settings
+EMAIL_HOST_USER=your_email@gmail.com
+EMAIL_HOST_PASSWORD=your_app_password
+DEFAULT_FROM_EMAIL=noreply@ripple.com
+
+# Email Backend (console or smtp)
+# Set USE_CONSOLE_EMAIL=True for development (emails in console)
+# Set USE_CONSOLE_EMAIL=False for production (real emails)
+USE_CONSOLE_EMAIL=False
+
+# Database (for production)
+# DATABASE_URL=postgresql://user:password@localhost:5432/ripple
+
+# Security (for production)
+# SECURE_SSL_REDIRECT=True
+# SESSION_COOKIE_SECURE=True
+# CSRF_COOKIE_SECURE=True

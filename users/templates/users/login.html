@@ -27,11 +27,6 @@
       <h3>User Login</h3>
       <form method="post" action="{% url 'users:login' %}" class="auth-form">
         {% csrf_token %}
-        {% if messages %}
-          {% for message in messages %}
-            <div class="auth-alert">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
         {% if form.non_field_errors %}
           {% for error in form.non_field_errors %}
             <div class="auth-alert">{{ error }}</div>
