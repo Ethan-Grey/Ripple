@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% block title %} · {{ skill.name }}{% endblock %}
+
+{% block content %}
+<style>
+.skill-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.skill-header {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.skill-title {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.skill-icon {
+    font-size: 42px;
+}
+
+.skill-description {
+    font-size: 16px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.skill-stats {
+    display: flex;
+    gap: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #3b82f6;
+    text-decoration: none;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    color: #2563eb;
+}
+
+.section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.section-header {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.teachers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.teacher-card {
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.teacher-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    transform: translateY(-2px);
+}
+
+.teacher-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.teacher-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.teacher-info {
+    flex: 1;
+}
+
+.teacher-name {
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 4px;
+}
+
+.teacher-username {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.teacher-bio {
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.teacher-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.proficiency-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.proficiency-1 { background: #dbeafe; color: #1e40af; } /* Beginner */
+.proficiency-2 { background: #dbeafe; color: #1e40af; } /* Intermediate */
+.proficiency-3 { background: #dcfce7; color: #15803d; } /* Advanced */
+.proficiency-4 { background: #fef3c7; color: #92400e; } /* Expert */
+.proficiency-5 { background: #fce7f3; color: #9f1239; } /* Master */
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #10b981;
+    color: white;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.teacher-location {
+    font-size: 13px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+}
+
+.empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.learners-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.learner-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border-radius: 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+}
+
+.learner-chip:hover {
+    background: #e5e7eb;
+    transform: scale(1.05);
+}
+
+.learner-avatar-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.learner-name {
+    font-weight: 500;
+    font-size: 14px;
+}
+</style>
+
+<div class="skill-detail-container">
+    <a href="{% url 'core:search' %}?q={{ skill.name }}" class="back-link">
+        ← Back to search
+    </a>
+
+    <!-- Skill Header -->
+    <div class="skill-header">
+        <h1 class="skill-title">
+            <span class="skill-icon"><i class="bi bi-lightning-charge-fill"></i></span>
+            {{ skill.name }}
+        </h1>
+        
+        {% if skill.description %}
+        <p class="skill-description">{{ skill.description }}</p>
+        {% endif %}
+
+        <div class="skill-stats">
+            <div class="stat">
+                <div class="stat-value">{{ teachers_count }}</div>
+                <div class="stat-label">Verified Teacher{{ teachers_count|pluralize }}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ learners_count }}</div>
+                <div class="stat-label">Learner{{ learners_count|pluralize }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teachers Section -->
+    <div class="section">
+        <h2 class="section-header">
+            <i class="bi bi-mortarboard-fill"></i> Teachers
+        </h2>
+        
+        {% if teachers %}
+        <div class="teachers-grid">
+            {% for user_skill in teachers %}
+            <a href="{% url 'users:view_profile' user_skill.user.username %}" class="teacher-card">
+                <div class="teacher-header">
+                    <div class="teacher-avatar">
+                        {{ user_skill.user.first_name|first|upper }}{{ user_skill.user.last_name|first|upper }}
+                    </div>
+                    <div class="teacher-info">
+                        <div class="teacher-name">
+                            {{ user_skill.user.first_name }} {{ user_skill.user.last_name }}
+                        </div>
+                        <div class="teacher-username">@{{ user_skill.user.username }}</div>
+                    </div>
+                </div>
+
+                {% if user_skill.user.profile.bio %}
+                <div class="teacher-bio">
+                    {{ user_skill.user.profile.bio }}
+                </div>
+                {% endif %}
+
+                <div class="teacher-meta">
+                    <div>
+                        <span class="proficiency-badge proficiency-{{ user_skill.level }}">
+                            {{ user_skill.get_level_display }}
+                        </span>
+                        {% if user_skill.verification_status == 'verified' %}
+                        <span class="verified-badge"><i class="bi bi-patch-check-fill"></i> Verified</span>
+                        {% endif %}
+                    </div>
+                    {% if user_skill.user.profile.location %}
+                    <div class="teacher-location">
+                        <i class="bi bi-geo-alt-fill"></i> {{ user_skill.user.profile.location }}
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-search"></i></div>
+            <h3>No verified teachers yet</h3>
+            <p style="color: #6b7280; margin-top: 8px;">
+                Be the first to teach {{ skill.name }}!
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Learners Section -->
+    {% if learners %}
+    <div class="section">
+        <h2 class="section-header">
+            <i class="bi bi-book-fill"></i> People Learning {{ skill.name }}
+        </h2>
+        
+        <div class="learners-list">
+            {% for user_skill in learners %}
+            <a href="{% url 'users:view_profile' user_skill.user.username %}" class="learner-chip">
+                <div class="learner-avatar-small">
+                    {{ user_skill.user.first_name|first|upper }}{{ user_skill.user.last_name|first|upper }}
+                </div>
+                <div class="learner-name">
+                    {{ user_skill.user.first_name }} {{ user_skill.user.last_name }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

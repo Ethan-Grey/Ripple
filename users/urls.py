@@ -43,6 +43,7 @@ urlpatterns = [
     # Profile URLs
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.profile_edit, name='profile_edit'),
+    path('profile/<str:username>/', views.view_user_profile, name='view_profile'),
     path('profile/delete-skill/<int:skill_id>/', views.delete_skill, name='delete_skill'),
     path('profile/verify-identity/', views.verify_identity, name='verify_identity'),
     

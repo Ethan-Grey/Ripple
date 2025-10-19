@@ -99,7 +99,7 @@
                     <div class="verification-uploads">
                         <div class="upload-group">
                             <label for="id_address_doc" class="file-input-label">
-                                <span class="file-input-text">📄 Upload Address Proof</span>
+                                <span class="file-input-text"><i class="bi bi-file-earmark-text-fill"></i> Upload Address Proof</span>
                                 <input type="file" name="address_doc" id="id_address_doc" accept="image/*,application/pdf" class="file-input">
                             </label>
                             <small class="form-help">Utility bill, bank statement, etc.</small>
@@ -179,21 +179,21 @@ document.addEventListener('change', function(e){
     if(e.target && e.target.name === 'id_document'){
         const file = e.target.files && e.target.files[0];
         if(file){
-            e.target.closest('label').querySelector('.file-input-text').textContent = '✓ ' + file.name;
+            e.target.closest('label').querySelector('.file-input-text').innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + file.name;
         }
     }
     
     if(e.target && e.target.name === 'selfie'){
         const file = e.target.files && e.target.files[0];
         if(file){
-            e.target.closest('label').querySelector('.file-input-text').textContent = '✓ ' + file.name;
+            e.target.closest('label').querySelector('.file-input-text').innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + file.name;
         }
     }
     
     if(e.target && e.target.name === 'address_doc'){
         const file = e.target.files && e.target.files[0];
         if(file){
-            e.target.closest('label').querySelector('.file-input-text').textContent = '✓ ' + file.name;
+            e.target.closest('label').querySelector('.file-input-text').innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + file.name;
         }
     }
 });

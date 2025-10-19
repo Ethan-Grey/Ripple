@@ -28,7 +28,7 @@
                             {% endif %}
                         </h1>
                         {% if profile.verification_status == 'verified' %}
-                            <span class="verified-badge">✓</span>
+                            <span class="verified-badge"><i class="bi bi-patch-check-fill"></i></span>
                         {% endif %}
                     </div>
                     
@@ -121,11 +121,11 @@
                                     <span class="detail-label">Verification:</span>
                                     <span class="detail-value">
                                         {% if profile.verification_status == 'verified' %}
-                                            <span class="status-badge verified">✓ Verified</span>
+                                            <span class="status-badge verified"><i class="bi bi-check-circle-fill"></i> Verified</span>
                                         {% elif profile.verification_status == 'pending' %}
-                                            <span class="status-badge pending">⏳ Pending</span>
+                                            <span class="status-badge pending"><i class="bi bi-clock-fill"></i> Pending</span>
                                         {% else %}
-                                            <span class="status-badge unverified">⚠ Unverified</span>
+                                            <span class="status-badge unverified"><i class="bi bi-exclamation-triangle-fill"></i> Unverified</span>
                                         {% endif %}
                                     </span>
                                 </div>

@@ -185,6 +185,35 @@ def profile_view(request):
     return render(request, 'users/profile/profile.html', context)
 
 
+def view_user_profile(request, username):
+    """View another user's public profile"""
+    from django.contrib.auth.models import User
+    
+    user = get_object_or_404(User, username=username)
+    profile = get_object_or_404(Profile, user=user)
+    
+    # Get user's skills
+    teaching_skills = UserSkill.objects.filter(
+        user=user, 
+        can_teach=True,
+        verification_status='verified'  # Only show verified skills
+    ).select_related('skill')
+    
+    learning_skills = UserSkill.objects.filter(
+        user=user, 
+        wants_to_learn=True
+    ).select_related('skill')
+    
+    context = {
+        'viewed_user': user,
+        'profile': profile,
+        'teaching_skills': teaching_skills,
+        'learning_skills': learning_skills,
+        'is_own_profile': request.user == user if request.user.is_authenticated else False,
+    }
+    return render(request, 'users/profile/view_profile.html', context)
+
+
 @login_required
 def profile_edit(request):
     """Edit user's profile with verification information"""

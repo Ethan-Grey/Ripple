@@ -13,13 +13,13 @@
             <div class="verification-status">
                 <span class="status-badge status-{{ user_skill.verification_status }}">
                     {% if user_skill.verification_status == 'verified' %}
-                        ✓ Verified
+                        <i class="bi bi-check-circle-fill"></i> Verified
                     {% elif user_skill.verification_status == 'pending' %}
-                        ⏳ Pending Review
+                        <i class="bi bi-clock-fill"></i> Pending Review
                     {% elif user_skill.verification_status == 'rejected' %}
-                        ❌ Rejected
+                        <i class="bi bi-x-circle-fill"></i> Rejected
                     {% else %}
-                        ⚠️ Unverified
+                        <i class="bi bi-exclamation-triangle-fill"></i> Unverified
                     {% endif %}
                 </span>
             </div>
@@ -118,13 +118,13 @@
                         <div class="evidence-links">
                             {% if evidence.file %}
                                 <a href="{{ evidence.file.url }}" target="_blank" class="evidence-link">
-                                    <span class="link-icon">📄</span>
+                                    <span class="link-icon"><i class="bi bi-file-earmark-text-fill"></i></span>
                                     View File
                                 </a>
                             {% endif %}
                             {% if evidence.link %}
                                 <a href="{{ evidence.link }}" target="_blank" class="evidence-link">
-                                    <span class="link-icon">🔗</span>
+                                    <span class="link-icon"><i class="bi bi-link-45deg"></i></span>
                                     View Link
                                 </a>
                             {% endif %}
@@ -153,19 +153,19 @@
             <h2>Verification Guidelines</h2>
             <div class="guidelines-content">
                 <div class="guideline-item">
-                    <h4>📄 Documents</h4>
+                    <h4><i class="bi bi-file-earmark-text-fill"></i> Documents</h4>
                     <p>Certificates, diplomas, transcripts, or professional documentation</p>
                 </div>
                 <div class="guideline-item">
-                    <h4>🎥 Videos</h4>
+                    <h4><i class="bi bi-camera-video-fill"></i> Videos</h4>
                     <p>Teaching demonstrations, project showcases, or skill demonstrations</p>
                 </div>
                 <div class="guideline-item">
-                    <h4>🖼️ Images</h4>
+                    <h4><i class="bi bi-image-fill"></i> Images</h4>
                     <p>Portfolio pieces, project screenshots, or achievement photos</p>
                 </div>
                 <div class="guideline-item">
-                    <h4>🔗 Links</h4>
+                    <h4><i class="bi bi-link-45deg"></i> Links</h4>
                     <p>Portfolio websites, GitHub repositories, or published work</p>
                 </div>
             </div>

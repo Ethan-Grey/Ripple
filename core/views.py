@@ -1,8 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from skills.models import Skill, UserSkill, Match
 from communities.models import Community
-from django.shortcuts import render, redirect
 
 def landing(request):
     # If user is already logged in, redirect to dashboard
@@ -43,11 +42,63 @@ def swipe(request):
 
 
 def search(request):
+    from django.contrib.auth.models import User
+    from django.db.models import Q, Count
+    
     q = request.GET.get('q', '').strip()
-    skill_results = Skill.objects.filter(name__icontains=q)[:10] if q else []
+    
+    # Search users
+    user_results = []
+    if q:
+        user_results = User.objects.filter(
+            Q(username__icontains=q) |
+            Q(first_name__icontains=q) |
+            Q(last_name__icontains=q) |
+            Q(email__icontains=q)
+        ).exclude(is_superuser=True).select_related('profile')[:10]
+    
+    # Search skills with teacher counts
+    skill_results = []
+    if q:
+        skill_results = Skill.objects.filter(name__icontains=q).annotate(
+            teachers_count=Count('userskill', filter=Q(userskill__can_teach=True))
+        )[:10]
+    
+    # Search communities
     community_results = Community.objects.filter(name__icontains=q)[:10] if q else []
+    
     return render(request, 'core/search.html', {
         'q': q,
+        'user_results': user_results,
         'skill_results': skill_results,
         'community_results': community_results,
     })
+
+
+def skill_detail(request, skill_id):
+    """Show all users who teach a specific skill"""
+    from django.contrib.auth.models import User
+    
+    skill = get_object_or_404(Skill, id=skill_id)
+    
+    # Get all users who can teach this skill
+    teachers = UserSkill.objects.filter(
+        skill=skill,
+        can_teach=True,
+        verification_status='verified'
+    ).select_related('user', 'user__profile').order_by('-level')
+    
+    # Get all users learning this skill
+    learners = UserSkill.objects.filter(
+        skill=skill,
+        wants_to_learn=True
+    ).select_related('user', 'user__profile')[:10]
+    
+    context = {
+        'skill': skill,
+        'teachers': teachers,
+        'learners': learners,
+        'teachers_count': teachers.count(),
+        'learners_count': learners.count(),
+    }
+    return render(request, 'core/skill_detail.html', context)

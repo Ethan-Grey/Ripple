@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} · {{ viewed_user.first_name }} {{ viewed_user.last_name }}{% endblock %}
+
+{% block content %}
+<style>
+.profile-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.profile-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 48px;
+    flex-shrink: 0;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #10b981;
+    color: white;
+    font-size: 14px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.profile-username {
+    font-size: 18px;
+    color: #6b7280;
+    margin-bottom: 16px;
+}
+
+.profile-meta {
+    display: flex;
+    gap: 24px;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.profile-bio {
+    line-height: 1.6;
+    color: #374151;
+    font-size: 16px;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-secondary {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background: #f9fafb;
+}
+
+.section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.skill-card {
+    padding: 12px 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.skill-icon {
+    font-size: 20px;
+}
+
+.skill-info {
+    flex: 1;
+}
+
+.skill-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.skill-level {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #3b82f6;
+    text-decoration: none;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    color: #2563eb;
+}
+</style>
+
+<div class="profile-container">
+    <a href="javascript:history.back()" class="back-link">
+        ← Back to search
+    </a>
+
+    <div class="profile-header">
+        <div class="profile-top">
+            <div class="profile-avatar">
+                {{ viewed_user.first_name|first|upper }}{{ viewed_user.last_name|first|upper }}
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-name">
+                    {{ viewed_user.first_name }} {{ viewed_user.last_name }}
+                    {% if profile.verification_status == 'verified' %}
+                    <span class="verified-badge"><i class="bi bi-patch-check-fill"></i> Verified</span>
+                    {% endif %}
+                </h1>
+                <div class="profile-username">@{{ viewed_user.username }}</div>
+                <div class="profile-meta">
+                    {% if profile.location %}
+                    <div class="meta-item">
+                        <i class="bi bi-geo-alt-fill"></i> {{ profile.location }}
+                    </div>
+                    {% endif %}
+                    {% if viewed_user.date_joined %}
+                    <div class="meta-item">
+                        <i class="bi bi-calendar-fill"></i> Joined {{ viewed_user.date_joined|date:"F Y" }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if profile.bio %}
+        <div class="profile-bio">
+            {{ profile.bio }}
+        </div>
+        {% endif %}
+
+        {% if not is_own_profile and request.user.is_authenticated %}
+        <div class="profile-actions" style="margin-top: 24px;">
+            <a href="{% url 'chat:messages' %}?user={{ viewed_user.username }}" class="btn btn-primary">
+                <i class="bi bi-chat-dots-fill"></i> Send Message
+            </a>
+            <a href="#" class="btn btn-secondary">
+                <i class="bi bi-person-plus-fill"></i> Connect
+            </a>
+        </div>
+        {% endif %}
+
+        {% if is_own_profile %}
+        <div class="profile-actions" style="margin-top: 24px;">
+            <a href="{% url 'users:profile' %}" class="btn btn-primary">
+                View My Full Profile
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Teaching Skills -->
+    <div class="section">
+        <h2 class="section-title">
+            <i class="bi bi-lightning-charge-fill"></i> Teaching Skills
+        </h2>
+        {% if teaching_skills %}
+        <div class="skills-grid">
+            {% for user_skill in teaching_skills %}
+            <div class="skill-card">
+                <div class="skill-icon"><i class="bi bi-mortarboard-fill"></i></div>
+                <div class="skill-info">
+                    <div class="skill-name">{{ user_skill.skill.name }}</div>
+                    <div class="skill-level">{{ user_skill.get_level_display }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No teaching skills listed yet</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Learning Skills -->
+    <div class="section">
+        <h2 class="section-title">
+            <i class="bi bi-book-fill"></i> Learning Goals
+        </h2>
+        {% if learning_skills %}
+        <div class="skills-grid">
+            {% for user_skill in learning_skills %}
+            <div class="skill-card">
+                <div class="skill-icon"><i class="bi bi-bookmark-fill"></i></div>
+                <div class="skill-info">
+                    <div class="skill-name">{{ user_skill.skill.name }}</div>
+                    <div class="skill-level">Wants to learn</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No learning goals listed yet</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

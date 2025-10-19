@@ -34,13 +34,13 @@
                     <div class="verification-status">
                         <span class="status-badge status-{{ user_skill.verification_status }}">
                             {% if user_skill.verification_status == 'verified' %}
-                                ✓ Verified
+                                <i class="bi bi-check-circle-fill"></i> Verified
                             {% elif user_skill.verification_status == 'pending' %}
-                                ⏳ Pending Review
+                                <i class="bi bi-clock-fill"></i> Pending Review
                             {% elif user_skill.verification_status == 'rejected' %}
-                                ❌ Rejected
+                                <i class="bi bi-x-circle-fill"></i> Rejected
                             {% else %}
-                                ⚠️ Unverified
+                                <i class="bi bi-exclamation-triangle-fill"></i> Unverified
                             {% endif %}
                         </span>
                     </div>
@@ -96,7 +96,7 @@
                             {% if evidence.file %}
                                 <div class="file-preview">
                                     <a href="{{ evidence.file.url }}" target="_blank" class="file-link">
-                                        <span class="file-icon">📄</span>
+                                        <span class="file-icon"><i class="bi bi-file-earmark-text-fill"></i></span>
                                         <span>View File</span>
                                     </a>
                                     <small class="file-name">{{ evidence.file.name|slice:"20:" }}</small>
@@ -106,7 +106,7 @@
                             {% if evidence.link %}
                                 <div class="link-preview">
                                     <a href="{{ evidence.link }}" target="_blank" class="link-url">
-                                        <span class="link-icon">🔗</span>
+                                        <span class="link-icon"><i class="bi bi-link-45deg"></i></span>
                                         <span>{{ evidence.link|truncatechars:50 }}</span>
                                     </a>
                                 </div>
@@ -144,7 +144,7 @@
                                     placeholder="Add a message for the user about this verification..."></textarea>
                         </div>
                         <button type="submit" class="btn btn-success">
-                            ✓ Verify Skill
+                            <i class="bi bi-check-circle-fill"></i> Verify Skill
                         </button>
                     </form>
                     
@@ -156,7 +156,7 @@
                                     placeholder="Explain why this skill verification is being rejected..."></textarea>
                         </div>
                         <button type="submit" class="btn btn-danger">
-                            ❌ Reject Skill
+                            <i class="bi bi-x-circle-fill"></i> Reject Skill
                         </button>
                     </form>
                 </div>
