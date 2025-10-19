@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %} · Request Community{% endblock %}
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'communities:communities' %}" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mb-2">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Communities
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900">Request a New Community</h1>
+        <p class="text-gray-600 mt-2">Submit a request to create a new community. Admins will review and approve your request.</p>
+    </div>
+
+    <!-- Info Box -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex gap-3">
+            <svg class="h-6 w-6 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <h3 class="font-semibold text-blue-900 mb-1">Before Requesting</h3>
+                <ul class="text-sm text-blue-800 space-y-1">
+                    <li>• Make sure a similar community doesn't already exist</li>
+                    <li>• Choose a skill that represents your community well</li>
+                    <li>• Write a clear description and compelling reason</li>
+                    <li>• Admins typically review requests within 48 hours</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Form -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- Community Name -->
+            <div class="mb-6">
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                    Community Name <span class="text-red-500">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    name="name" 
+                    id="name"
+                    required
+                    maxlength="140"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Advanced Python Developers"
+                >
+                <p class="text-xs text-gray-500 mt-1">Choose a unique and descriptive name</p>
+            </div>
+
+            <!-- Skill -->
+            <div class="mb-6">
+                <label for="skill" class="block text-sm font-medium text-gray-700 mb-2">
+                    Associated Skill <span class="text-red-500">*</span>
+                </label>
+                <select 
+                    name="skill" 
+                    id="skill"
+                    required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="">Select a skill...</option>
+                    {% for skill in skills %}
+                        <option value="{{ skill.id }}">{{ skill.name }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">The main skill this community focuses on</p>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-6">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                    Community Description <span class="text-red-500">*</span>
+                </label>
+                <textarea 
+                    name="description" 
+                    id="description"
+                    required
+                    rows="5"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                    placeholder="Describe what this community is about, who it's for, and what members can expect..."
+                ></textarea>
+                <p class="text-xs text-gray-500 mt-1">Help others understand what your community offers</p>
+            </div>
+
+            <!-- Reason -->
+            <div class="mb-6">
+                <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
+                    Why Do You Want to Create This Community? <span class="text-red-500">*</span>
+                </label>
+                <textarea 
+                    name="reason" 
+                    id="reason"
+                    required
+                    rows="5"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                    placeholder="Explain why this community is needed and how you plan to moderate and grow it..."
+                ></textarea>
+                <p class="text-xs text-gray-500 mt-1">This helps admins understand your commitment and vision</p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center justify-between">
+                <a href="{% url 'communities:my_requests' %}" class="text-blue-600 hover:text-blue-700 text-sm">
+                    View my previous requests →
+                </a>
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'communities:communities' %}" class="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                        Submit Request
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+

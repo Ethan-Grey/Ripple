@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %} · My Community Requests{% endblock %}
+{% block content %}
+
+<div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'communities:communities' %}" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mb-2">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Communities
+        </a>
+        <div class="flex items-center justify-between">
+            <h1 class="text-3xl font-bold text-gray-900">My Community Requests</h1>
+            <a href="{% url 'communities:request_community' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+                New Request
+            </a>
+        </div>
+    </div>
+
+    <!-- Requests List -->
+    {% if requests %}
+        <div class="space-y-4">
+            {% for req in requests %}
+                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold text-gray-900">{{ req.name }}</h3>
+                            <div class="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">{{ req.skill.name }}</span>
+                                <span>•</span>
+                                <span>Submitted {{ req.created_at|timesince }} ago</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Status Badge -->
+                        {% if req.status == 'pending' %}
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                                Pending Review
+                            </span>
+                        {% elif req.status == 'approved' %}
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                                Approved
+                            </span>
+                        {% elif req.status == 'rejected' %}
+                            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
+                                Rejected
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-1">Description</h4>
+                        <p class="text-gray-600 text-sm">{{ req.description }}</p>
+                    </div>
+
+                    <!-- Reason -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-1">Your Reason</h4>
+                        <p class="text-gray-600 text-sm">{{ req.reason }}</p>
+                    </div>
+
+                    <!-- Admin Notes (if any) -->
+                    {% if req.admin_notes %}
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                            <h4 class="text-sm font-medium text-gray-700 mb-1">Admin Notes</h4>
+                            <p class="text-gray-600 text-sm">{{ req.admin_notes }}</p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Review Info -->
+                    {% if req.reviewed_at %}
+                        <div class="border-t border-gray-200 pt-4 text-sm text-gray-500">
+                            <span>Reviewed by {{ req.reviewed_by.username }} · {{ req.reviewed_at|timesince }} ago</span>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No requests yet</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by requesting a new community.</p>
+            <div class="mt-6">
+                <a href="{% url 'communities:request_community' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    Create Request
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+

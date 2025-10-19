@@ -232,6 +232,10 @@
                                             <span class="tag level">{{ user_skill.level|title }}</span>
                                         </div>
                                     </div>
+                                    
+                                    <div class="skill-actions">
+                                        <a href="{% url 'users:delete_skill' user_skill.skill.id %}" class="btn btn-outline btn-small">Delete</a>
+                                    </div>
                                 </div>
                                 {% endfor %}
                             </div>
@@ -282,14 +286,34 @@
         <div class="profile-sidebar">
             <!-- Communities Section -->
             <div class="sidebar-section">
-                <h3 class="sidebar-title">Communities</h3>
+                <div class="section-header-sidebar">
+                    <h3 class="sidebar-title">Communities</h3>
+                    {% if profile.user.communities.all %}
+                        <a href="{% url 'communities:communities' %}" class="view-all-link">View All</a>
+                    {% endif %}
+                </div>
                 <div class="communities-list">
                     {% if profile.user.communities.all %}
-                        {% for community in profile.user.communities.all %}
-                        <div class="community-item">
-                            <span class="community-name">{{ community.name }}</span>
+                        <div class="communities-grid">
+                            {% for community in profile.user.communities.all|slice:":6" %}
+                            <a href="{% url 'communities:community_detail' community.pk %}" class="community-card">
+                                <div class="community-avatar">
+                                    {{ community.name|first|upper }}
+                                </div>
+                                <div class="community-info">
+                                    <span class="community-name-short">{{ community.name|truncatewords:3 }}</span>
+                                    <span class="community-members">{{ community.member_count }} members</span>
+                                </div>
+                            </a>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
+                        {% if profile.user.communities.all.count > 6 %}
+                            <div class="show-more-communities">
+                                <a href="{% url 'communities:communities' %}" class="show-more-link">
+                                    +{{ profile.user.communities.all.count|add:"-6" }} more communities
+                                </a>
+                            </div>
+                        {% endif %}
                     {% else %}
                         <div class="empty-communities">
                             <p>No communities joined yet.</p>
@@ -776,29 +800,119 @@
     min-height: 200px;
 }
 
+.section-header-sidebar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
 .sidebar-title {
-    margin: 0 0 1.5rem 0;
+    margin: 0;
     font-size: 1.3rem;
     font-weight: 700;
     color: #1f2937;
 }
 
+.view-all-link {
+    font-size: 0.875rem;
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.view-all-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
 .communities-list {
-    display: flex;
-    flex-direction: column;
+    position: relative;
+}
+
+.communities-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
 }
 
-.community-item {
-    padding: 1rem;
+.community-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
     background: #f9fafb;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
+    text-decoration: none;
+    transition: all 0.2s ease;
 }
 
-.community-name {
+.community-card:hover {
+    background: #e5e7eb;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.community-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.community-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.community-name-short {
     font-weight: 500;
     color: #374151;
+    font-size: 0.875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.community-card:hover .community-name-short {
+    color: #3b82f6;
+}
+
+.community-members {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.show-more-communities {
+    margin-top: 0.75rem;
+    text-align: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.show-more-link {
+    font-size: 0.875rem;
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.show-more-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
 }
 
 .empty-communities {

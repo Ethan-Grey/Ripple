@@ -1,0 +1,140 @@
+<!-- Comment (Recursive Template for Nested Comments) -->
+<div class="{% if depth > 0 %}ml-8 pl-4 border-l-2 border-gray-200{% endif %} {% if depth > 0 %}mt-4{% endif %}">
+    <div class="flex gap-3">
+        <!-- Vote Section -->
+        <div class="flex flex-col items-center gap-1">
+            <button 
+                class="comment-vote-btn text-gray-400 hover:text-blue-600 transition-colors text-sm"
+                data-comment-id="{{ comment.id }}"
+                data-vote-type="up"
+            >
+                ▲
+            </button>
+            <span class="comment-score text-xs font-semibold {% if comment.score > 0 %}text-blue-600{% elif comment.score < 0 %}text-red-600{% else %}text-gray-600{% endif %}" data-comment-id="{{ comment.id }}">
+                {{ comment.score }}
+            </span>
+            <button 
+                class="comment-vote-btn text-gray-400 hover:text-red-600 transition-colors text-sm"
+                data-comment-id="{{ comment.id }}"
+                data-vote-type="down"
+            >
+                ▼
+            </button>
+        </div>
+
+        <!-- Comment Content -->
+        <div class="flex-1">
+            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                <a href="{% url 'users:view_profile' comment.author.username %}" class="font-medium text-gray-900 hover:text-blue-600">
+                    {{ comment.author.username }}
+                </a>
+                <span>•</span>
+                <span>{{ comment.created_at|timesince }} ago</span>
+            </div>
+            
+            <p class="text-gray-700 text-sm mb-2 whitespace-pre-wrap">{{ comment.content }}</p>
+            
+            <div class="flex items-center gap-3 text-xs text-gray-500">
+                <button 
+                    class="reply-btn hover:text-blue-600 transition-colors"
+                    data-comment-id="{{ comment.id }}"
+                >
+                    Reply
+                </button>
+            </div>
+
+            <!-- Reply Form (Hidden by default) -->
+            <div class="reply-form mt-3 hidden" id="reply-form-{{ comment.id }}">
+                <form method="POST" action="{% url 'communities:add_comment' post.community.pk post.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                    <textarea 
+                        name="content" 
+                        rows="3"
+                        required
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-2"
+                        placeholder="Write a reply..."
+                    ></textarea>
+                    <div class="flex gap-2">
+                        <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
+                            Reply
+                        </button>
+                        <button type="button" class="cancel-reply px-3 py-1 text-gray-600 hover:bg-gray-100 rounded text-sm transition-colors" data-comment-id="{{ comment.id }}">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Nested Replies -->
+            {% if comment.replies.all %}
+                <div class="mt-3">
+                    {% for reply in comment.replies.all %}
+                        {% include 'communities/comment.html' with comment=reply depth=depth|add:1 %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if depth == 0 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Reply button functionality
+    const replyBtn = document.querySelector('.reply-btn[data-comment-id="{{ comment.id }}"]');
+    if (replyBtn) {
+        replyBtn.addEventListener('click', function() {
+            const formId = 'reply-form-' + this.dataset.commentId;
+            document.getElementById(formId).classList.toggle('hidden');
+        });
+    }
+
+    const cancelBtn = document.querySelector('.cancel-reply[data-comment-id="{{ comment.id }}"]');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            const formId = 'reply-form-' + this.dataset.commentId;
+            document.getElementById(formId).classList.add('hidden');
+        });
+    }
+
+    // Vote functionality for comments
+    const voteBtns = document.querySelectorAll('.comment-vote-btn[data-comment-id="{{ comment.id }}"]');
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    voteBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const commentId = this.dataset.commentId;
+            const voteType = this.dataset.voteType;
+            
+            fetch(`/communities/comment/${commentId}/vote/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken
+                },
+                body: `vote_type=${voteType}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                const scoreEl = document.querySelector(`.comment-score[data-comment-id="${commentId}"]`);
+                scoreEl.textContent = data.score;
+                
+                // Update score color
+                scoreEl.classList.remove('text-blue-600', 'text-red-600', 'text-gray-600');
+                if (data.score > 0) {
+                    scoreEl.classList.add('text-blue-600');
+                } else if (data.score < 0) {
+                    scoreEl.classList.add('text-red-600');
+                } else {
+                    scoreEl.classList.add('text-gray-600');
+                }
+            });
+        });
+    });
+});
+</script>
+{% endif %}
+

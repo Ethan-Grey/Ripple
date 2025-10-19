@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %} · Create Post in {{ community.name }}{% endblock %}
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'communities:community_detail' community.pk %}" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mb-2">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to {{ community.name }}
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900">Create a Post</h1>
+        <p class="text-gray-600 mt-1">Share your thoughts, questions, or projects with the community</p>
+    </div>
+
+    <!-- Post Form -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Title -->
+            <div class="mb-6">
+                <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+                    Title <span class="text-red-500">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    name="title" 
+                    id="title"
+                    required
+                    maxlength="300"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter a descriptive title..."
+                >
+            </div>
+
+            <!-- Content -->
+            <div class="mb-6">
+                <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
+                    Content <span class="text-red-500">*</span>
+                </label>
+                <textarea 
+                    name="content" 
+                    id="content"
+                    required
+                    rows="10"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                    placeholder="Write your post content here... You can share your thoughts, ask questions, or describe your projects."
+                ></textarea>
+            </div>
+
+            <!-- Image Upload -->
+            <div class="mb-6">
+                <label for="image" class="block text-sm font-medium text-gray-700 mb-2">
+                    Image (Optional)
+                </label>
+                <input 
+                    type="file" 
+                    name="image" 
+                    id="image"
+                    accept="image/*"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                <p class="text-xs text-gray-500 mt-1">Upload an image to include with your post</p>
+            </div>
+
+            <!-- Link -->
+            <div class="mb-6">
+                <label for="link" class="block text-sm font-medium text-gray-700 mb-2">
+                    External Link (Optional)
+                </label>
+                <input 
+                    type="url" 
+                    name="link" 
+                    id="link"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://example.com"
+                >
+                <p class="text-xs text-gray-500 mt-1">Share a relevant link (portfolio, tutorial, article, etc.)</p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center justify-end gap-3">
+                <a href="{% url 'communities:community_detail' community.pk %}" class="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    Create Post
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
