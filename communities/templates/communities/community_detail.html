@@ -23,23 +23,32 @@
             </div>
         </div>
         
-        {% if user.is_authenticated %}
-            {% if is_member %}
-                <form method="POST" action="{% url 'communities:leave_community' community.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="px-6 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                        Leave Community
-                    </button>
-                </form>
-            {% else %}
-                <form method="POST" action="{% url 'communities:join_community' community.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="px-6 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-colors">
-                        Join Community
-                    </button>
-                </form>
+        <div class="flex gap-3">
+            {% if user.is_authenticated %}
+                {% if is_member %}
+                    <form method="POST" action="{% url 'communities:leave_community' community.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="px-6 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                            Leave Community
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="POST" action="{% url 'communities:join_community' community.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="px-6 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                            Join Community
+                        </button>
+                    </form>
+                {% endif %}
             {% endif %}
-        {% endif %}
+            
+            {% if user.is_staff %}
+                <a href="{% url 'communities:delete_community' community.pk %}" 
+                   class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors">
+                    Delete Community
+                </a>
+            {% endif %}
+        </div>
     </div>
     
     <p class="mt-4 text-blue-50">{{ community.description }}</p>

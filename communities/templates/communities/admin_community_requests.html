@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %} · Review Community Requests{% endblock %}
+{% block content %}
+<div class="container" style="max-width:1280px;">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h2 class="h4 m-0">Community Requests Review</h2>
+        <div class="d-flex align-items-center gap-2">
+            <input id="search-input" type="text" class="form-control form-control-sm" placeholder="Search by name or requester">
+            <form method="get" class="d-flex align-items-center gap-2">
+                <label class="text-muted small ms-3">Status</label>
+                <select name="status" style="width: 120px;" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    {% if requests %}
+    <div class="row g-4" id="cards">
+        {% for req in requests %}
+        <div class="col-12 search-card" data-keywords="{{ req.name }} {{ req.requester.username }} {{ req.skill.name }}">
+            <div class="request-card border rounded-4 p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="user-pill">{{ req.requester.username|first|upper }}</div>
+                        <div>
+                            <div class="fw-bold fs-5">{{ req.name }}</div>
+                            <div class="text-muted small">Requested by: <strong>@{{ req.requester.username }}</strong></div>
+                            <div class="text-muted xsmall">Skill: <span class="badge bg-primary">{{ req.skill.name }}</span></div>
+                            <div class="text-muted xsmall">Submitted: {{ req.created_at|date:'Y-m-d H:i' }}</div>
+                            {% if req.status != 'pending' %}
+                            <div class="text-muted xsmall">
+                                Reviewed by: {% if req.reviewed_by %}@{{ req.reviewed_by.username }}{% else %}—{% endif %}
+                                {% if req.reviewed_at %}on {{ req.reviewed_at|date:'Y-m-d H:i' }}{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if req.status == 'pending' %}
+                    <div class="d-flex align-items-center gap-2">
+                        <a class="btn btn-sm btn-success" href="{% url 'communities:admin_community_request_action' req.id 'approve' %}">Approve</a>
+                        <a class="btn btn-sm btn-outline-danger" href="{% url 'communities:admin_community_request_action' req.id 'reject' %}">Reject</a>
+                    </div>
+                    {% else %}
+                    <div class="d-flex align-items-center gap-2">
+                        {% if req.status == 'approved' %}
+                        <span class="badge bg-success">Approved</span>
+                        {% elif req.status == 'rejected' %}
+                        <span class="badge bg-danger">Rejected</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="section-divider"></div>
+                
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <div class="section-title">Description</div>
+                        <div class="description-box">
+                            {{ req.description|linebreaks }}
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="section-title">Requester's Reason</div>
+                        <div class="description-box">
+                            {{ req.reason|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+
+                {% if req.admin_notes %}
+                <div class="section-divider"></div>
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="section-title">Admin Notes</div>
+                        <div class="description-box" style="background:#fff3cd;">
+                            {{ req.admin_notes|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="text-center py-5">
+            <p class="text-muted">No community requests found for the selected status.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.request-card{background:#fff}
+.user-pill{width:44px;height:44px;border-radius:999px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#4f46e5}
+.section-title{font-weight:600;margin-bottom:12px;color:#374151}
+.description-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;line-height:1.6;color:#374151;white-space:pre-wrap;word-break:break-word}
+.xsmall{font-size:.75rem}
+.section-divider{height:1px;background:#e5e7eb;margin:20px 0}
+.badge{padding:.4rem .6rem;font-size:.75rem;font-weight:600}
+</style>
+<script>
+const input=document.getElementById('search-input');
+if(input){
+  input.addEventListener('input',()=>{
+    const q=input.value.toLowerCase();
+    document.querySelectorAll('.search-card').forEach(card=>{
+      const k=(card.getAttribute('data-keywords')||'').toLowerCase();
+      card.style.display=k.includes(q)?'':'none';
+    });
+  });
+}
+</script>
+{% endblock %}
+

@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Count, Q, Prefetch
@@ -317,7 +318,7 @@ def request_community(request):
                 status='pending'
             ).exists():
                 messages.warning(request, "You already have a pending request for a community with this name.")
-                return redirect('communities:my_community_requests')
+                return redirect('communities:my_requests')
             
             CommunityRequest.objects.create(
                 requester=request.user,
@@ -328,7 +329,7 @@ def request_community(request):
             )
             
             messages.success(request, "Your community request has been submitted! Admins will review it soon.")
-            return redirect('communities:my_community_requests')
+            return redirect('communities:my_requests')
         else:
             messages.error(request, "All fields are required.")
     
@@ -368,4 +369,82 @@ def delete_post(request, community_pk, post_pk):
     return render(request, 'communities/confirm_delete_post.html', {
         'post': post,
         'community': post.community
+    })
+
+
+@staff_member_required
+def admin_community_requests(request):
+    """Admin view to review community requests"""
+    status_filter = request.GET.get('status', 'pending')
+    allowed_statuses = ['all', 'pending', 'approved', 'rejected']
+    
+    if status_filter not in allowed_statuses:
+        status_filter = 'pending'
+    
+    # Get requests based on status filter
+    requests_query = CommunityRequest.objects.select_related(
+        'requester', 'skill', 'reviewed_by'
+    )
+    
+    if status_filter != 'all':
+        requests_query = requests_query.filter(status=status_filter)
+    
+    requests_list = requests_query.order_by('-created_at')
+    
+    return render(request, 'communities/admin_community_requests.html', {
+        'requests': requests_list,
+        'status_filter': status_filter,
+    })
+
+
+@staff_member_required
+def admin_community_request_action(request, request_id, action):
+    """Approve or reject a community request"""
+    community_request = get_object_or_404(CommunityRequest, pk=request_id)
+    
+    if action == 'approve':
+        # Create the community
+        community = Community.objects.create(
+            name=community_request.name,
+            skill=community_request.skill,
+            description=community_request.description,
+            creator=community_request.requester,
+            is_approved=True
+        )
+        # Add the creator as a member
+        community.members.add(community_request.requester)
+        
+        # Update request status
+        community_request.status = CommunityRequest.APPROVED
+        community_request.reviewed_by = request.user
+        community_request.reviewed_at = timezone.now()
+        community_request.save()
+        
+        messages.success(request, f'Community "{community_request.name}" has been approved and created!')
+        
+    elif action == 'reject':
+        # Update request status
+        community_request.status = CommunityRequest.REJECTED
+        community_request.reviewed_by = request.user
+        community_request.reviewed_at = timezone.now()
+        community_request.save()
+        
+        messages.info(request, f'Community request "{community_request.name}" has been rejected.')
+    
+    return redirect('communities:admin_community_requests')
+
+
+@staff_member_required
+def delete_community(request, pk):
+    """Delete a community (admin only)"""
+    community = get_object_or_404(Community, pk=pk)
+    
+    if request.method == 'POST':
+        community_name = community.name
+        community.delete()
+        messages.success(request, f'Community "{community_name}" has been deleted.')
+        return redirect('communities:communities')
+    
+    return render(request, 'communities/confirm_delete_community.html', {
+        'community': community
     })

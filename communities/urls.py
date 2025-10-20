@@ -27,4 +27,11 @@ urlpatterns = [
     # Community requests
     path('request/', views.request_community, name='request_community'),
     path('my-requests/', views.my_community_requests, name='my_requests'),
+    
+    # Admin: Community request review
+    path('admin/requests/', views.admin_community_requests, name='admin_community_requests'),
+    path('admin/requests/<int:request_id>/<str:action>/', views.admin_community_request_action, name='admin_community_request_action'),
+    
+    # Admin: Delete community
+    path('<int:pk>/delete/', views.delete_community, name='delete_community'),
 ]
