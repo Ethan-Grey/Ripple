@@ -11,16 +11,27 @@ from skills.models import Skill
 def communities_page(request):
     """List all approved communities with filtering"""
     skill_filter = request.GET.get('skill', 'all')
+    filter_type = request.GET.get('filter', 'all')  # 'all' or 'my'
     
-    communities = Community.objects.filter(is_approved=True).select_related('skill', 'creator').prefetch_related('members').annotate(
-        member_count_annotated=Count('members')
+    # Get approved communities
+    communities = Community.objects.filter(
+        is_approved=True
+    ).select_related(
+        'skill', 'creator'
+    ).prefetch_related(
+        'members'
     )
     
     # Apply skill filter
     if skill_filter != 'all':
         communities = communities.filter(skill__id=skill_filter)
     
-    communities = communities.all()
+    # Apply "My Communities" filter
+    if filter_type == 'my' and request.user.is_authenticated:
+        communities = communities.filter(members=request.user)
+    
+    # Order by newest first
+    communities = communities.order_by('-created_at')
     
     # Get all skills for filter dropdown
     skills = Skill.objects.all().order_by('name')
@@ -29,6 +40,7 @@ def communities_page(request):
         'communities': communities,
         'skills': skills,
         'current_skill_filter': skill_filter,
+        'filter_type': filter_type,
     })
 
 
@@ -40,10 +52,14 @@ def community_detail(request, pk):
         is_approved=True
     )
     
-    # Get posts with vote counts
-    posts = community.posts.select_related('author', 'author__profile').prefetch_related('upvotes', 'downvotes').annotate(
+    # Get posts with comments count
+    posts = community.posts.select_related(
+        'author', 'author__profile'
+    ).prefetch_related(
+        'upvotes', 'downvotes'
+    ).annotate(
         comment_count_annotated=Count('comments')
-    ).all()
+    ).order_by('-is_pinned', '-created_at')
     
     # Check if user is a member
     is_member = request.user.is_authenticated and request.user in community.members.all()
@@ -63,6 +79,8 @@ def join_community(request, pk):
     if request.user not in community.members.all():
         community.members.add(request.user)
         messages.success(request, f"You've joined {community.name}!")
+    else:
+        messages.info(request, f"You're already a member of {community.name}")
     
     return redirect('communities:community_detail', pk=pk)
 
@@ -75,6 +93,8 @@ def leave_community(request, pk):
     if request.user in community.members.all():
         community.members.remove(request.user)
         messages.success(request, f"You've left {community.name}")
+    else:
+        messages.info(request, "You're not a member of this community")
     
     return redirect('communities:community_detail', pk=pk)
 
@@ -90,9 +110,9 @@ def create_post(request, community_pk):
         return redirect('communities:community_detail', pk=community_pk)
     
     if request.method == 'POST':
-        title = request.POST.get('title')
-        content = request.POST.get('content')
-        link = request.POST.get('link', '')
+        title = request.POST.get('title', '').strip()
+        content = request.POST.get('content', '').strip()
+        link = request.POST.get('link', '').strip()
         image = request.FILES.get('image')
         
         if title and content:
@@ -122,9 +142,16 @@ def post_detail(request, community_pk, post_pk):
     )
     
     # Get top-level comments (no parent) with their replies
-    comments = post.comments.filter(parent=None).select_related('author', 'author__profile').prefetch_related(
-        'replies__author', 'replies__author__profile', 'upvotes', 'downvotes'
-    ).all()
+    comments = post.comments.filter(
+        parent=None
+    ).select_related(
+        'author', 'author__profile'
+    ).prefetch_related(
+        'replies__author', 
+        'replies__author__profile', 
+        'upvotes', 
+        'downvotes'
+    ).order_by('-created_at')
     
     # Check if user is a member
     is_member = request.user.is_authenticated and request.user in post.community.members.all()
@@ -157,7 +184,7 @@ def add_comment(request, community_pk, post_pk):
         return redirect('communities:post_detail', community_pk=community_pk, post_pk=post_pk)
     
     if request.method == 'POST':
-        content = request.POST.get('content')
+        content = request.POST.get('content', '').strip()
         parent_id = request.POST.get('parent_id')
         
         if content:
@@ -181,10 +208,16 @@ def add_comment(request, community_pk, post_pk):
 @login_required
 def vote_post(request, community_pk, post_pk):
     """Vote on a post (AJAX)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST request required'}, status=400)
+    
     post = get_object_or_404(Post, pk=post_pk, community__pk=community_pk)
     vote_type = request.POST.get('vote_type')  # 'up' or 'down'
     
     # Check if user is a member
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'You must be logged in to vote'}, status=403)
+    
     if request.user not in post.community.members.all():
         return JsonResponse({'error': 'You must be a member to vote'}, status=403)
     
@@ -216,10 +249,16 @@ def vote_post(request, community_pk, post_pk):
 @login_required
 def vote_comment(request, comment_pk):
     """Vote on a comment (AJAX)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST request required'}, status=400)
+    
     comment = get_object_or_404(Comment, pk=comment_pk)
     vote_type = request.POST.get('vote_type')  # 'up' or 'down'
     
     # Check if user is a member
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'You must be logged in to vote'}, status=403)
+    
     if request.user not in comment.post.community.members.all():
         return JsonResponse({'error': 'You must be a member to vote'}, status=403)
     
@@ -252,13 +291,33 @@ def vote_comment(request, comment_pk):
 def request_community(request):
     """Request to create a new community"""
     if request.method == 'POST':
-        name = request.POST.get('name')
+        name = request.POST.get('name', '').strip()
         skill_id = request.POST.get('skill')
-        description = request.POST.get('description')
-        reason = request.POST.get('reason')
+        description = request.POST.get('description', '').strip()
+        reason = request.POST.get('reason', '').strip()
         
         if name and skill_id and description and reason:
             skill = get_object_or_404(Skill, pk=skill_id)
+            
+            # Check if community with this name already exists
+            if Community.objects.filter(name__iexact=name).exists():
+                messages.error(request, "A community with this name already exists.")
+                skills = Skill.objects.all().order_by('name')
+                return render(request, 'communities/request_community.html', {
+                    'skills': skills,
+                    'name': name,
+                    'description': description,
+                    'reason': reason
+                })
+            
+            # Check if user already has a pending request for this name
+            if CommunityRequest.objects.filter(
+                requester=request.user, 
+                name__iexact=name, 
+                status='pending'
+            ).exists():
+                messages.warning(request, "You already have a pending request for a community with this name.")
+                return redirect('communities:my_community_requests')
             
             CommunityRequest.objects.create(
                 requester=request.user,
@@ -269,7 +328,7 @@ def request_community(request):
             )
             
             messages.success(request, "Your community request has been submitted! Admins will review it soon.")
-            return redirect('communities:communities')
+            return redirect('communities:my_community_requests')
         else:
             messages.error(request, "All fields are required.")
     
@@ -280,24 +339,33 @@ def request_community(request):
 @login_required
 def my_community_requests(request):
     """View user's community requests"""
-    requests_list = CommunityRequest.objects.filter(requester=request.user).select_related('skill', 'reviewed_by')
+    requests_list = CommunityRequest.objects.filter(
+        requester=request.user
+    ).select_related(
+        'skill', 'reviewed_by'
+    ).order_by('-created_at')
+    
     return render(request, 'communities/my_requests.html', {'requests': requests_list})
 
 
 @login_required
 def delete_post(request, community_pk, post_pk):
-    """Delete a post (author only)"""
+    """Delete a post (author or staff only)"""
     post = get_object_or_404(Post, pk=post_pk, community__pk=community_pk)
     
-    # Check if user is the author
-    if request.user != post.author:
-        messages.error(request, "You can only delete your own posts.")
+    # Check if user is the author or a staff member
+    if request.user != post.author and not request.user.is_staff:
+        messages.error(request, "You don't have permission to delete this post.")
         return redirect('communities:post_detail', community_pk=community_pk, post_pk=post_pk)
     
     if request.method == 'POST':
         community_pk = post.community.pk
+        post_title = post.title
         post.delete()
-        messages.success(request, "Your post has been deleted.")
+        messages.success(request, f'Post "{post_title}" has been deleted.')
         return redirect('communities:community_detail', pk=community_pk)
     
-    return render(request, 'communities/confirm_delete_post.html', {'post': post})
+    return render(request, 'communities/confirm_delete_post.html', {
+        'post': post,
+        'community': post.community
+    })
