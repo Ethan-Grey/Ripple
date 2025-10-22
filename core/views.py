@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q, Count
 from skills.models import Skill, UserSkill, Match
 from communities.models import Community
 
@@ -12,22 +13,60 @@ def landing(request):
 def home(request):
     user = request.user if request.user.is_authenticated else None
 
-    # Featured skill: first skill or None
-    featured_skill = Skill.objects.first()
+    # Featured skills of the day: Get 5 quality skills with descriptions
+    featured_skills = Skill.objects.filter(
+        description__isnull=False
+    ).exclude(
+        description=''
+    ).order_by('?')[:5]
+    
+    # If we don't have 5 skills with descriptions, just get any 5
+    if featured_skills.count() < 5:
+        featured_skills = Skill.objects.order_by('?')[:5]
 
-    # User's communities if logged in; otherwise top 5 communities
+    # User's communities if logged in
+    user_communities = []
     if user:
         user_communities = Community.objects.filter(members=user)[:5]
-    else:
-        user_communities = Community.objects.all()[:5]
 
-    # Simple suggested matches: latest 6 matches
-    recent_matches = Match.objects.all().order_by('-created_at')[:6]
+    # Recent matches - only show matches involving the logged-in user
+    recent_matches = []
+    if user:
+        recent_matches = Match.objects.filter(
+            Q(user_a=user) | Q(user_b=user)
+        ).select_related('user_a', 'user_b').order_by('-created_at')[:2]
+
+    # Matched users - users who share complementary skills with current user
+    matched_users = []
+    if user:
+        # Get skills the user wants to learn
+        user_learning_skills = UserSkill.objects.filter(
+            user=user, 
+            wants_to_learn=True
+        ).values_list('skill_id', flat=True)
+        
+        # Find users who can teach those skills
+        if user_learning_skills:
+            potential_matches = UserSkill.objects.filter(
+                skill_id__in=user_learning_skills,
+                can_teach=True
+            ).exclude(user=user).select_related('user', 'skill')[:6]
+            
+            # Get unique users with their teaching skill
+            seen_users = set()
+            for us in potential_matches:
+                if us.user.id not in seen_users:
+                    matched_users.append({
+                        'user': us.user,
+                        'skill': us.skill
+                    })
+                    seen_users.add(us.user.id)
 
     context = {
-        'featured_skill': featured_skill,
+        'featured_skills': featured_skills,
         'user_communities': user_communities,
         'recent_matches': recent_matches,
+        'matched_users': matched_users,
     }
     return render(request, 'core/home.html', context)
 
@@ -43,7 +82,6 @@ def swipe(request):
 
 def search(request):
     from django.contrib.auth.models import User
-    from django.db.models import Q, Count
     
     q = request.GET.get('q', '').strip()
     

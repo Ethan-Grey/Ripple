@@ -1,69 +1,564 @@
 {% extends 'base.html' %}
 
-{% block title %} · Home{% endblock %}
+{% block title %} · Dashboard{% endblock %}
 
-{% block content %}
-<div class="grid">
-  <div class="card hero">
-    <h2>{% if featured_skill %}{{ featured_skill.name }}{% else %}Skill Name{% endif %}</h2>
-    <hr/>
-    <p>{% if featured_skill and featured_skill.description %}{{ featured_skill.description }}{% else %}Skill Description{% endif %}</p>
-    <div class="hero-dots">
-      <span></span><span></span>
-    </div>
-  </div>
+{% block extra_head %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
 
-  <div class="right-col">
-    <div class="card">
-      <h3>Communities</h3>
-      {% if user_communities %}
-      <div class="placeholder-lines" style="margin-top:8px">
-        {% for c in user_communities %}
-          <div style="width:90%">{{ c.name }}</div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="placeholder-lines"><div></div><div></div><div></div></div>
-      {% endif %}
-    </div>
+    .featured-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 32px;
+        color: white;
+        min-height: 260px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    }
 
-    <div class="card">
-      <h3>Matches</h3>
-      <div class="match-cards">
-        {% for m in recent_matches %}
-        <div class="mini-card">
-          <div class="avatar"></div>
-          <div>
-            <div class="title">{{ m.user_a.username }} & {{ m.user_b.username }}</div>
-            <div class="lines"></div>
-          </div>
-        </div>
-        {% empty %}
-        <div class="mini-card"><div class="avatar"></div><div><div class="title">No matches yet</div><div class="lines"></div></div></div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
+    .featured-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+        opacity: 0.3;
+    }
 
-  <div class="full-row">
-    <h3>Matched Users</h3>
-    <div class="list-cards">
-      <div class="list-card">
-        <div class="avatar"></div>
-        <div class="content">
-          <div class="title">User 1</div>
-          <div class="lines"></div>
-        </div>
-      </div>
-      <div class="list-card">
-        <div class="avatar"></div>
-        <div class="content">
-          <div class="title">User 2</div>
-          <div class="lines"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+    .carousel-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .carousel-slide {
+        display: none;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .carousel-slide.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .carousel-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: all 0.2s;
+        z-index: 10;
+    }
+
+    .carousel-nav:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .carousel-prev {
+        left: 16px;
+    }
+
+    .carousel-next {
+        right: 16px;
+    }
+
+    .featured-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .featured-label {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .featured-card h2 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 16px;
+    }
+
+    .featured-card p {
+        font-size: 16px;
+        line-height: 1.6;
+        opacity: 0.95;
+        margin-bottom: 24px;
+    }
+
+    .featured-dots {
+        display: flex;
+        gap: 10px;
+        margin-top: auto;
+        position: absolute;
+        bottom: 32px;
+        left: 32px;
+        z-index: 10;
+    }
+
+    .featured-dots span {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .featured-dots span:hover {
+        background: rgba(255, 255, 255, 0.5);
+        transform: scale(1.2);
+    }
+
+    .featured-dots span.active {
+        background: white;
+    }
+
+    .sidebar-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .info-card {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid #e6e8ee;
+    }
+
+    .info-card h3 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: var(--text);
+    }
+
+    .community-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .community-item {
+        padding: 12px 0;
+        border-bottom: 1px solid #e6e8ee;
+        text-decoration: none;
+        color: var(--text);
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .community-item:last-child {
+        border-bottom: none;
+    }
+
+    .community-item:hover {
+        color: var(--brand);
+        padding-left: 8px;
+    }
+
+    .community-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--brand) 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .empty-state-small {
+        color: var(--muted);
+        font-size: 14px;
+        padding: 12px 0;
+    }
+
+    .empty-state-small a {
+        color: var(--brand);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .empty-state-small a:hover {
+        text-decoration: underline;
+    }
+
+    .match-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .match-item {
+        display: flex;
+        gap: 12px;
+        padding: 12px;
+        background: #f6f7f9;
+        border-radius: 12px;
+        align-items: center;
+        transition: all 0.2s;
+    }
+
+    .match-item:hover {
+        background: #eceef2;
+        transform: translateX(4px);
+    }
+
+    .match-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .match-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .match-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text);
+        margin-bottom: 4px;
+    }
+
+    .match-time {
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .suggestions-section {
+        margin-top: 20px;
+    }
+
+    .section-header {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: var(--text);
+    }
+
+    .suggestions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+
+    .suggestion-card {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid #e6e8ee;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: block;
+    }
+
+    .suggestion-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-color: var(--brand);
+    }
+
+    .suggestion-header {
+        display: flex;
+        gap: 14px;
+        align-items: start;
+        margin-bottom: 12px;
+    }
+
+    .suggestion-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .suggestion-info h4 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 4px;
+    }
+
+    .suggestion-skill {
+        font-size: 13px;
+        color: var(--muted);
+    }
+
+    .suggestion-skill .skill-name {
+        color: var(--brand);
+        font-weight: 600;
+    }
+
+    .placeholder-card {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 32px 20px;
+        border: 1px solid #e6e8ee;
+        text-align: center;
+    }
+
+    .placeholder-card .avatar-placeholder {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #e6e8ee;
+        margin: 0 auto 16px;
+    }
+
+    .placeholder-card h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+    }
+
+    .placeholder-card p {
+        font-size: 14px;
+        color: var(--muted);
+    }
+
+    @media (max-width: 1024px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .suggestions-grid {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        }
+    }
+</style>
 {% endblock %}
 
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Featured Skills Carousel -->
+    <div class="featured-card">
+        <div class="carousel-container">
+            {% if featured_skills %}
+                <!-- Previous Button -->
+                <button class="carousel-nav carousel-prev" onclick="changeSlide(-1)">‹</button>
+                
+                <!-- Carousel Slides -->
+                {% for skill in featured_skills %}
+                <div class="carousel-slide {% if forloop.first %}active{% endif %}" data-slide="{{ forloop.counter0 }}">
+                    <div class="featured-content">
+                        <div class="featured-label">Featured Skills of the Day</div>
+                        <h2>{{ skill.name }}</h2>
+                        <p>{% if skill.description %}{{ skill.description }}{% else %}Discover this skill and connect with others who share your interest!{% endif %}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Next Button -->
+                <button class="carousel-nav carousel-next" onclick="changeSlide(1)">›</button>
+                
+                <!-- Dots Navigation -->
+                <div class="featured-dots">
+                    {% for skill in featured_skills %}
+                    <span onclick="goToSlide({{ forloop.counter0 }})" class="{% if forloop.first %}active{% endif %}"></span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="featured-content">
+                    <div class="featured-label">Featured Skill of the Day</div>
+                    <h2>Discover Skills</h2>
+                    <p>Browse and connect with people who share your interests. Start swiping to find your perfect skill match!</p>
+                    <div class="featured-dots">
+                        <span class="active"></span>
+                        <span></span>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sidebar Cards -->
+    <div class="sidebar-cards">
+        <!-- Communities Card -->
+        <div class="info-card">
+            <h3>Your Communities</h3>
+            {% if user_communities %}
+                <div class="community-list">
+                    {% for community in user_communities %}
+                        <a href="/communities/" class="community-item">
+                            <div class="community-icon">{{ community.name|first|upper }}</div>
+                            {{ community.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state-small">
+                    You haven't joined any communities yet. <a href="/communities/">Explore communities</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Matches Card -->
+        <div class="info-card">
+            <h3>Recent Matches</h3>
+            {% if recent_matches %}
+                <div class="match-grid">
+                    {% for match in recent_matches %}
+                        <div class="match-item">
+                            <div class="match-avatar">
+                                {% if match.user_a == user %}
+                                    {{ match.user_b.username|first|upper }}
+                                {% else %}
+                                    {{ match.user_a.username|first|upper }}
+                                {% endif %}
+                            </div>
+                            <div class="match-info">
+                                <div class="match-name">
+                                    {% if match.user_a == user %}
+                                        {{ match.user_b.username }}
+                                    {% else %}
+                                        {{ match.user_a.username }}
+                                    {% endif %}
+                                </div>
+                                <div class="match-time">{{ match.created_at|timesince }} ago</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state-small">
+                    No matches yet. Start swiping to find matches!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Suggested Connections Section -->
+<div class="suggestions-section">
+    <h2 class="section-header">Suggested Connections</h2>
+    <div class="suggestions-grid">
+        {% if matched_users %}
+            {% for match in matched_users %}
+                <div class="suggestion-card">
+                    <div class="suggestion-header">
+                        <div class="suggestion-avatar">{{ match.user.username|first|upper }}</div>
+                        <div class="suggestion-info">
+                            <h4>{{ match.user.username }}</h4>
+                            <div class="suggestion-skill">
+                                Can teach: <span class="skill-name">{{ match.skill.name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="placeholder-card">
+                <div class="avatar-placeholder"></div>
+                <h4>No suggestions yet</h4>
+                <p>Add skills to your profile to get personalized matches</p>
+            </div>
+            <div class="placeholder-card">
+                <div class="avatar-placeholder"></div>
+                <h4>Start Exploring</h4>
+                <p>Browse skills and communities to find your interests</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+let currentSlide = 0;
+const slides = document.querySelectorAll('.carousel-slide');
+const dots = document.querySelectorAll('.featured-dots span');
+
+function showSlide(index) {
+    // Hide all slides
+    slides.forEach(slide => slide.classList.remove('active'));
+    dots.forEach(dot => dot.classList.remove('active'));
+    
+    // Wrap around
+    if (index >= slides.length) currentSlide = 0;
+    if (index < 0) currentSlide = slides.length - 1;
+    
+    // Show current slide
+    if (slides[currentSlide]) {
+        slides[currentSlide].classList.add('active');
+        dots[currentSlide].classList.add('active');
+    }
+}
+
+function changeSlide(direction) {
+    currentSlide += direction;
+    showSlide(currentSlide);
+}
+
+function goToSlide(index) {
+    currentSlide = index;
+    showSlide(currentSlide);
+}
+
+// Auto-advance carousel every 5 seconds
+setInterval(() => {
+    if (slides.length > 1) {
+        changeSlide(1);
+    }
+}, 5000);
+</script>
+{% endblock %}
