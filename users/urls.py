@@ -56,4 +56,8 @@ urlpatterns = [
     path('user-verification/', views.admin_user_verifications, name='admin_user_verifications'),
     path('user-verification/<int:profile_id>/<str:action>/', views.admin_user_verification_action, name='admin_user_verification_action'),
     
+    # Admin: User skills management
+    path('admin-user-skills/', views.admin_user_skills, name='admin_user_skills'),
+    path('admin-delete-skill/<int:user_id>/<int:skill_id>/', views.admin_delete_user_skill, name='admin_delete_user_skill'),
+    
 ]

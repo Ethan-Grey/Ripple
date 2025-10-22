@@ -27,6 +27,7 @@
                 {% if user.is_staff %}
                 <a class="nav-item" href="{% url 'skill_admin:skill_review' %}" style="background:#f59e0b;color:#92400e">Admin Review</a>
                 <a class="nav-item" href="{% url 'users:admin_user_verifications' %}" style="background:#fde68a;color:#92400e">User Verifications</a>
+                <a class="nav-item" href="{% url 'users:admin_user_skills' %}" style="background:#ef4444;color:#ffffff">User Skills</a>
                 <a class="nav-item" href="{% url 'communities:admin_community_requests' %}" style="background:#a78bfa;color:#4c1d95">Community Requests</a>
                 <a class="nav-item" href="/admin/" style="background:#34d399;color:#065f46">Django Admin</a>
                 {% endif %}

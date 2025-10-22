@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin - User Skills Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-users-cog"></i> User Skills Management
+            </h2>
+            
+            <!-- Search and Filter Form -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="search" class="form-label">Search Users</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Enter username...">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="skill" class="form-label">Filter by Skill</label>
+                            <input type="text" class="form-control" id="skill" name="skill" 
+                                   value="{{ skill_filter }}" placeholder="Enter skill name...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary d-block w-100">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Users and Skills List -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Users and Their Skills
+                        {% if user_data %}
+                            <span class="badge bg-secondary ms-2">{{ user_data|length }} user{{ user_data|length|pluralize }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user_data %}
+                        {% for data in user_data %}
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3">
+                                        <div class="d-flex align-items-center">
+                                            {% if data.user.profile.avatar %}
+                                                <img src="{{ data.user.profile.avatar.url }}" 
+                                                     alt="{{ data.user.username }}" 
+                                                     class="rounded-circle me-2" 
+                                                     style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-secondary rounded-circle me-2 d-flex align-items-center justify-content-center" 
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-user text-white"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0">{{ data.user.username }}</h6>
+                                                <small class="text-muted">{{ data.user.get_full_name|default:data.user.email }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <!-- Teaching Skills -->
+                                        {% if data.teaching_skills %}
+                                            <div class="mb-2">
+                                                <small class="text-success fw-bold">
+                                                    <i class="fas fa-chalkboard-teacher"></i> Teaching Skills:
+                                                </small>
+                                                <div class="mt-1">
+                                                    {% for user_skill in data.teaching_skills %}
+                                                        <a href="{% url 'users:admin_delete_user_skill' data.user.id user_skill.skill.id %}" 
+                                                           class="badge bg-success me-1 mb-1 d-inline-flex align-items-center text-decoration-none skill-badge" 
+                                                           onclick="return deleteSkill('{{ user_skill.skill.name }}', '{{ data.user.username }}', this.href, this)"
+                                                           title="Click to delete {{ user_skill.skill.name }} from {{ data.user.username }}'s profile">
+                                                            {{ user_skill.skill.name }} ({{ user_skill.level }})
+                                                            <i class="fas fa-times ms-1" style="font-size: 10px;"></i>
+                                                        </a>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Learning Skills -->
+                                        {% if data.learning_skills %}
+                                            <div>
+                                                <small class="text-primary fw-bold">
+                                                    <i class="fas fa-graduation-cap"></i> Learning Skills:
+                                                </small>
+                                                <div class="mt-1">
+                                                    {% for user_skill in data.learning_skills %}
+                                                        <a href="{% url 'users:admin_delete_user_skill' data.user.id user_skill.skill.id %}" 
+                                                           class="badge bg-primary me-1 mb-1 d-inline-flex align-items-center text-decoration-none skill-badge" 
+                                                           onclick="return deleteSkill('{{ user_skill.skill.name }}', '{{ data.user.username }}', this.href, this)"
+                                                           title="Click to delete {{ user_skill.skill.name }} from {{ data.user.username }}'s profile">
+                                                            {{ user_skill.skill.name }} ({{ user_skill.level }})
+                                                            <i class="fas fa-times ms-1" style="font-size: 10px;"></i>
+                                                        </a>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if not data.teaching_skills and not data.learning_skills %}
+                                            <span class="text-muted">
+                                                <i class="fas fa-info-circle"></i> No skills found
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No users found</h5>
+                            <p class="text-muted">
+                                {% if search_query or skill_filter %}
+                                    Try adjusting your search criteria.
+                                {% else %}
+                                    No users have skills yet.
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="mt-4">
+                <a href="{% url 'skill_admin:skill_review' %}" class="btn btn-warning">
+                    <i class="fas fa-clipboard-check"></i> Skill Review
+                </a>
+                <a href="{% url 'users:admin_user_verifications' %}" class="btn btn-secondary ms-2">
+                    <i class="fas fa-id-card"></i> User Verifications
+                </a>
+                <a href="{% url 'communities:admin_community_requests' %}" class="btn btn-primary ms-2">
+                    <i class="fas fa-users"></i> Community Requests
+                </a>
+                <a href="/admin/" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-cog"></i> Django Admin
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteSkillModal" tabindex="-1" aria-labelledby="deleteSkillModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteSkillModalLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Delete Skill
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-trash-alt fa-3x text-danger"></i>
+                </div>
+                <p class="text-center mb-0">
+                    Are you sure you want to delete the skill <strong id="skillNameToDelete"></strong> from <strong id="userNameToDelete"></strong>'s profile?
+                </p>
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Warning:</strong> This will also remove all associated evidence and cannot be undone.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Skill
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.skill-badge {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.skill-badge:hover {
+    background-color: #dc3545 !important; /* Red background on hover */
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+.skill-badge:hover .fas.fa-times {
+    color: #ffffff !important; /* White X on red background */
+}
+</style>
+
+<script>
+let currentDeleteUrl = '';
+let currentSkillBadge = null;
+
+function deleteSkill(skillName, username, deleteUrl, skillBadge) {
+    // Store the delete URL and badge element for later use
+    currentDeleteUrl = deleteUrl;
+    currentSkillBadge = skillBadge;
+    
+    // Update modal content
+    document.getElementById('skillNameToDelete').textContent = skillName;
+    document.getElementById('userNameToDelete').textContent = username;
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('deleteSkillModal'));
+    modal.show();
+    
+    return false;
+}
+
+// Handle confirm delete button click
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    if (currentDeleteUrl && currentSkillBadge) {
+        // Disable the button to prevent double-clicks
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        
+        // Make AJAX request
+        fetch(currentDeleteUrl, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the skill badge from the page
+                currentSkillBadge.remove();
+                
+                // Show success message
+                showToast(data.message, 'success');
+                
+                // Check if user has no more skills and hide the user section if needed
+                checkUserSkills(currentSkillBadge);
+            } else {
+                // Show error message
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while deleting the skill.', 'error');
+        })
+        .finally(() => {
+            // Re-enable the button
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-trash"></i> Delete Skill';
+            
+            // Hide the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteSkillModal'));
+            modal.hide();
+        });
+    }
+});
+
+// Clear the delete URL when modal is hidden
+document.getElementById('deleteSkillModal').addEventListener('hidden.bs.modal', function() {
+    currentDeleteUrl = '';
+    currentSkillBadge = null;
+});
+
+// Function to show toast notifications
+function showToast(message, type) {
+    // Create toast element
+    const toastHtml = `
+        <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    // Add toast to page
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Show the toast
+    const toastElement = toastContainer.lastElementChild;
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        this.remove();
+    });
+}
+
+// Function to check if user has remaining skills
+function checkUserSkills(deletedBadge) {
+    // Find the user container
+    let userContainer = deletedBadge.closest('.border-bottom');
+    if (userContainer) {
+        // Check if there are any remaining skill badges in this user's section
+        const remainingSkills = userContainer.querySelectorAll('.skill-badge');
+        if (remainingSkills.length === 0) {
+            // Hide the user section if no skills remain
+            userContainer.style.opacity = '0.5';
+            userContainer.style.pointerEvents = 'none';
+        }
+    }
+}
+</script>
+{% endblock %}

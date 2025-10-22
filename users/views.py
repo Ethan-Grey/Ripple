@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -543,3 +544,91 @@ def admin_user_verification_action(request, profile_id, action):
         messages.info(request, f"{profile.user.username}'s verification was rejected and related documents have been removed.")
     profile.save()
     return redirect('users:admin_user_verifications')
+
+
+@staff_member_required
+def admin_user_skills(request):
+    """List all users and their skills for admin management."""
+    search_query = request.GET.get('search', '')
+    skill_filter = request.GET.get('skill', '')
+    
+    # Get all users with their skills
+    users = User.objects.select_related('profile').prefetch_related('user_skills__skill').all()
+    
+    if search_query:
+        users = users.filter(username__icontains=search_query)
+    
+    # Build user data with skills
+    user_data = []
+    for user in users:
+        teaching_skills = UserSkill.objects.filter(
+            user=user, 
+            can_teach=True
+        ).select_related('skill')
+        
+        learning_skills = UserSkill.objects.filter(
+            user=user, 
+            wants_to_learn=True
+        ).select_related('skill')
+        
+        if skill_filter:
+            teaching_skills = teaching_skills.filter(skill__name__icontains=skill_filter)
+            learning_skills = learning_skills.filter(skill__name__icontains=skill_filter)
+        
+        # Only include users who have skills or match search
+        if teaching_skills.exists() or learning_skills.exists() or search_query:
+            user_data.append({
+                'user': user,
+                'teaching_skills': teaching_skills,
+                'learning_skills': learning_skills,
+            })
+    
+    context = {
+        'user_data': user_data,
+        'search_query': search_query,
+        'skill_filter': skill_filter,
+    }
+    return render(request, 'users/profile/admin_user_skills.html', context)
+
+
+@staff_member_required
+def admin_delete_user_skill(request, user_id, skill_id):
+    """Delete a specific skill from a user's profile."""
+    try:
+        user = get_object_or_404(User, id=user_id)
+        user_skill = get_object_or_404(UserSkill, user=user, skill_id=skill_id)
+        skill_name = user_skill.skill.name
+        
+        # Delete all related evidence first
+        evidence_count = 0
+        for evidence in user_skill.evidence.all():
+            try:
+                if evidence.file:
+                    evidence.file.delete(save=False)
+                evidence.delete()
+                evidence_count += 1
+            except Exception as e:
+                print(f"Error deleting evidence: {e}")
+        
+        # Delete the user skill
+        user_skill.delete()
+        
+        # Check if this is an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Successfully removed skill "{skill_name}" from {user.username}\'s profile. Deleted {evidence_count} evidence items.'
+            })
+        else:
+            messages.success(request, f'Successfully removed skill "{skill_name}" from {user.username}\'s profile. Deleted {evidence_count} evidence items.')
+            return redirect('users:admin_user_skills')
+        
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': f'Error deleting skill: {str(e)}'
+            })
+        else:
+            messages.error(request, f'Error deleting skill: {str(e)}')
+            return redirect('users:admin_user_skills')
