@@ -44,6 +44,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.profile_edit, name='profile_edit'),
     path('profile/verify-identity/', views.verify_identity, name='verify_identity'),
+    path('profile/verification-status/', views.view_verification_status, name='verification_status'),
     path('profile/add-skill/', views.add_skill, name='add_skill'),
     path('profile/delete-skill/<int:skill_id>/', views.delete_skill, name='delete_skill'),
     path('profile/verify-skill/<int:skill_id>/', views.verify_skill, name='verify_skill'),

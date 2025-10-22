@@ -527,23 +527,61 @@ def admin_user_verifications(request):
 def admin_user_verification_action(request, profile_id, action):
     """Approve or reject a user's identity verification."""
     profile = get_object_or_404(Profile, id=profile_id)
-    if action == 'approve':
-        profile.verification_status = 'verified'
-        messages.success(request, f"{profile.user.username} has been verified.")
-    elif action == 'reject':
-        # Wipe identity evidence and submitted info on rejection
-        for ev in list(profile.evidence.all()):
-            try:
-                if ev.file:
-                    ev.file.delete(save=False)
-            except Exception:
-                pass
-            ev.delete()
-        profile.identity_submissions.all().delete()
-        profile.verification_status = 'unverified'
-        messages.info(request, f"{profile.user.username}'s verification was rejected and related documents have been removed.")
-    profile.save()
-    return redirect('users:admin_user_verifications')
+    
+    try:
+        if action == 'approve':
+            profile.verification_status = 'verified'
+            message = f"{profile.user.username} has been verified."
+            message_type = 'success'
+        elif action == 'reject':
+            # Wipe identity evidence and submitted info on rejection
+            evidence_count = 0
+            for ev in list(profile.evidence.all()):
+                try:
+                    if ev.file:
+                        ev.file.delete(save=False)
+                    ev.delete()
+                    evidence_count += 1
+                except Exception:
+                    pass
+            profile.identity_submissions.all().delete()
+            profile.verification_status = 'unverified'
+            message = f"{profile.user.username}'s verification was rejected and {evidence_count} documents have been removed."
+            message_type = 'info'
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid action'
+            })
+        
+        profile.save()
+        
+        # Check if this is an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'message_type': message_type,
+                'action': action,
+                'username': profile.user.username,
+                'verification_status': profile.verification_status
+            })
+        else:
+            if action == 'approve':
+                messages.success(request, message)
+            else:
+                messages.info(request, message)
+            return redirect('users:admin_user_verifications')
+            
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': f'Error processing verification: {str(e)}'
+            })
+        else:
+            messages.error(request, f'Error processing verification: {str(e)}')
+            return redirect('users:admin_user_verifications')
 
 
 @staff_member_required
@@ -632,3 +670,22 @@ def admin_delete_user_skill(request, user_id, skill_id):
         else:
             messages.error(request, f'Error deleting skill: {str(e)}')
             return redirect('users:admin_user_skills')
+
+
+@login_required
+def view_verification_status(request):
+    """View user's verification status and submitted documents"""
+    profile = get_object_or_404(Profile, user=request.user)
+    
+    # Get all evidence submitted for verification
+    evidence_list = profile.evidence.all()
+    
+    # Get latest identity submission
+    latest_submission = profile.identity_submissions.order_by('-created_at').first()
+    
+    context = {
+        'profile': profile,
+        'evidence_list': evidence_list,
+        'latest_submission': latest_submission,
+    }
+    return render(request, 'users/profile/verification_status.html', context)

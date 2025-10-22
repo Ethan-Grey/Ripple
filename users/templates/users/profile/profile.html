@@ -121,11 +121,17 @@
                                     <span class="detail-label">Verification:</span>
                                     <span class="detail-value">
                                         {% if profile.verification_status == 'verified' %}
-                                            <span class="status-badge verified"><i class="bi bi-check-circle-fill"></i> Verified</span>
+                                            <a href="{% url 'users:verification_status' %}" class="status-badge verified status-button">
+                                                <i class="bi bi-check-circle-fill"></i> Verified
+                                            </a>
                                         {% elif profile.verification_status == 'pending' %}
-                                            <span class="status-badge pending"><i class="bi bi-clock-fill"></i> Pending</span>
+                                            <a href="{% url 'users:verification_status' %}" class="status-badge pending status-button">
+                                                <i class="bi bi-clock-fill"></i> Pending
+                                            </a>
                                         {% else %}
-                                            <span class="status-badge unverified"><i class="bi bi-exclamation-triangle-fill"></i> Unverified</span>
+                                            <a href="{% url 'users:verification_status' %}" class="status-badge unverified status-button">
+                                                <i class="bi bi-exclamation-triangle-fill"></i> Unverified
+                                            </a>
                                         {% endif %}
                                     </span>
                                 </div>
@@ -585,6 +591,34 @@
 .status-badge.unverified {
     background: #fee2e2;
     color: #991b1b;
+}
+
+.status-button {
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.status-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+    color: inherit;
+}
+
+.status-button.verified:hover {
+    background: #10b981;
+    color: white;
+}
+
+.status-button.pending:hover {
+    background: #f59e0b;
+    color: white;
+}
+
+.status-button.unverified:hover {
+    background: #ef4444;
+    color: white;
 }
 
 .about-actions {

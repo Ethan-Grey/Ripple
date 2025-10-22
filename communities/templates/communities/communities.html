@@ -276,6 +276,9 @@
     <h2>Communities</h2>
     <div class="header-actions">
         {% if user.is_authenticated %}
+            <a href="{% url 'communities:my_requests' %}" class="btn-request" style="background: #f59e0b;">
+                <i class="fas fa-list"></i> My Requests
+            </a>
             <a href="{% url 'communities:request_community' %}" class="btn-request">
                 + Request Community
             </a>

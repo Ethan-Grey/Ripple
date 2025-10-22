@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verification Status{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-id-card"></i> Verification Status
+                </h2>
+                <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Profile
+                </a>
+            </div>
+
+            <!-- Verification Status Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt"></i> Current Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                {% if profile.verification_status == 'verified' %}
+                                    <div class="status-icon verified me-3">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1 text-success">Verified</h6>
+                                        <p class="text-muted mb-0">Your identity has been successfully verified.</p>
+                                    </div>
+                                {% elif profile.verification_status == 'pending' %}
+                                    <div class="status-icon pending me-3">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1 text-warning">Pending Review</h6>
+                                        <p class="text-muted mb-0">Your verification documents are being reviewed by our team.</p>
+                                    </div>
+                                {% else %}
+                                    <div class="status-icon unverified me-3">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1 text-danger">Unverified</h6>
+                                        <p class="text-muted mb-0">You haven't submitted verification documents yet.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if profile.verification_status == 'unverified' %}
+                                <a href="{% url 'users:verify_identity' %}" class="btn btn-primary">
+                                    <i class="fas fa-upload"></i> Start Verification
+                                </a>
+                            {% elif profile.verification_status == 'pending' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-clock"></i> Under Review
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check"></i> Verified
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submitted Documents -->
+            {% if evidence_list or latest_submission %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-alt"></i> Submitted Documents
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if evidence_list %}
+                            <div class="row">
+                                {% for evidence in evidence_list %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="document-item">
+                                            <div class="document-icon">
+                                                {% if evidence.title == 'Identity Document' %}
+                                                    <i class="fas fa-id-card text-primary"></i>
+                                                {% elif evidence.title == 'Selfie' %}
+                                                    <i class="fas fa-user-circle text-info"></i>
+                                                {% elif evidence.title == 'Proof of Address' %}
+                                                    <i class="fas fa-home text-success"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file text-secondary"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="document-info">
+                                                <h6 class="mb-1">{{ evidence.title }}</h6>
+                                                <p class="text-muted mb-1">Submitted on {{ evidence.created_at|date:"F j, Y" }}</p>
+                                                {% if evidence.file %}
+                                                    <a href="{{ evidence.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-download"></i> View Document
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Identity Information -->
+                        {% if latest_submission %}
+                            <div class="mt-4">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-info-circle"></i> Submitted Information
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="info-item mb-2">
+                                            <strong>Name:</strong> 
+                                            {% if latest_submission.first_name and latest_submission.last_name %}
+                                                {{ latest_submission.first_name }} {{ latest_submission.last_name }}
+                                            {% else %}
+                                                Not provided
+                                            {% endif %}
+                                        </div>
+                                        {% if latest_submission.dob %}
+                                            <div class="info-item mb-2">
+                                                <strong>Date of Birth:</strong> {{ latest_submission.dob|date:"F j, Y" }}
+                                            </div>
+                                        {% endif %}
+                                        {% if latest_submission.nationality %}
+                                            <div class="info-item mb-2">
+                                                <strong>Nationality:</strong> {{ latest_submission.nationality }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% if latest_submission.country %}
+                                            <div class="info-item mb-2">
+                                                <strong>Country:</strong> {{ latest_submission.country }}
+                                            </div>
+                                        {% endif %}
+                                        {% if latest_submission.address1 %}
+                                            <div class="info-item mb-2">
+                                                <strong>Address:</strong> {{ latest_submission.address1 }}
+                                                {% if latest_submission.address2 %}
+                                                    , {{ latest_submission.address2 }}
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                        {% if latest_submission.state %}
+                                            <div class="info-item mb-2">
+                                                <strong>State:</strong> {{ latest_submission.state }}
+                                            </div>
+                                        {% endif %}
+                                        {% if latest_submission.postal %}
+                                            <div class="info-item mb-2">
+                                                <strong>Postal Code:</strong> {{ latest_submission.postal }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Next Steps -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i> Next Steps
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if profile.verification_status == 'unverified' %}
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Get Started with Verification</h6>
+                            <p class="mb-2">To verify your identity, you'll need to provide:</p>
+                            <ul class="mb-0">
+                                <li>A government-issued ID (driver's license, passport, etc.)</li>
+                                <li>A selfie photo</li>
+                                <li>Proof of address (utility bill, bank statement, etc.)</li>
+                            </ul>
+                        </div>
+                        <a href="{% url 'users:verify_identity' %}" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Start Verification Process
+                        </a>
+                    {% elif profile.verification_status == 'pending' %}
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-clock"></i> Verification Under Review</h6>
+                            <p class="mb-0">Your documents are being reviewed by our verification team. This process typically takes 1-3 business days. You'll receive an email notification once the review is complete.</p>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-check-circle"></i> Verification Complete</h6>
+                            <p class="mb-0">Congratulations! Your identity has been verified. You now have access to all platform features and increased trust from other users.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.status-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.status-icon.verified {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-icon.pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-icon.unverified {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.document-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    border: 1px solid #dee2e6;
+}
+
+.document-info {
+    flex: 1;
+}
+
+.info-item {
+    color: #6c757d;
+}
+</style>
+{% endblock %}
