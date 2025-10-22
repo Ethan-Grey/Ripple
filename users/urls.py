@@ -43,16 +43,14 @@ urlpatterns = [
     # Profile URLs
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.profile_edit, name='profile_edit'),
-    path('profile/<str:username>/', views.view_user_profile, name='view_profile'),
-    path('profile/delete-skill/<int:skill_id>/', views.delete_skill, name='delete_skill'),
     path('profile/verify-identity/', views.verify_identity, name='verify_identity'),
-    
-    # Skill verification URLs
+    path('profile/add-skill/', views.add_skill, name='add_skill'),
+    path('profile/delete-skill/<int:skill_id>/', views.delete_skill, name='delete_skill'),
     path('profile/verify-skill/<int:skill_id>/', views.verify_skill, name='verify_skill'),
     path('profile/submit-evidence/<int:skill_id>/', views.submit_evidence, name='submit_evidence'),
     path('profile/remove-evidence/<int:evidence_id>/', views.remove_evidence, name='remove_evidence'),
     path('profile/unverify-skill/<int:skill_id>/', views.unverify_skill, name='unverify_skill'),
-    path('profile/add-skill/', views.add_skill, name='add_skill'),
+    path('profile/<str:username>/', views.view_user_profile, name='view_profile'),
     
     # Admin: User identity verification review
     path('user-verification/', views.admin_user_verifications, name='admin_user_verifications'),
