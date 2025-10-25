@@ -11,8 +11,14 @@ from skills.models import Skill
 
 def communities_page(request):
     """List all approved communities with filtering"""
-    skill_filter = request.GET.get('skill', 'all')
+    skill_param = request.GET.get('skill', '')
     filter_type = request.GET.get('filter', 'all')  # 'all' or 'my'
+    
+    # Handle comma-separated skill IDs
+    selected_skills = []
+    if skill_param and skill_param != 'all':
+        # Split by comma and filter out empty strings
+        selected_skills = [s.strip() for s in skill_param.split(',') if s.strip()]
     
     # Get approved communities
     communities = Community.objects.filter(
@@ -23,9 +29,9 @@ def communities_page(request):
         'members'
     )
     
-    # Apply skill filter
-    if skill_filter != 'all':
-        communities = communities.filter(skill__id=skill_filter)
+    # Apply skill filter - handle multiple skills
+    if selected_skills:
+        communities = communities.filter(skill__id__in=selected_skills)
     
     # Apply "My Communities" filter
     if filter_type == 'my' and request.user.is_authenticated:
@@ -40,7 +46,7 @@ def communities_page(request):
     return render(request, 'communities/communities.html', {
         'communities': communities,
         'skills': skills,
-        'current_skill_filter': skill_filter,
+        'selected_skills': selected_skills,
         'filter_type': filter_type,
     })
 
