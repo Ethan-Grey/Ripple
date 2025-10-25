@@ -23,6 +23,45 @@
         align-items: center;
     }
 
+    .layout-toggle {
+        display: flex;
+        background: var(--card);
+        border-radius: 8px;
+        padding: 4px;
+        border: 1px solid #e6e8ee;
+        gap: 4px;
+    }
+
+    .layout-btn {
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .layout-btn:hover {
+        color: var(--text);
+        background: #f5f7fa;
+    }
+
+    .layout-btn.active {
+        background: var(--brand);
+        color: white;
+    }
+
+    .layout-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
     .filter-tabs {
         display: flex;
         background: var(--card);
@@ -69,7 +108,11 @@
         transform: translateY(-1px);
     }
 
-    .filter-select {
+    .skill-filter-wrapper {
+        position: relative;
+    }
+
+    .skill-filter-button {
         padding: 10px 16px;
         border: 1px solid #e6e8ee;
         border-radius: 8px;
@@ -79,17 +122,201 @@
         cursor: pointer;
         outline: none;
         transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
     }
 
-    .filter-select:focus {
+    .skill-filter-button:hover {
+        border-color: var(--brand);
+    }
+
+    .skill-filter-button.active {
         border-color: var(--brand);
         box-shadow: 0 0 0 3px rgba(74, 103, 255, 0.1);
+    }
+
+    .skill-filter-button svg {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.2s;
+    }
+
+    .skill-filter-button.active svg {
+        transform: rotate(180deg);
+    }
+
+    .skill-filter-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: white;
+        border: 1px solid #e6e8ee;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        min-width: 550px;
+        max-width: 650px;
+        max-height: 450px;
+        overflow-y: auto;
+        display: none;
+    }
+
+    .skill-filter-dropdown.show {
+        display: block;
+    }
+
+    .skill-filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e6e8ee;
+    }
+
+    .skill-filter-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .skill-filter-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .clear-filters-btn {
+        background: none;
+        border: none;
+        color: var(--brand);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .clear-filters-btn:hover {
+        background: rgba(74, 103, 255, 0.1);
+    }
+
+    .apply-filters-btn {
+        padding: 8px 12px;
+        background: var(--brand);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .apply-filters-btn:hover {
+        background: #5a77ff;
+    }
+
+    .apply-filters-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .skill-checkbox-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .skill-checkbox-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: 6px;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: 1px solid #e6e8ee;
+        background: white;
+    }
+
+    .skill-checkbox-item:hover {
+        background: #f5f7fa;
+        border-color: var(--brand);
+    }
+
+    .skill-checkbox-item input[type="checkbox"]:checked + .skill-checkbox-label {
+        font-weight: 600;
+    }
+
+    .skill-checkbox-item:has(input[type="checkbox"]:checked) {
+        background: rgba(74, 103, 255, 0.1);
+        border-color: var(--brand);
+    }
+
+    .skill-checkbox-item input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin-right: 8px;
+        cursor: pointer;
+        accent-color: var(--brand);
+        flex-shrink: 0;
+    }
+
+    .skill-checkbox-label {
+        font-size: 13px;
+        color: var(--text);
+        cursor: pointer;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .skill-count-badge {
+        font-size: 12px;
+        color: var(--muted);
+        background: #f5f7fa;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    .selected-filters-count {
+        background: var(--brand);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 18px;
+        text-align: center;
     }
 
     .communities-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 20px;
+    }
+
+    .communities-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .layout-grid {
+        display: grid;
+    }
+
+    .layout-list {
+        display: flex;
     }
 
     .community-card {
@@ -102,10 +329,69 @@
         border: 1px solid #e6e8ee;
     }
 
+    .community-card.list-view {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 20px;
+        padding: 16px 20px;
+    }
+
+    .community-card.list-view .community-header {
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .community-card.list-view .community-content {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: 20px;
+        min-width: 0;
+    }
+
+    .community-card.list-view .community-main-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .community-card.list-view .community-description {
+        margin-bottom: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .community-card.list-view .community-skill-tag {
+        margin-bottom: 0;
+        white-space: nowrap;
+    }
+
+    .community-card.list-view .community-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-end;
+        flex-shrink: 0;
+    }
+
+    .community-card.list-view .community-footer {
+        border-top: none;
+        padding-top: 0;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-end;
+    }
+
     .community-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
         border-color: var(--brand);
+    }
+
+    .community-card.list-view:hover {
+        transform: translateX(4px);
     }
 
     .community-header {
@@ -266,8 +552,149 @@
         .communities-grid {
             grid-template-columns: 1fr;
         }
+
+        .skill-filter-dropdown {
+            right: auto;
+            left: 0;
+            min-width: 100%;
+            max-width: 100%;
+        }
+
+        .skill-checkbox-list {
+            grid-template-columns: 1fr;
+        }
+
+        .community-card.list-view {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .community-card.list-view .community-content {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .community-card.list-view .community-stats {
+            align-items: flex-start;
+        }
+
+        .community-card.list-view .community-footer {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButton = document.getElementById('skillFilterButton');
+    const filterDropdown = document.getElementById('skillFilterDropdown');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const applyFiltersBtn = document.getElementById('applyFilters');
+    const filterCountBadge = document.getElementById('filterCount');
+    const gridBtn = document.getElementById('gridBtn');
+    const listBtn = document.getElementById('listBtn');
+    const communitiesContainer = document.getElementById('communitiesContainer');
+    
+    // Toggle dropdown
+    filterButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        filterDropdown.classList.toggle('show');
+        filterButton.classList.toggle('active');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!filterDropdown.contains(e.target) && e.target !== filterButton) {
+            filterDropdown.classList.remove('show');
+            filterButton.classList.remove('active');
+        }
+    });
+    
+    // Prevent dropdown from closing when clicking inside
+    filterDropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Update count badge
+    function updateFilterCount() {
+        const checkedBoxes = document.querySelectorAll('.skill-checkbox:checked').length;
+        if (checkedBoxes > 0) {
+            filterCountBadge.textContent = checkedBoxes;
+            filterCountBadge.style.display = 'inline-block';
+        } else {
+            filterCountBadge.style.display = 'none';
+        }
+    }
+    
+    // Clear all filters
+    clearFiltersBtn.addEventListener('click', function() {
+        document.querySelectorAll('.skill-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateFilterCount();
+    });
+    
+    // Update count when checkboxes change
+    document.querySelectorAll('.skill-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateFilterCount);
+    });
+    
+    // Apply filters - FIXED VERSION
+    applyFiltersBtn.addEventListener('click', function() {
+        const checkedBoxes = document.querySelectorAll('.skill-checkbox:checked');
+        const skillIds = Array.from(checkedBoxes).map(cb => cb.value);
+        const filterType = document.querySelector('input[name="filter"]').value;
+        
+        // Build URL with all selected skills
+        let url = '?filter=' + filterType;
+        if (skillIds.length > 0) {
+            url += '&skill=' + skillIds.join(',');
+        }
+        
+        window.location.href = url;
+    });
+    
+    // Layout toggle functionality
+    const currentLayout = localStorage.getItem('communityLayout') || 'grid';
+    
+    function setLayout(layout) {
+        localStorage.setItem('communityLayout', layout);
+        
+        if (layout === 'grid') {
+            communitiesContainer.className = 'communities-grid layout-grid';
+            document.querySelectorAll('.community-card').forEach(card => {
+                card.classList.remove('list-view');
+            });
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
+        } else {
+            communitiesContainer.className = 'communities-list layout-list';
+            document.querySelectorAll('.community-card').forEach(card => {
+                card.classList.add('list-view');
+            });
+            listBtn.classList.add('active');
+            gridBtn.classList.remove('active');
+        }
+    }
+    
+    // Set initial layout
+    setLayout(currentLayout);
+    
+    // Layout button event listeners
+    gridBtn.addEventListener('click', function() {
+        setLayout('grid');
+    });
+    
+    listBtn.addEventListener('click', function() {
+        setLayout('list');
+    });
+    
+    // Initialize count on load
+    updateFilterCount();
+});
+</script>
 {% endblock %}
 
 {% block content %}
@@ -283,30 +710,73 @@
                 + Request Community
             </a>
         {% endif %}
-        <form method="get" style="display: flex; gap: 12px; align-items: center;">
-            <!-- Filter Tabs -->
+        
+        <!-- Layout Toggle -->
+        <div class="layout-toggle">
+            <button type="button" id="gridBtn" class="layout-btn active">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                </svg>
+                Grid
+            </button>
+            <button type="button" id="listBtn" class="layout-btn">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+                List
+            </button>
+        </div>
+        
+        <form method="get" id="filterForm" style="display: flex; gap: 12px; align-items: center;">
+            <!-- Filter Tabs - REMOVED "All" TAB -->
+            {% if user.is_authenticated %}
             <div class="filter-tabs">
-                <a href="?filter=all{% if current_skill_filter and current_skill_filter != 'all' %}&skill={{ current_skill_filter }}{% endif %}" 
-                   class="filter-tab {% if not filter_type or filter_type == 'all' %}active{% endif %}">
-                    All
-                </a>
-                {% if user.is_authenticated %}
-                <a href="?filter=my{% if current_skill_filter and current_skill_filter != 'all' %}&skill={{ current_skill_filter }}{% endif %}" 
+                <a href="?filter=my{% if selected_skills %}&skill={{ selected_skills|join:',' }}{% endif %}" 
                    class="filter-tab {% if filter_type == 'my' %}active{% endif %}">
                     My Communities
                 </a>
-                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Skill Filter with Checkboxes -->
+            <div class="skill-filter-wrapper">
+                <button type="button" id="skillFilterButton" class="skill-filter-button">
+                    <span>Filter by Skills</span>
+                    <span id="filterCount" class="selected-filters-count" style="display: none;">0</span>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                
+                <div id="skillFilterDropdown" class="skill-filter-dropdown">
+                    <div class="skill-filter-header">
+                        <span class="skill-filter-title">Select Skills</span>
+                        <div class="skill-filter-actions">
+                            <button type="button" id="clearFilters" class="clear-filters-btn">Clear All</button>
+                            <button type="button" id="applyFilters" class="apply-filters-btn">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="skill-checkbox-list">
+                        {% for skill in skills %}
+                        <label class="skill-checkbox-item">
+                            <input type="checkbox" 
+                                   name="skill" 
+                                   value="{{ skill.id }}" 
+                                   class="skill-checkbox"
+                                   {% if skill.id|stringformat:"s" in selected_skills %}checked{% endif %}>
+                            <span class="skill-checkbox-label">{{ skill.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
             
-            <!-- Skill Filter -->
-            <select name="skill" onchange="this.form.submit()" class="filter-select">
-                <option value="all" {% if current_skill_filter == 'all' %}selected{% endif %}>All Skills</option>
-                {% for skill in skills %}
-                    <option value="{{ skill.id }}" {% if current_skill_filter|stringformat:"s" == skill.id|stringformat:"s" %}selected{% endif %}>
-                        {{ skill.name }}
-                    </option>
-                {% endfor %}
-            </select>
             <input type="hidden" name="filter" value="{{ filter_type|default:'all' }}">
         </form>
     </div>
@@ -314,7 +784,7 @@
 
 <!-- Communities Grid -->
 {% if communities %}
-    <div class="communities-grid">
+    <div id="communitiesContainer" class="communities-grid layout-grid">
         {% for c in communities %}
         <a href="{% url 'communities:community_detail' c.pk %}" class="community-card">
             <div class="community-header">
@@ -332,26 +802,32 @@
                 </div>
             </div>
             
-            {% if c.description %}
-            <p class="community-description">{{ c.description|truncatewords:15 }}</p>
-            {% else %}
-            <p class="community-description">A community for {{ c.skill.name }} enthusiasts.</p>
-            {% endif %}
-            
-            <span class="community-skill-tag">{{ c.skill.name }}</span>
-            
-            <div class="community-footer">
-                <div class="community-date">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    <span>{% if c.created_at %}{{ c.created_at|timesince }} ago{% else %}Recently{% endif %}</span>
+            <div class="community-content">
+                <div class="community-main-info">
+                    {% if c.description %}
+                    <p class="community-description">{{ c.description|truncatewords:15 }}</p>
+                    {% else %}
+                    <p class="community-description">A community for {{ c.skill.name }} enthusiasts.</p>
+                    {% endif %}
+                    
+                    <span class="community-skill-tag">{{ c.skill.name }}</span>
                 </div>
-                {% if user in c.members.all %}
-                    <span class="badge-joined">✓ Joined</span>
-                {% else %}
-                    <span class="badge-view">View →</span>
-                {% endif %}
+                
+                <div class="community-stats">
+                    <div class="community-footer">
+                        <div class="community-date">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>{% if c.created_at %}{{ c.created_at|timesince }} ago{% else %}Recently{% endif %}</span>
+                        </div>
+                        {% if user in c.members.all %}
+                            <span class="badge-joined">✓ Joined</span>
+                        {% else %}
+                            <span class="badge-view">View →</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </a>
         {% endfor %}
