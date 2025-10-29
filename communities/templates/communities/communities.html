@@ -641,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', updateFilterCount);
     });
     
-    // Apply filters - FIXED VERSION
+    // Apply filters
     applyFiltersBtn.addEventListener('click', function() {
         const checkedBoxes = document.querySelectorAll('.skill-checkbox:checked');
         const skillIds = Array.from(checkedBoxes).map(cb => cb.value);
@@ -728,10 +728,10 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <form method="get" id="filterForm" style="display: flex; gap: 12px; align-items: center;">
-            <!-- Filter Tabs - REMOVED "All" TAB -->
+            <!-- Filter Tabs - TOGGLEABLE -->
             {% if user.is_authenticated %}
             <div class="filter-tabs">
-                <a href="?filter=my{% if selected_skills %}&skill={{ selected_skills|join:',' }}{% endif %}" 
+                <a href="?{% if filter_type == 'my' %}filter=all{% else %}filter=my{% endif %}{% if selected_skills %}&skill={{ selected_skills|join:',' }}{% endif %}" 
                    class="filter-tab {% if filter_type == 'my' %}active{% endif %}">
                     My Communities
                 </a>
