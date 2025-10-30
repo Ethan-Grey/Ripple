@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
-{% block title %} · Admin - Skill Review{% endblock %}
+{% block title %} · Admin - Teacher Applications{% endblock %}
 
 {% block content %}
 <div class="admin-container">
     <div class="admin-header">
-        <h1>Skill Verification Review</h1>
+        <h1>Teacher Applications Review</h1>
         <div class="admin-stats">
             <span class="stat-item">
                 <strong>{{ total_pending }}</strong> pending verifications
@@ -12,57 +12,48 @@
         </div>
     </div>
 
-    {% if users_with_pending_skills %}
+    {% if applications %}
         <div class="pending-skills-list">
-            {% for user, skills in users_with_pending_skills.items %}
+            {% for app in applications %}
             <div class="user-card">
                 <div class="user-header">
                     <div class="user-info">
                         <div class="user-avatar">
-                            {% if user.profile.avatar %}
-                                <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="avatar-img">
+                            {% if app.applicant.profile.avatar %}
+                                <img src="{{ app.applicant.profile.avatar.url }}" alt="{{ app.applicant.username }}" class="avatar-img">
                             {% else %}
                                 <div class="avatar-placeholder">
-                                    <span>{{ user.username|first|upper }}</span>
+                                    <span>{{ app.applicant.username|first|upper }}</span>
                                 </div>
                             {% endif %}
                         </div>
                         <div class="user-details">
-                            <h3>{{ user.username }}</h3>
-                            <p class="user-email">{{ user.email }}</p>
-                            <p class="user-joined">Joined {{ user.date_joined|date:"M Y" }}</p>
+                            <h3>{{ app.applicant.username }}</h3>
+                            <p class="user-email">{{ app.applicant.email }}</p>
+                            <p class="user-joined">Joined {{ app.applicant.date_joined|date:"M Y" }}</p>
                         </div>
                     </div>
                     <div class="user-stats">
-                        <span class="skill-count">{{ skills|length }} skill{{ skills|length|pluralize }} pending</span>
+                        <span class="skill-count">Submitted {{ app.created_at|date:"M d, Y" }}</span>
                     </div>
                 </div>
 
                 <div class="skills-grid">
-                    {% for skill in skills %}
                     <div class="skill-card">
                         <div class="skill-header">
-                            <h4>{{ skill.skill.name }}</h4>
-                            <span class="skill-level">{{ skill.level|title }}</span>
+                            <h4>{{ app.title }}</h4>
+                            <span class="skill-level">Application</span>
                         </div>
-                        
                         <div class="skill-meta">
-                            <span class="evidence-count">
-                                {{ skill.evidence.count }} evidence item{{ skill.evidence.count|pluralize }}
-                            </span>
-                            <span class="submitted-date">
-                                Submitted {{ skill.created_at|date:"M d, Y" }}
-                            </span>
+                            <span class="evidence-count">Status: {{ app.status|title }}</span>
+                            <span class="submitted-date">Updated {{ app.created_at|date:"M d, Y" }}</span>
                         </div>
-
                         <div class="skill-actions">
-                            <a href="{% url 'skill_admin:skill_detail' user.id skill.skill.id %}" 
-                               class="btn btn-primary btn-small">
-                                Review Evidence
+                            <a href="{% url 'skill_admin:skill_detail' app.id %}" class="btn btn-primary btn-small">
+                                Review Application
                             </a>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
             {% endfor %}
@@ -70,8 +61,8 @@
     {% else %}
         <div class="empty-state">
             <div class="empty-icon"><i class="bi bi-check-circle-fill"></i></div>
-            <h3>No Pending Verifications</h3>
-            <p>All skill verification requests have been processed.</p>
+            <h3>No Pending Applications</h3>
+            <p>All teacher applications have been processed.</p>
         </div>
     {% endif %}
 </div>

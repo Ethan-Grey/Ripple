@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+  <h1 class="page-title">Classes</h1>
+  <form method="get" class="filters">
+    <input class="search" type="text" name="q" value="{{ request.GET.q }}" placeholder="Search classes" />
+    <select class="select" name="difficulty">
+      <option value="">All levels</option>
+      <option value="beginner" {% if request.GET.difficulty == 'beginner' %}selected{% endif %}>Beginner</option>
+      <option value="intermediate" {% if request.GET.difficulty == 'intermediate' %}selected{% endif %}>Intermediate</option>
+      <option value="advanced" {% if request.GET.difficulty == 'advanced' %}selected{% endif %}>Advanced</option>
+    </select>
+    <button class="btn" type="submit">Apply</button>
+  </form>
+
+  <div id="react-class-grid"></div>
+  <script id="classes-data" type="application/json">
+  [
+  {% for c in classes %}
+    {
+      "slug": "{{ c.slug|escapejs }}",
+      "title": "{{ c.title|escapejs }}",
+      "thumb": "{% if c.thumbnail %}{{ c.thumbnail.url|escapejs }}{% endif %}",
+      "teacher": "{{ c.teacher.username|escapejs }}",
+      "difficulty": "{{ c.get_difficulty_display|escapejs }}",
+      "duration": {{ c.duration_minutes|default:0 }},
+      "rating": {{ c.avg_rating|default:0 }},
+      "reviews": {{ c.reviews_count|default:0 }},
+      "topics": [{% for t in c.topics.all|slice:":3" %}"{{ t.name|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}]
+    }{% if not forloop.last %}, {% endif %}
+  {% empty %}
+  
+  {% endfor %}
+  ]
+  </script>
+
+  {% if is_paginated %}
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}">Next</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+<style>
+.page-title{margin:0 0 1rem 0}
+.filters{display:flex;gap:.5rem;align-items:center;margin-bottom:1rem}
+.search{flex:1;min-width:200px;padding:.6rem .8rem;border:1px solid #d1d5db;border-radius:8px}
+.select{padding:.6rem .8rem;border:1px solid #d1d5db;border-radius:8px;background:#fff}
+.btn{padding:.6rem 1rem;border:none;border-radius:8px;background:#667eea;color:#fff;font-weight:600;cursor:pointer}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+.class-card{display:flex;flex-direction:column;background:#fff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;box-shadow:0 2px 10px rgba(0,0,0,.05);transition:transform .15s ease, box-shadow .15s ease}
+.class-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08)}
+.thumb-wrap{position:relative;background:#f3f4f6}
+.thumb{display:block;width:100%;height:160px;object-fit:cover}
+.thumb-placeholder{display:flex;align-items:center;justify-content:center;font-weight:700;color:#667eea;height:160px}
+.badge{position:absolute;top:.5rem;left:.5rem;background:rgba(255,255,255,.9);backdrop-filter:saturate(180%) blur(8px);border-radius:999px;padding:.15rem .5rem;font-size:.8rem;font-weight:600}
+.content{padding:0.9rem 1rem 0 1rem}
+.teacher{font-size:.85rem;color:#6b7280;margin-bottom:.2rem}
+.title{margin:.1rem 0 .5rem 0;font-size:1.05rem;line-height:1.35;color:#111827}
+.topics{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.7rem}
+.pill{background:#eef2ff;color:#3730a3;border:1px solid #e0e7ff;padding:.15rem .5rem;border-radius:999px;font-size:.75rem;font-weight:600}
+.pill.more{background:#f3f4f6;color:#6b7280;border-color:#e5e7eb}
+.footer{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem .9rem 1rem}
+.meta{display:flex;align-items:center;color:#6b7280;font-size:.9rem}
+.dot{margin:0 .4rem}
+.bookmark{opacity:.6}
+@media (min-width: 1280px){.thumb{height:180px}}
+@media (max-width: 360px){.thumb{height:140px}}
+</style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script>
+const e = React.createElement;
+
+function Card({c}){
+  const href = `/classes/${c.slug}/`;
+  return e('a',{href,className:'class-card'},[
+    e('div',{className:'thumb-wrap',key:'img'},[
+      c.thumb ? e('img',{className:'thumb',src:c.thumb,alt:c.title}) : e('div',{className:'thumb thumb-placeholder'},c.title[0]?.toUpperCase()||'C'),
+      (c.rating>0&&c.reviews>0) ? e('div',{className:'badge'},`⭐ ${c.rating} • ${c.reviews}`) : null
+    ]),
+    e('div',{className:'content',key:'content'},[
+      e('div',{className:'teacher'},c.teacher),
+      e('h3',{className:'title'},c.title),
+      e('div',{className:'topics'},[
+        ...(c.topics||[]).slice(0,3).map((t,i)=>e('span',{className:'pill',key:i},t)),
+        (c.topics?.length>3) ? e('span',{className:'pill more'},`+${c.topics.length-3}`) : null
+      ])
+    ]),
+    e('div',{className:'footer',key:'foot'},[
+      e('div',{className:'meta'},[
+        e('span',{className:'level'},c.difficulty),e('span',{className:'dot'},'•'),e('span',{className:'duration'},`${c.duration}m`)
+      ]),
+      e('div',{className:'bookmark','aria-hidden':'true'},'🔖')
+    ])
+  ]);
+}
+
+function Grid(){
+  const root = document.getElementById('react-class-grid');
+  const dataEl = document.getElementById('classes-data');
+  const items = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+  return e('div',{className:'card-grid'}, items.length? items.map((c,i)=>e(Card,{c,key:i})) : [e('p',{key:'empty'},'No classes found.')]);
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const mount = document.getElementById('react-class-grid');
+  if(mount){ ReactDOM.createRoot(mount).render(e(Grid)); }
+});
+</script>
+{% endblock %}
+
+

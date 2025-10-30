@@ -55,8 +55,9 @@
             <!-- Navigation Tabs -->
             <div class="profile-nav">
                 <button class="nav-tab active" data-tab="about">About Me</button>
-                <button class="nav-tab" data-tab="teaching">Teaching Skills</button>
                 <button class="nav-tab" data-tab="learning">Learning Skills</button>
+                <button class="nav-tab" data-tab="teach">Teach on Ripple</button>
+                <button class="nav-tab" data-tab="my-classes">My Classes</button>
             </div>
 
             <!-- Tab Content -->
@@ -142,69 +143,7 @@
                     </div>
                 </div>
 
-                <!-- Teaching Skills Tab -->
-                <div id="teaching-tab" class="tab-panel">
-                    <div class="skills-section">
-                        <div class="section-header">
-                            <h2 class="section-title">Teaching Skills</h2>
-                            <button class="btn btn-primary btn-small" onclick="toggleAddSkillForm('teach')">+ Add Skill</button>
-                        </div>
-                        {% if teaching_skills %}
-                            <div class="skills-list">
-                                {% for user_skill in teaching_skills %}
-                                <div class="skill-item">
-                                    <div class="skill-icon">
-                                        {% if 'guitar' in user_skill.skill.name|lower %}
-                                            🎸
-                                        {% elif 'piano' in user_skill.skill.name|lower %}
-                                            🎹
-                                        {% elif 'web' in user_skill.skill.name|lower or 'react' in user_skill.skill.name|lower or 'vue' in user_skill.skill.name|lower %}
-                                            💻
-                                        {% elif 'design' in user_skill.skill.name|lower or 'ui' in user_skill.skill.name|lower %}
-                                            🎨
-                                        {% elif 'data' in user_skill.skill.name|lower or 'sql' in user_skill.skill.name|lower or 'python' in user_skill.skill.name|lower %}
-                                            📊
-                                        {% else %}
-                                            🔧
-                                        {% endif %}
-                                    </div>
-                                    <div class="skill-content">
-                                        <span class="skill-name">{{ user_skill.skill.name }}</span>
-                                        <div class="skill-tags">
-                                            {% if user_skill.verification_status == 'verified' %}
-                                                <span class="tag verified">Verified</span>
-                                            {% elif user_skill.verification_status == 'pending' %}
-                                                <span class="tag pending">Pending</span>
-                                            {% elif user_skill.verification_status == 'rejected' %}
-                                                <span class="tag rejected">Rejected</span>
-                                            {% else %}
-                                                <span class="tag unverified">Unverified</span>
-                                            {% endif %}
-                                            <span class="tag level">{{ user_skill.level|title }}</span>
-                                        </div>
-                                    </div>
-
-
-                                    <div class="skill-actions">
-                                        <a href="{% url 'users:delete_skill' user_skill.skill.id %}" class="btn btn-outline btn-small">Delete</a>
-                                    </div>
-
-
-                                    {% if user_skill.verification_status != 'verified' %}
-                                    <div class="skill-actions">
-                                        <a href="{% url 'users:verify_skill' user_skill.skill.id %}" class="btn btn-primary btn-small">Verify Teaching</a>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="empty-skills">
-                                <p>No teaching skills added yet.</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
+                
 
                 <!-- Learning Skills Tab -->
                 <div id="learning-tab" class="tab-panel">
@@ -252,16 +191,90 @@
                         {% endif %}
                     </div>
                 </div>
+                
+                <!-- Teach on Ripple Tab -->
+                <div id="teach-tab" class="tab-panel">
+                    <div class="skills-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Teach on Ripple</h2>
+                        </div>
+                        <div class="empty-skills" style="text-align:left;">
+                            <p style="margin-bottom: .75rem; color:#6b7280;">Apply to become a teacher, upload an intro video and thumbnail, describe your expertise, and we’ll review your application. Once approved, you can publish classes and reach learners.</p>
+                            <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary btn-small">Apply to Teach</a>
+                            <a href="{% url 'skills:class_list' %}" class="btn btn-outline btn-small" style="margin-left:.5rem;">Browse Classes</a>
+                        </div>
+
+                        {% if my_pending_applications %}
+                        <div class="skills-list" style="margin-top:1rem;">
+                            {% for app in my_pending_applications %}
+                            <div class="skill-item">
+                                <div class="skill-icon">🗂️</div>
+                                <div class="skill-content">
+                                    <span class="skill-name">{{ app.title }}</span>
+                                    <div class="skill-tags">
+                                        <span class="tag pending">Pending Review</span>
+                                        <span class="tag level">Submitted {{ app.created_at|date:"M d, Y" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- My Classes Tab -->
+                <div id="my-classes" class="tab-panel">
+                    <div class="skills-section">
+                        <div class="section-header">
+                            <h2 class="section-title">My Classes</h2>
+                            <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary btn-small">Create new class</a>
+                        </div>
+                        {% if my_classes_published or my_classes_drafts %}
+                        <div class="skills-list">
+                            {% for cls in my_classes_published %}
+                            <a href="{% url 'skills:class_detail' cls.slug %}" class="skill-item" style="text-decoration:none;">
+                                <div class="skill-icon">✅</div>
+                                <div class="skill-content">
+                                    <span class="skill-name">{{ cls.title }}</span>
+                                    <div class="skill-tags">
+                                        <span class="tag verified">Published</span>
+                                        <span class="tag level">{{ cls.get_difficulty_display }}</span>
+                                        <span class="tag level">{{ cls.duration_minutes }}m</span>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                            {% for cls in my_classes_drafts %}
+                            <a href="{% url 'skills:class_detail' cls.slug %}" class="skill-item" style="text-decoration:none;">
+                                <div class="skill-icon">📝</div>
+                                <div class="skill-content">
+                                    <span class="skill-name">{{ cls.title }}</span>
+                                    <div class="skill-tags">
+                                        <span class="tag pending">Draft</span>
+                                        {% if not cls.is_tradeable %}<span class="tag unverified">Not tradeable</span>{% endif %}
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-skills">
+                            <p>You haven’t created any classes yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
 
 
-            <!-- Add Skill Form -->
+            <!-- Add Skill Form (Learning only) -->
             <div id="add-skill-form" class="add-skill-form" style="display: none;">
                 <form method="post" action="{% url 'users:add_skill' %}">
                     {% csrf_token %}
-                    <input type="hidden" name="skill_type" id="skill_type" value="teach">
+                    <input type="hidden" name="skill_type" id="skill_type" value="learn">
                     <div class="form-header">
-                        <h3 id="form-title">Add New Teaching Skill</h3>
+                        <h3 id="form-title">Add New Learning Skill</h3>
                         <button type="button" class="close-btn" onclick="toggleAddSkillForm()">×</button>
                     </div>
                     
@@ -281,7 +294,7 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" id="submit-btn">Add Teaching Skill</button>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">Add Learning Skill</button>
                         <button type="button" class="btn btn-secondary" onclick="toggleAddSkillForm()">Cancel</button>
                     </div>
                 </form>
@@ -1110,7 +1123,7 @@
 </style>
 
 <script>
-function toggleAddSkillForm(skillType = 'teach') {
+function toggleAddSkillForm(skillType = 'learn') {
     const form = document.getElementById('add-skill-form');
     const skillTypeInput = document.getElementById('skill_type');
     const formTitle = document.getElementById('form-title');
@@ -1120,13 +1133,8 @@ function toggleAddSkillForm(skillType = 'teach') {
         // Update form based on skill type
         skillTypeInput.value = skillType;
         
-        if (skillType === 'teach') {
-            formTitle.textContent = 'Add New Teaching Skill';
-            submitBtn.textContent = 'Add Teaching Skill';
-        } else {
-            formTitle.textContent = 'Add New Learning Skill';
-            submitBtn.textContent = 'Add Learning Skill';
-        }
+        formTitle.textContent = 'Add New Learning Skill';
+        submitBtn.textContent = 'Add Learning Skill';
         
         form.style.display = 'block';
         // Add overlay
@@ -1167,7 +1175,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add active class to clicked tab and corresponding panel
             this.classList.add('active');
-            document.getElementById(targetTab + '-tab').classList.add('active');
+            const panel = document.getElementById(targetTab + '-tab') || document.getElementById(targetTab);
+            if (panel) panel.classList.add('active');
         });
     });
 });
