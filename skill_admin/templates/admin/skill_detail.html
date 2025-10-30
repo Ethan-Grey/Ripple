@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
-{% block title %} · Admin - Review {{ user_skill.skill.name }}{% endblock %}
+{% block title %} · Admin - Review Teacher Application{% endblock %}
 
 {% block content %}
 <div class="admin-container">
     <div class="admin-header">
         <div class="breadcrumb">
-            <a href="{% url 'skill_admin:skill_review' %}" class="breadcrumb-link">← Back to Reviews</a>
+            <a href="{% url 'skill_admin:skill_review' %}" class="breadcrumb-link">← Back to Applications</a>
         </div>
-        <h1>Review Skill Evidence</h1>
+        <h1>Review Teacher Application</h1>
     </div>
 
     <div class="review-content">
@@ -32,15 +32,13 @@
                         </div>
                     </div>
                     <div class="verification-status">
-                        <span class="status-badge status-{{ user_skill.verification_status }}">
-                            {% if user_skill.verification_status == 'verified' %}
-                                <i class="bi bi-check-circle-fill"></i> Verified
-                            {% elif user_skill.verification_status == 'pending' %}
+                        <span class="status-badge status-{{ application.status }}">
+                            {% if application.status == 'approved' %}
+                                <i class="bi bi-check-circle-fill"></i> Approved
+                            {% elif application.status == 'pending' %}
                                 <i class="bi bi-clock-fill"></i> Pending Review
-                            {% elif user_skill.verification_status == 'rejected' %}
+                            {% elif application.status == 'rejected' %}
                                 <i class="bi bi-x-circle-fill"></i> Rejected
-                            {% else %}
-                                <i class="bi bi-exclamation-triangle-fill"></i> Unverified
                             {% endif %}
                         </span>
                     </div>
@@ -48,115 +46,76 @@
             </div>
         </div>
 
-        <!-- Skill Information -->
+        <!-- Application Information -->
         <div class="skill-section">
             <div class="skill-card">
                 <div class="skill-header">
-                    <h3>{{ user_skill.skill.name }}</h3>
+                    <h3>{{ application.title }}</h3>
                     <div class="skill-meta">
-                        <span class="skill-level">{{ user_skill.level|title }}</span>
-                        <span class="submission-date">Submitted {{ user_skill.created_at|date:"M d, Y" }}</span>
+                        <span class="submission-date">Submitted {{ application.created_at|date:"M d, Y" }}</span>
                     </div>
                 </div>
-                
-                {% if user_skill.skill.description %}
                 <div class="skill-description">
-                    <p>{{ user_skill.skill.description }}</p>
+                    {% if application.bio %}
+                        <p>{{ application.bio|linebreaks }}</p>
+                    {% endif %}
+                    {% if application.thumbnail %}
+                        <div style="margin: 1rem 0;">
+                            <img src="{{ application.thumbnail.url }}" alt="thumbnail" style="max-width: 100%; height: auto;" />
+                        </div>
+                    {% endif %}
+                    {% if application.portfolio_links %}
+                        <p><strong>Links:</strong><br/>{{ application.portfolio_links|linebreaks }}</p>
+                    {% endif %}
+                    {% if application.expertise_topics %}
+                        <p><strong>Expertise:</strong><br/>{{ application.expertise_topics|linebreaks }}</p>
+                    {% endif %}
+                </div>
+                {% if application.intro_video %}
+                <div class="evidence-content" style="margin-top:1rem;">
+                    <video controls style="max-width:100%; height:auto;">
+                        <source src="{{ application.intro_video.url }}" type="video/mp4">
+                    </video>
                 </div>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Evidence Review -->
-        <div class="evidence-section">
-            <h3>Submitted Evidence</h3>
-            
-            {% if evidence_list %}
-                <div class="evidence-grid">
-                    {% for evidence in evidence_list %}
-                    <div class="evidence-card">
-                        <div class="evidence-header">
-                            <h4>{{ evidence.title }}</h4>
-                            {% if evidence.is_primary %}
-                                <span class="primary-badge">Primary</span>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="evidence-type">
-                            <span class="type-badge type-{{ evidence.evidence_type }}">{{ evidence.evidence_type|title }}</span>
-                        </div>
-                        
-                        {% if evidence.description %}
-                        <div class="evidence-description">
-                            <p>{{ evidence.description }}</p>
-                        </div>
-                        {% endif %}
-                        
-                        <div class="evidence-content">
-                            {% if evidence.file %}
-                                <div class="file-preview">
-                                    <a href="{{ evidence.file.url }}" target="_blank" class="file-link">
-                                        <span class="file-icon"><i class="bi bi-file-earmark-text-fill"></i></span>
-                                        <span>View File</span>
-                                    </a>
-                                    <small class="file-name">{{ evidence.file.name|slice:"20:" }}</small>
-                                </div>
-                            {% endif %}
-                            
-                            {% if evidence.link %}
-                                <div class="link-preview">
-                                    <a href="{{ evidence.link }}" target="_blank" class="link-url">
-                                        <span class="link-icon"><i class="bi bi-link-45deg"></i></span>
-                                        <span>{{ evidence.link|truncatechars:50 }}</span>
-                                    </a>
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="evidence-meta">
-                            <small class="evidence-date">Uploaded {{ evidence.created_at|date:"M d, Y" }}</small>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="empty-evidence">
-                    <div class="empty-icon">📋</div>
-                    <h4>No Evidence Submitted</h4>
-                    <p>This user has not submitted any evidence for this skill.</p>
-                </div>
-            {% endif %}
-        </div>
+        
 
         <!-- Admin Actions -->
-        {% if user_skill.verification_status == 'pending' %}
+        {% if application.status == 'pending' %}
         <div class="admin-actions">
             <div class="action-card">
-                <h3>Verification Decision</h3>
-                <p>Review the evidence above and make a decision on this skill verification request.</p>
+                <h3>Application Decision</h3>
+                <p>Review the application details above and make a decision.</p>
                 
                 <div class="action-buttons">
-                    <form method="post" action="{% url 'skill_admin:verify_skill' user.id user_skill.skill.id %}" class="action-form">
+                    <form method="post" action="{% url 'skill_admin:verify_skill' application.id %}" class="action-form">
                         {% csrf_token %}
                         <div class="form-group">
-                            <label for="verify_message">Verification Message (Optional)</label>
+                            <label for="verify_message">Approval Notes (Optional)</label>
                             <textarea name="verification_message" id="verify_message" rows="3" 
-                                    placeholder="Add a message for the user about this verification..."></textarea>
+                                    placeholder="Add a message for the applicant..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" name="is_published"> Publish now</label>
+                            <p style="margin:.25rem 0 0 0;color:#6b7280;font-size:.9rem;">Difficulty, tradeable, duration and price are taken from the applicant’s submission.</p>
                         </div>
                         <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle-fill"></i> Verify Skill
+                            <i class="bi bi-check-circle-fill"></i> Approve Application
                         </button>
                     </form>
                     
-                    <form method="post" action="{% url 'skill_admin:reject_skill' user.id user_skill.skill.id %}" class="action-form">
+                    <form method="post" action="{% url 'skill_admin:reject_skill' application.id %}" class="action-form">
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="reject_message">Rejection Reason (Required)</label>
                             <textarea name="verification_message" id="reject_message" rows="3" required
-                                    placeholder="Explain why this skill verification is being rejected..."></textarea>
+                                    placeholder="Explain why this application is being rejected..."></textarea>
                         </div>
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-x-circle-fill"></i> Reject Skill
+                            <i class="bi bi-x-circle-fill"></i> Reject Application
                         </button>
                     </form>
                 </div>
@@ -165,16 +124,16 @@
         {% endif %}
 
         <!-- Previous Admin Message -->
-        {% if user_skill.verification_message %}
+        {% if application.decision_notes %}
         <div class="admin-message">
             <h3>Admin Message</h3>
             <div class="message-content">
-                <p>{{ user_skill.verification_message }}</p>
+                <p>{{ application.decision_notes }}</p>
                 <small class="message-date">
-                    {% if user_skill.verification_status == 'verified' %}
-                        Verified on {{ user_skill.updated_at|date:"M d, Y" }}
-                    {% elif user_skill.verification_status == 'rejected' %}
-                        Rejected on {{ user_skill.updated_at|date:"M d, Y" }}
+                    {% if application.status == 'approved' %}
+                        Approved on {{ application.reviewed_at|date:"M d, Y" }}
+                    {% elif application.status == 'rejected' %}
+                        Rejected on {{ application.reviewed_at|date:"M d, Y" }}
                     {% endif %}
                 </small>
             </div>

@@ -13,7 +13,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
 from django.contrib import messages
 from .models import Profile, Evidence, IdentitySubmission
-from skills.models import UserSkill, Skill, SkillEvidence
+from skills.models import UserSkill, Skill, SkillEvidence, TeachingClass, TeacherApplication
 from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
 from .message_utils import clear_all_messages
@@ -89,8 +89,9 @@ def register(request):
             token = default_token_generator.make_token(User(username=username))
             uid = urlsafe_base64_encode(force_bytes(username))
             
+            from django.urls import reverse
             verification_url = request.build_absolute_uri(
-                f'/verify-email/{uid}/{token}/'
+                reverse('users:verify_email', args=[uid, token])
             )
             
             # Send verification email
@@ -182,6 +183,11 @@ def profile_view(request):
         'latest_submission': latest_submission,
         'teaching_skills': teaching_skills,
         'learning_skills': learning_skills,
+        # Classes authored by this user
+        'my_classes_published': TeachingClass.objects.filter(teacher=request.user, is_published=True).order_by('-created_at'),
+        'my_classes_drafts': TeachingClass.objects.filter(teacher=request.user, is_published=False).order_by('-created_at'),
+        # Pending teacher applications
+        'my_pending_applications': TeacherApplication.objects.filter(applicant=request.user, status='pending').order_by('-created_at'),
     }
     return render(request, 'users/profile/profile.html', context)
 
@@ -211,6 +217,7 @@ def view_user_profile(request, username):
         'teaching_skills': teaching_skills,
         'learning_skills': learning_skills,
         'is_own_profile': request.user == user if request.user.is_authenticated else False,
+        'public_classes': TeachingClass.objects.filter(teacher=user, is_published=True).order_by('-created_at'),
     }
     return render(request, 'users/profile/view_profile.html', context)
 

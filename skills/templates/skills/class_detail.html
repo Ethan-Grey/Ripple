@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="detail-page">
+  <section class="hero-bleed">
+    <div class="hero-container">
+      <div class="hero-media">
+        {% if cls.intro_video %}
+          <video controls poster="{% if cls.thumbnail %}{{ cls.thumbnail.url }}{% endif %}" class="hero-el">
+            <source src="{{ cls.intro_video.url }}" type="video/mp4">
+          </video>
+        {% else %}
+          <img src="{{ cls.thumbnail.url }}" alt="{{ cls.title }}" class="hero-el" />
+        {% endif %}
+      </div>
+      <div class="hero-summary">
+        <div class="breadcrumbs"><a href="/classes/">Classes</a> / <span>{{ cls.get_difficulty_display }}</span></div>
+        <h1 class="hero-title">{{ cls.title }}</h1>
+        {% if cls.short_description %}
+          <p class="hero-sub">{{ cls.short_description }}</p>
+        {% endif %}
+        <div class="hero-meta">
+          <span>{{ cls.get_difficulty_display }}</span>
+          <span>• {{ cls.duration_minutes }}m</span>
+          <span>• {{ cls.price_display }}</span>
+          {% if cls.is_tradeable %}<span>• Tradeable</span>{% endif %}
+          <span>• ⭐ {{ cls.avg_rating }} ({{ cls.reviews_count }})</span>
+        </div>
+        <div class="hero-teacher">
+          <div class="avatar">
+            {% if cls.teacher.profile.avatar %}
+              <img src="{{ cls.teacher.profile.avatar.url }}" alt="{{ cls.teacher.username }}" />
+            {% else %}
+              <div class="avatar-ph">{{ cls.teacher.username|first|upper }}</div>
+            {% endif %}
+          </div>
+          <div class="teacher-meta">
+            <div class="teacher-name">{{ cls.teacher.username }}</div>
+            <div class="teacher-sub">Instructor</div>
+          </div>
+        </div>
+        <div class="hero-cta">
+          {% if not is_enrolled and cls.price_cents and cls.price_cents > 0 %}
+            <form method="post" action="{% url 'skills:class_checkout' cls.slug %}" style="display:inline-block; margin-right:.4rem;">
+              {% csrf_token %}
+              <button type="submit" class="btn primary">Join for {{ cls.price_display }}</button>
+            </form>
+          {% endif %}
+          <a href="#reviews" class="btn ghost">Read reviews</a>
+          {% if cls.is_tradeable %}
+            <a href="#trade" class="btn ghost">Propose trade</a>
+          {% endif %}
+          {% if request.user.is_staff or request.user.id == cls.teacher_id %}
+            <form method="post" action="{% url 'skills:class_delete' cls.slug %}" style="display:inline-block; margin-left:.4rem;">
+              {% csrf_token %}
+              <button type="submit" class="btn ghost" onclick="return confirm('Delete this class? This cannot be undone.');">Delete</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="band">
+      <div class="band-row">
+        <div class="band-col">
+          <div class="band-title">Unlimited learning</div>
+          <div class="band-sub">New classes are added regularly.</div>
+        </div>
+        <div class="band-col">
+          <div class="band-title">Real‑world instructors</div>
+          <div class="band-sub">Taught by creators and professionals.</div>
+        </div>
+        <div class="band-col">
+          <div class="band-title">Clear outcomes</div>
+          <div class="band-sub">Actionable projects and exercises.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% if cls.topics.all %}
+  <section class="section u-max">
+    <h2>Lessons & Topics</h2>
+    <div class="topics">
+      {% for t in cls.topics.all %}
+        <span class="chip">{{ t.name }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if cls.full_description %}
+  <section class="section u-max">
+    <h2>About This Class</h2>
+    <div class="prose">{{ cls.full_description|linebreaks }}</div>
+  </section>
+  {% endif %}
+
+  <section class="section u-max" id="teacher">
+    <h2>Meet Your Teacher</h2>
+    <div class="teacher-inline">
+      <div class="avatar lg">
+        {% if cls.teacher.profile.avatar %}
+          <img src="{{ cls.teacher.profile.avatar.url }}" alt="{{ cls.teacher.username }}" />
+        {% else %}
+          <div class="avatar-ph">{{ cls.teacher.username|first|upper }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <div class="name">{{ cls.teacher.username }}</div>
+        {% if cls.teacher.profile.bio %}
+          <p class="muted">{{ cls.teacher.profile.bio }}</p>
+        {% else %}
+          <p class="muted">Instructor on Ripple.</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section u-max" id="reviews">
+    {% if request.GET.error %}
+    <div style="margin-bottom:0.75rem;padding:0.75rem 1rem;border:1px solid #fecaca;background:#fef2f2;color:#7f1d1d;border-radius:10px;">
+      {% if request.GET.error == 'stripe_not_installed' %}
+        Payments not configured: install Stripe and restart the server.
+      {% elif request.GET.error == 'stripe_not_configured' %}
+        Payments not configured: add STRIPE_SECRET_KEY to settings.
+      {% elif request.GET.error == 'pricing_required' %}
+        This class requires a price. Contact the teacher.
+      {% else %}
+        Unable to start checkout.
+      {% endif %}
+    </div>
+    {% endif %}
+    <h2>Reviews</h2>
+    <div id="react-review-form" data-action="{% url 'skills:class_review_create' cls.slug %}"></div>
+    <div class="reviews">
+      {% for r in cls.reviews.all %}
+        <div class="rev">
+          <div class="rev-head"><strong>{{ r.reviewer.username }}</strong><span class="stars">{{ r.rating }}/5</span></div>
+          <div class="rev-body">{{ r.comment|linebreaks }}</div>
+        </div>
+      {% empty %}
+        <p class="muted">No reviews yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if cls.is_tradeable %}
+  <section class="section u-max" id="trade">
+    <h2>Propose a trade</h2>
+    <div id="react-trade-form" data-action="{% url 'skills:class_trade_propose' cls.slug %}">
+      <template id="trade-options">
+        {% for my in request.user.teaching_classes.all %}
+          <option value="{{ my.id }}">{{ my.title }}</option>
+        {% endfor %}
+      </template>
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+<style>
+.detail-page{padding-bottom:3rem}
+.hero-bleed{background:linear-gradient(180deg,#0f172a 0%, #0f172a 48%, #ffffff 49%);color:#fff}
+.hero-container{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:1.35fr 1fr;gap:2.5rem;align-items:center;padding:2.75rem 1.25rem 1.75rem}
+.hero-media{position:relative}
+.hero-el{display:block;width:100%;height:480px;object-fit:cover;border-radius:16px;box-shadow:0 18px 50px rgba(2,6,23,.35)}
+.hero-summary{padding-bottom:1.5rem}
+.breadcrumbs{font-size:.92rem;color:#9fb0bf;margin-bottom:.5rem}
+.breadcrumbs a{color:#9fb0bf;text-decoration:none}
+.breadcrumbs a:hover{color:#cbd5e1}
+.hero-title{margin:.25rem 0 .6rem 0;line-height:1.12}
+.hero-sub{color:#d1d5db;margin:0 0 1.1rem 0}
+.hero-meta{display:flex;gap:.75rem 1rem;flex-wrap:wrap;color:#e2e8f0;margin-bottom:1.25rem}
+.hero-teacher{display:flex;align-items:center;gap:.75rem;margin:1.1rem 0}
+.avatar{width:40px;height:40px;border-radius:50%;overflow:hidden;background:#1f2937;display:flex;align-items:center;justify-content:center}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar-ph{font-weight:700;color:#cbd5e1}
+.avatar.lg{width:56px;height:56px}
+.teacher-meta .teacher-name{font-weight:700}
+.hero-cta{display:flex;gap:.8rem;margin-top:.25rem}
+.btn{border-radius:10px;padding:.7rem 1.1rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center}
+.btn.primary{background:#3b82f6;color:#fff}
+.btn.primary:hover{background:#2563eb}
+.btn.ghost{background:transparent;color:#e5e7eb;border:1px solid rgba(229,231,235,.25)}
+.btn.ghost:hover{background:rgba(255,255,255,.06)}
+.band{background:#f5f7fb;color:#0f172a;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb}
+.band-row{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;padding:1.1rem 1.25rem}
+.band-title{font-weight:800}
+.band-sub{color:#475569}
+.section.u-max{max-width:1100px;margin:2rem auto 0 auto;padding:0 1.25rem}
+.topics{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
+.chip{background:#eef2ff;color:#3730a3;border:1px solid #e0e7ff;padding:.25rem .6rem;border-radius:999px;font-size:.85rem;font-weight:600}
+.prose{color:#1f2937;line-height:1.75}
+.teacher-inline{display:flex;align-items:center;gap:.8rem}
+.name{font-weight:700}
+.muted{color:#6b7280;margin:0}
+.review-inline{display:grid;grid-template-columns:120px 1fr 120px auto;gap:.6rem;align-items:center}
+.reviews{margin-top:1rem;display:flex;flex-direction:column;gap:.9rem}
+.rev{border-bottom:1px solid #e5e7eb;padding:1rem 0}
+.rev-head{display:flex;justify-content:space-between;color:#111827}
+.stars{color:#f59e0b}
+.trade-inline{display:grid;grid-template-columns:1fr 2fr auto;gap:.6rem;align-items:center}
+@media(max-width: 1024px){.hero-container{grid-template-columns:1fr;gap:1.25rem}.hero-el{height:340px}.band-row{grid-template-columns:1fr}}
+</style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script>
+// Basic helpers
+function getCookie(name){const v=`; ${document.cookie}`.split(`; ${name}=`);if(v.length===2)return v.pop().split(';').shift();return ''}
+
+const e = React.createElement;
+
+function RxButton({children, variant='primary', type='button'}){
+  const base = 'rx-btn ' + (variant==='ghost'?'rx-ghost':'rx-primary');
+  return e('button', {className: base, type}, children);
+}
+
+function ReviewForm({action}){
+  const [rating,setRating] = React.useState(5);
+  const [comment,setComment] = React.useState('');
+  return e('form', {method:'post', action, className:'rx-form'}, [
+    e('input',{type:'hidden',name:'csrfmiddlewaretoken',value:getCookie('csrftoken'),key:'csrf'}),
+    e('div',{className:'rx-field',key:'r1'},[
+      e('label',null,'Rating'),
+      e('div',{className:'rx-stars'},[1,2,3,4,5].map(i=>e('span',{key:i,onClick:()=>setRating(i),className: 'rx-star'+(i<=rating?' active':'')},'★'))),
+      e('input',{type:'hidden',name:'rating',value:rating})
+    ]),
+    e('div',{className:'rx-field',key:'r2'},[
+      e('label',null,'Comment'),
+      e('textarea',{name:'comment',rows:3,placeholder:'Share your thoughts...',value:comment,onChange:(ev)=>setComment(ev.target.value)})
+    ]),
+    e(RxButton,{type:'submit'},'Submit review')
+  ]);
+}
+
+function TradeForm({action, optionsHtml}){
+  const [message,setMessage] = React.useState('');
+  return e('form',{method:'post', action, className:'rx-form rx-row'},[
+    e('input',{type:'hidden',name:'csrfmiddlewaretoken',value:getCookie('csrftoken'),key:'csrf'}),
+    e('div',{className:'rx-field',key:'t1'},[
+      e('label',null,'Your class to offer'),
+      e('select',{name:'offered_class_id',dangerouslySetInnerHTML:{__html:optionsHtml}})
+    ]),
+    e('div',{className:'rx-field',key:'t2'},[
+      e('label',null,'Message (optional)'),
+      e('input',{type:'text',name:'message',placeholder:'Optional note',value:message,onChange:(ev)=>setMessage(ev.target.value)})
+    ]),
+    e(RxButton,{type:'submit'},'Send offer')
+  ]);
+}
+
+function mountReact(){
+  const reviewRoot = document.getElementById('react-review-form');
+  if(reviewRoot){
+    ReactDOM.createRoot(reviewRoot).render(e(ReviewForm,{action:reviewRoot.dataset.action}));
+  }
+  const tradeRoot = document.getElementById('react-trade-form');
+  if(tradeRoot){
+    const tpl = tradeRoot.querySelector('#trade-options');
+    const optionsHtml = tpl ? tpl.innerHTML : '';
+    ReactDOM.createRoot(tradeRoot).render(e(TradeForm,{action:tradeRoot.dataset.action, optionsHtml}));
+  }
+}
+document.addEventListener('DOMContentLoaded', mountReact);
+
+// Scoped styles for React widgets
+const rxCss = `
+.rx-form{display:flex;flex-direction:column;gap:1rem;margin:.75rem 0 1.25rem 0}
+.rx-row{display:grid;grid-template-columns:1fr 2fr auto;align-items:end;gap:1rem}
+.rx-field{display:flex;flex-direction:column;gap:.45rem}
+.rx-field label{font-weight:600;color:#111827}
+.rx-field input,.rx-field select,.rx-field textarea{padding:.8rem .9rem;border:1px solid #d1d5db;border-radius:10px;background:#fff}
+.rx-stars{display:flex;gap:.2rem;font-size:1.2rem;color:#cbd5e1;cursor:pointer}
+.rx-star.active{color:#f59e0b}
+.rx-btn{border:none;border-radius:10px;padding:.75rem 1.1rem;font-weight:700;cursor:pointer}
+.rx-primary{background:#111827;color:#fff}
+.rx-primary:hover{background:#000}
+.rx-ghost{background:transparent;color:#111827;border:1px solid #d1d5db}
+.rx-ghost:hover{background:#f9fafb}
+@media(max-width: 720px){.rx-row{grid-template-columns:1fr}}
+`;
+const style = document.createElement('style');
+style.textContent = rxCss;document.head.appendChild(style);
+</script>
+{% endblock %}
+
+

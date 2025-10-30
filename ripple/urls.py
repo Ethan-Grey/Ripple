@@ -16,5 +16,7 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('communities/', include('communities.urls')),
     path('chat/', include('chat.urls')),
+    path('classes/', include('skills.urls')),
+    path('payments/webhooks/stripe/', __import__('skills.views', fromlist=['']).StripeWebhookView.as_view(), name='stripe_webhook'),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

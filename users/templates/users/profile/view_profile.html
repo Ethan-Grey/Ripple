@@ -255,26 +255,26 @@
         {% endif %}
     </div>
 
-    <!-- Teaching Skills -->
+    <!-- Classes Taught -->
     <div class="section">
         <h2 class="section-title">
-            <i class="bi bi-lightning-charge-fill"></i> Teaching Skills
+            <i class="bi bi-collection-play-fill"></i> Classes by {{ viewed_user.username }}
         </h2>
-        {% if teaching_skills %}
-        <div class="skills-grid">
-            {% for user_skill in teaching_skills %}
-            <div class="skill-card">
-                <div class="skill-icon"><i class="bi bi-mortarboard-fill"></i></div>
+        {% if public_classes %}
+        <div class="skills-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+            {% for c in public_classes %}
+            <a href="{% url 'skills:class_detail' c.slug %}" class="skill-card" style="text-decoration:none;">
+                <div class="skill-icon">🎓</div>
                 <div class="skill-info">
-                    <div class="skill-name">{{ user_skill.skill.name }}</div>
-                    <div class="skill-level">{{ user_skill.get_level_display }}</div>
+                    <div class="skill-name">{{ c.title }}</div>
+                    <div class="skill-level">{{ c.get_difficulty_display }} • {{ c.duration_minutes }}m</div>
                 </div>
-            </div>
+            </a>
             {% endfor %}
         </div>
         {% else %}
         <div class="empty-state">
-            <p>No teaching skills listed yet</p>
+            <p>No classes published yet</p>
         </div>
         {% endif %}
     </div>
