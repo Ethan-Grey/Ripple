@@ -92,7 +92,7 @@
                 <p>Added {{ swipe.created_at|timesince }} ago</p>
             </div>
             <div class="skill-actions">
-                <button class="btn-remove" onclick="removeSwipe({{ swipe.skill.id }})">Remove</button>
+                <button class="btn-remove" data-skill-id="{{ swipe.skill.id }}">Remove</button>
             </div>
         </div>
         {% endfor %}
@@ -121,7 +121,8 @@ function removeSwipe(skillId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            document.getElementById(`skill-${skillId}`).remove();
+            const el = document.getElementById(`skill-${skillId}`);
+            if (el) el.remove();
             
             // Reload if no more skills
             if (document.querySelectorAll('.skill-item').length === 0) {
@@ -130,5 +131,15 @@ function removeSwipe(skillId) {
         }
     });
 }
+
+// attach click handlers to buttons (avoid inline onclick with template braces)
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-remove').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const skillId = this.getAttribute('data-skill-id') || this.dataset.skillId;
+            removeSwipe(skillId);
+        });
+    });
+});
 </script>
 {% endblock %}
