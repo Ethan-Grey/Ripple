@@ -7,11 +7,21 @@
     <div class="hero-container">
       <div class="hero-media">
         {% if cls.intro_video %}
-          <video controls poster="{% if cls.thumbnail %}{{ cls.thumbnail.url }}{% endif %}" class="hero-video">
+          <video controls class="hero-video">
             <source src="{{ cls.intro_video.url }}" type="video/mp4">
           </video>
         {% else %}
-          <img src="{{ cls.thumbnail.url }}" alt="{{ cls.title }}" class="hero-image" />
+          <div class="hero-image hero-placeholder">
+            <div class="placeholder-content">
+              <svg class="placeholder-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+              </svg>
+              <div class="placeholder-text">
+                <span class="placeholder-title">{{ cls.title }}</span>
+                <span class="placeholder-subtitle">No video available yet</span>
+              </div>
+            </div>
+          </div>
         {% endif %}
       </div>
       
@@ -293,6 +303,82 @@
   height: 500px;
   object-fit: cover;
   border-radius: 20px;
+}
+
+.hero-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(74, 103, 255, 0.15) 0%, rgba(90, 119, 255, 0.15) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-placeholder::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(74, 103, 255, 0.05) 10px,
+    rgba(74, 103, 255, 0.05) 20px
+  );
+  animation: slide 20s linear infinite;
+}
+
+@keyframes slide {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(50px, 50px);
+  }
+}
+
+.placeholder-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+  padding: 40px;
+}
+
+.placeholder-icon {
+  width: 120px;
+  height: 120px;
+  color: var(--brand);
+  opacity: 0.6;
+  filter: drop-shadow(0 4px 12px rgba(74, 103, 255, 0.2));
+}
+
+.placeholder-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.placeholder-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--brand);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  line-height: 1.3;
+  max-width: 500px;
+}
+
+.placeholder-subtitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #6b7280;
+  opacity: 0.8;
 }
 
 .hero-content {
