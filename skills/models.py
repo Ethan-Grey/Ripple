@@ -106,3 +106,36 @@ class Match(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_a.username} ↔ {self.user_b.username}"
+
+class SwipeAction(models.Model):
+    """Track user swipe actions on skills"""
+    SWIPE_RIGHT = 'right'  # Whitelist
+    SWIPE_LEFT = 'left'    # Blacklist
+    
+    SWIPE_CHOICES = [
+        (SWIPE_RIGHT, 'Interested'),
+        (SWIPE_LEFT, 'Not Interested'),
+    ]
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='swipe_actions'
+    )
+    skill = models.ForeignKey(
+        'Skill',
+        on_delete=models.CASCADE,
+        related_name='swipe_actions'
+    )
+    action = models.CharField(
+        max_length=10,
+        choices=SWIPE_CHOICES
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'skill']
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.skill.name} - {self.action}"

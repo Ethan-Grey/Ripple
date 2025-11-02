@@ -3,6 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 from skills.models import Skill, UserSkill, Match
 from communities.models import Community
+from django.http import JsonResponse
+from skills.models import Skill, SwipeAction
+from django.views.decorators.http import require_http_methods
+import json
 
 def landing(request):
     # If user is already logged in, redirect to dashboard
@@ -140,3 +144,138 @@ def skill_detail(request, skill_id):
         'learners_count': learners.count(),
     }
     return render(request, 'core/skill_detail.html', context)
+
+@login_required
+def swipe(request):
+    """Swipe interface for discovering skills"""
+    # Get skills user hasn't swiped on yet
+    swiped_skill_ids = SwipeAction.objects.filter(
+        user=request.user
+    ).values_list('skill_id', flat=True)
+    
+    # Get next skill to show
+    available_skills = Skill.objects.exclude(
+        id__in=swiped_skill_ids
+    ).order_by('?')
+    
+    card_skill = available_skills.first()
+    
+    # Get whitelist and blacklist counts
+    whitelist_count = SwipeAction.objects.filter(
+        user=request.user,
+        action=SwipeAction.SWIPE_RIGHT
+    ).count()
+    
+    blacklist_count = SwipeAction.objects.filter(
+        user=request.user,
+        action=SwipeAction.SWIPE_LEFT
+    ).count()
+    
+    context = {
+        'card_skill': card_skill,
+        'whitelist_count': whitelist_count,
+        'blacklist_count': blacklist_count,
+        'total_skills': Skill.objects.count(),
+        'swiped_count': len(swiped_skill_ids),
+    }
+    return render(request, 'core/swipe.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def swipe_action(request):
+    """Handle swipe left/right actions via AJAX"""
+    try:
+        data = json.loads(request.body)
+        skill_id = data.get('skill_id')
+        action = data.get('action')  # 'left' or 'right'
+        
+        if not skill_id or action not in ['left', 'right']:
+            return JsonResponse({'error': 'Invalid data'}, status=400)
+        
+        skill = get_object_or_404(Skill, id=skill_id)
+        
+        # Create or update swipe action
+        swipe, created = SwipeAction.objects.update_or_create(
+            user=request.user,
+            skill=skill,
+            defaults={'action': action}
+        )
+        
+        # Get next skill
+        swiped_skill_ids = SwipeAction.objects.filter(
+            user=request.user
+        ).values_list('skill_id', flat=True)
+        
+        next_skill = Skill.objects.exclude(
+            id__in=swiped_skill_ids
+        ).order_by('?').first()
+        
+        # Get updated counts
+        whitelist_count = SwipeAction.objects.filter(
+            user=request.user,
+            action=SwipeAction.SWIPE_RIGHT
+        ).count()
+        
+        blacklist_count = SwipeAction.objects.filter(
+            user=request.user,
+            action=SwipeAction.SWIPE_LEFT
+        ).count()
+        
+        response_data = {
+            'success': True,
+            'action': action,
+            'whitelist_count': whitelist_count,
+            'blacklist_count': blacklist_count,
+        }
+        
+        if next_skill:
+            response_data['next_skill'] = {
+                'id': next_skill.id,
+                'name': next_skill.name,
+                'description': next_skill.description or 'No description available'
+            }
+        else:
+            response_data['no_more_skills'] = True
+        
+        return JsonResponse(response_data)
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def view_whitelist(request):
+    """View whitelisted skills"""
+    whitelist = SwipeAction.objects.filter(
+        user=request.user,
+        action=SwipeAction.SWIPE_RIGHT
+    ).select_related('skill')
+    
+    return render(request, 'core/whitelist.html', {'whitelist': whitelist})
+
+
+@login_required
+def view_blacklist(request):
+    """View blacklisted skills"""
+    blacklist = SwipeAction.objects.filter(
+        user=request.user,
+        action=SwipeAction.SWIPE_LEFT
+    ).select_related('skill')
+    
+    return render(request, 'core/blacklist.html', {'blacklist': blacklist})
+
+
+@login_required
+@require_http_methods(["POST"])
+def remove_swipe_action(request, skill_id):
+    """Remove a swipe action (undo swipe)"""
+    try:
+        SwipeAction.objects.filter(
+            user=request.user,
+            skill_id=skill_id
+        ).delete()
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

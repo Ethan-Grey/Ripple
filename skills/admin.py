@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Skill, UserSkill, Offer, Match
+from .models import Skill, SwipeAction, UserSkill, Offer, Match
 
 
 @admin.register(Skill)
@@ -25,3 +25,9 @@ class OfferAdmin(admin.ModelAdmin):
 class MatchAdmin(admin.ModelAdmin):
     list_display = ("user_a", "user_b", "teach_a_learn_b", "teach_b_learn_a", "created_at")
     search_fields = ("user_a__username", "user_b__username")
+
+@admin.register(SwipeAction)
+class SwipeActionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'skill', 'action', 'created_at')
+    list_filter = ('action', 'created_at')
+    search_fields = ('user__username', 'skill__name')
