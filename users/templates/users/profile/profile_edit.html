@@ -2,177 +2,275 @@
 {% block title %} · Edit Profile{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="profile-edit-header">
-        <h1>Edit Profile</h1>
-        <a href="{% url 'users:profile' %}" class="btn btn-secondary">Cancel</a>
-    </div>
+<div class="edit-profile-page">
+    <div class="edit-profile-container">
+        <!-- Header Section -->
+        <div class="edit-header">
+            <div class="header-content">
+                <div class="header-icon">✏️</div>
+                <div class="header-text">
+                    <h1 class="edit-title">Edit Your Profile</h1>
+                    <p class="edit-subtitle">Update your information and make your profile shine</p>
+                </div>
+            </div>
+            <a href="{% url 'users:profile' %}" class="btn btn-ghost">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Cancel
+            </a>
+        </div>
 
-    <form method="post" enctype="multipart/form-data" class="profile-form">
-        {% csrf_token %}
-        
-        <div class="form-section">
-            <h2>Profile Picture</h2>
-            <div class="avatar-section">
-                <div class="current-avatar">
-                    {% if profile.avatar %}
-                        <img src="{{ profile.avatar.url }}" alt="Current avatar" class="avatar-preview">
-                    {% else %}
-                        <div class="avatar-placeholder">
-                            <span>{{ profile.user.username|first|upper }}</span>
+        <!-- Form Wrapper -->
+        <div class="form-wrapper">
+            <form method="post" enctype="multipart/form-data" class="profile-form">
+                {% csrf_token %}
+                
+                <!-- Profile Picture Section -->
+                <div class="form-section">
+                    <h2 class="section-title">Profile Picture</h2>
+                    <div class="avatar-section">
+                        <div class="current-avatar">
+                            {% if profile.avatar %}
+                                <img src="{{ profile.avatar.url }}" alt="Current avatar" class="avatar-preview" id="avatarPreview">
+                            {% else %}
+                                <div class="avatar-placeholder" id="avatarPlaceholder">
+                                    <span>{{ profile.user.username|first|upper }}</span>
+                                </div>
+                            {% endif %}
                         </div>
-                    {% endif %}
+                        <div class="avatar-upload">
+                            <label for="id_avatar" class="file-upload-btn">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                Choose New Picture
+                                <input type="file" name="avatar" id="id_avatar" accept="image/*" class="file-input">
+                            </label>
+                            <small class="form-help">JPG, PNG or GIF. Max size 5MB.</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="avatar-upload">
-                    <label for="id_avatar" class="file-input-label">
-                        <span class="file-input-text">Choose New Picture</span>
-                        <input type="file" name="avatar" id="id_avatar" accept="image/*" class="file-input">
-                    </label>
-                    <small class="form-help">JPG, PNG or GIF. Max size 5MB.</small>
-                </div>
-            </div>
-        </div>
 
-        <div class="form-section">
-            <h2>About You</h2>
-            <div class="form-group">
-                <label for="id_bio">Bio</label>
-                <textarea name="bio" id="id_bio" rows="3" class="form-control bio-textarea" placeholder="Tell others about yourself, your skills, and what you're looking for...">{{ profile.bio }}</textarea>
-                <small class="form-help">Share your story and what makes you unique</small>
-            </div>
-        </div>
+                <!-- About You Section -->
+                <div class="form-section">
+                    <h2 class="section-title">About You</h2>
+                    <div class="form-group">
+                        <label for="id_bio">Bio</label>
+                        <textarea name="bio" id="id_bio" rows="4" class="form-control" placeholder="Tell others about yourself, your skills, and what you're looking for...">{{ profile.bio }}</textarea>
+                        <small class="form-help">Share your story and what makes you unique</small>
+                    </div>
+                </div>
 
-        <div class="form-section">
-            <h2>Personal Information</h2>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="id_username">Username</label>
-                    <input type="text" id="id_username" value="{{ profile.user.username }}" disabled class="form-control disabled">
-                    <small class="form-help">Username cannot be changed</small>
+                <!-- Personal Information Section -->
+                <div class="form-section">
+                    <h2 class="section-title">Personal Information</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="id_username" class="disabled-label">
+                                Username
+                                <span class="lock-icon">🔒</span>
+                            </label>
+                            <input type="text" id="id_username" value="{{ profile.user.username }}" disabled class="form-control disabled">
+                            <small class="form-help">Username cannot be changed</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_email" class="disabled-label">
+                                Email
+                                <span class="lock-icon">🔒</span>
+                            </label>
+                            <input type="email" id="id_email" value="{{ profile.user.email }}" disabled class="form-control disabled">
+                            <small class="form-help">Email cannot be changed</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="id_first_name">First Name</label>
+                            <input type="text" name="first_name" id="id_first_name" value="{{ profile.user.first_name }}" class="form-control" placeholder="Enter first name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_last_name">Last Name</label>
+                            <input type="text" name="last_name" id="id_last_name" value="{{ profile.user.last_name }}" class="form-control" placeholder="Enter last name">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="id_dob">Date of Birth</label>
+                            <input type="date" name="dob" id="id_dob" value="{% if latest_submission.dob %}{{ latest_submission.dob|date:'Y-m-d' }}{% endif %}" class="form-control">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_nationality">Nationality</label>
+                            <input type="text" name="nationality" id="id_nationality" value="{% if latest_submission %}{{ latest_submission.nationality }}{% endif %}" class="form-control" placeholder="Country of citizenship">
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="id_email">Email</label>
-                    <input type="email" id="id_email" value="{{ profile.user.email }}" disabled class="form-control disabled">
-                    <small class="form-help">Email cannot be changed</small>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="id_first_name">First Name</label>
-                    <input type="text" name="first_name" id="id_first_name" value="{{ profile.user.first_name }}" class="form-control" placeholder="Enter first name">
-                </div>
-                
-                <div class="form-group">
-                    <label for="id_last_name">Last Name</label>
-                    <input type="text" name="last_name" id="id_last_name" value="{{ profile.user.last_name }}" class="form-control" placeholder="Enter last name">
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="id_dob">Date of Birth</label>
-                    <input type="date" name="dob" id="id_dob" value="{% if latest_submission.dob %}{{ latest_submission.dob|date:'Y-m-d' }}{% endif %}" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label for="id_nationality">Nationality</label>
-                    <input type="text" name="nationality" id="id_nationality" value="{% if latest_submission %}{{ latest_submission.nationality }}{% endif %}" class="form-control" placeholder="Country of citizenship">
-                </div>
-            </div>
-        </div>
 
-        <div class="form-section">
-            <h2>Address Information</h2>
-            <div class="form-group">
-                <label for="id_address1">Residential Address</label>
-                <input type="text" name="address1" id="id_address1" value="{% if latest_submission %}{{ latest_submission.address1 }}{% endif %}" class="form-control" placeholder="Street address">
-            </div>
-            
-            <div class="form-group">
-                <label for="id_address2">Street Address 2</label>
-                <input type="text" name="address2" id="id_address2" value="{% if latest_submission %}{{ latest_submission.address2 }}{% endif %}" class="form-control" placeholder="Apartment, suite, etc. (optional)">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="id_country">Country</label>
-                    <input type="text" name="country" id="id_country" value="{% if latest_submission %}{{ latest_submission.country }}{% else %}{{ profile.location }}{% endif %}" class="form-control" placeholder="Country">
+                <!-- Address Information Section -->
+                <div class="form-section">
+                    <h2 class="section-title">Address Information</h2>
+                    
+                    <div class="form-group">
+                        <label for="id_address1">Residential Address</label>
+                        <input type="text" name="address1" id="id_address1" value="{% if latest_submission %}{{ latest_submission.address1 }}{% endif %}" class="form-control" placeholder="Street address">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_address2">Street Address 2 <span class="optional-tag">(optional)</span></label>
+                        <input type="text" name="address2" id="id_address2" value="{% if latest_submission %}{{ latest_submission.address2 }}{% endif %}" class="form-control" placeholder="Apartment, suite, etc.">
+                    </div>
+                    
+                    <div class="form-row form-row-three">
+                        <div class="form-group">
+                            <label for="id_country">Country</label>
+                            <input type="text" name="country" id="id_country" value="{% if latest_submission %}{{ latest_submission.country }}{% else %}{{ profile.location }}{% endif %}" class="form-control" placeholder="Country">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_state">State/Province</label>
+                            <input type="text" name="state" id="id_state" value="{% if latest_submission %}{{ latest_submission.state }}{% endif %}" class="form-control" placeholder="State or Province">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_postal">Postal Code</label>
+                            <input type="text" name="postal" id="id_postal" value="{% if latest_submission %}{{ latest_submission.postal }}{% endif %}" class="form-control" placeholder="Postal Code">
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="id_state">State/Province</label>
-                    <input type="text" name="state" id="id_state" value="{% if latest_submission %}{{ latest_submission.state }}{% endif %}" class="form-control" placeholder="State or Province">
-                </div>
-                
-                <div class="form-group">
-                    <label for="id_postal">Postal Code</label>
-                    <input type="text" name="postal" id="id_postal" value="{% if latest_submission %}{{ latest_submission.postal }}{% endif %}" class="form-control" placeholder="Postal Code">
-                </div>
-            </div>
-        </div>
 
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a href="{% url 'users:profile' %}" class="btn btn-secondary">Cancel</a>
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <a href="{% url 'users:profile' %}" class="btn btn-ghost-alt">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
 
 <style>
-.profile-edit-header {
+/* Page Layout */
+.edit-profile-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+    padding: 60px 24px;
+}
+
+.edit-profile-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Header Section */
+.edit-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #e1e5e9;
+    margin-bottom: 40px;
+    gap: 20px;
 }
 
-.profile-edit-header h1 {
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+}
+
+.header-icon {
+    font-size: 56px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.header-text {
+    flex: 1;
+}
+
+.edit-title {
+    font-size: 36px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.5px;
+}
+
+.edit-subtitle {
+    font-size: 16px;
+    color: #6b7280;
     margin: 0;
-    color: #2c3e50;
 }
 
-.bio-textarea {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    white-space: pre-wrap;
-    word-break: break-word;
-    resize: vertical;
-    min-height: 80px;
+/* Form Wrapper */
+.form-wrapper {
+    background: white;
+    border-radius: 24px;
+    padding: 48px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
 }
 
 .profile-form {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
 }
 
+/* Form Sections */
 .form-section {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid #e1e5e9;
+    padding-bottom: 32px;
+    border-bottom: 2px solid #f3f4f6;
 }
 
 .form-section:last-of-type {
     border-bottom: none;
-    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
-.form-section h2 {
-    margin: 0 0 1rem 0;
-    color: #2c3e50;
-    font-size: 1.1rem;
+.section-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
+.section-title::before {
+    content: '';
+    width: 4px;
+    height: 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+}
+
+/* Avatar Section */
 .avatar-section {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 32px;
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-radius: 16px;
+    border: 2px solid rgba(102, 126, 234, 0.1);
 }
 
 .current-avatar {
@@ -180,184 +278,287 @@
 }
 
 .avatar-preview {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #e1e5e9;
+    border: 4px solid white;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .avatar-placeholder {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 1.5rem;
-    font-weight: bold;
+    font-size: 40px;
+    font-weight: 800;
+    border: 4px solid white;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .avatar-upload {
     flex: 1;
 }
 
-.file-input-label {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    background: #f8f9fa;
-    border: 2px dashed #dee2e6;
-    border-radius: 6px;
+.file-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    font-weight: 700;
+    font-size: 15px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    margin-bottom: 10px;
 }
 
-.file-input-label:hover {
-    background: #e9ecef;
-    border-color: #adb5bd;
+.file-upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.file-upload-btn svg {
+    flex-shrink: 0;
 }
 
 .file-input {
     display: none;
 }
 
-.file-input-text {
-    color: #495057;
-    font-weight: 500;
-}
-
+/* Form Groups */
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 20px;
 }
 
-.form-row:last-child {
-    margin-bottom: 0;
+.form-row-three {
+    grid-template-columns: 1fr 1fr 1fr;
 }
 
 .form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group:last-child {
-    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .form-group label {
-    display: block;
-    margin-bottom: 0.4rem;
+    font-size: 14px;
+    font-weight: 700;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.disabled-label {
+    color: #9ca3af !important;
+}
+
+.lock-icon {
+    font-size: 12px;
+}
+
+.optional-tag {
+    font-size: 12px;
     font-weight: 500;
-    color: #2c3e50;
-    font-size: 0.9rem;
+    color: #9ca3af;
 }
 
 .form-control {
     width: 100%;
-    padding: 0.6rem;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    padding: 14px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f9fafb;
+    font-size: 15px;
+    font-family: inherit;
+    color: #111827;
+    transition: all 0.2s ease;
 }
 
 .form-control:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
 .form-control.disabled {
-    background: #f8f9fa;
-    color: #6c757d;
+    background: #f3f4f6;
+    color: #9ca3af;
     cursor: not-allowed;
+    border-color: #e5e7eb;
 }
 
-.form-control[type="file"] {
-    padding: 0.5rem;
+.form-control::placeholder {
+    color: #9ca3af;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
 }
 
 .form-help {
-    display: block;
-    margin-top: 0.25rem;
-    color: #6c757d;
-    font-size: 0.8rem;
+    font-size: 13px;
+    color: #6b7280;
 }
 
-
+/* Form Actions */
 .form-actions {
     display: flex;
-    gap: 1rem;
+    gap: 16px;
     justify-content: flex-end;
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #e1e5e9;
+    padding-top: 32px;
+    border-top: 2px solid #f3f4f6;
 }
 
+/* Buttons */
 .btn {
-    display: inline-block;
-    padding: 0.6rem 1.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 28px;
     border: none;
-    border-radius: 6px;
-    font-weight: 500;
-    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
     cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn svg {
+    flex-shrink: 0;
 }
 
 .btn-primary {
-    background: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .btn-primary:hover {
-    background: #5a67d8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     color: white;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    transform: translateY(-1px);
 }
 
-.btn-secondary {
-    background: #4a5568;
-    color: white;
-    box-shadow: 0 2px 8px rgba(74, 85, 104, 0.3);
+.btn-ghost {
+    background: transparent;
+    color: #6b7280;
+    border: 2px solid #e5e7eb;
 }
 
-.btn-secondary:hover {
-    background: #2d3748;
-    color: white;
-    box-shadow: 0 4px 12px rgba(74, 85, 104, 0.4);
-    transform: translateY(-1px);
+.btn-ghost:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    color: #374151;
 }
 
-.container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 1.5rem;
+.btn-ghost-alt {
+    background: white;
+    color: #6b7280;
+    border: 2px solid #d1d5db;
 }
 
-/* File input preview */
-.file-input:focus + .file-input-label {
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+.btn-ghost-alt:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    color: #374151;
 }
 
-/* Responsive adjustments */
+/* Responsive Design */
 @media (max-width: 768px) {
-    .form-row {
+    .edit-profile-page {
+        padding: 40px 16px;
+    }
+    
+    .edit-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .header-icon {
+        font-size: 48px;
+    }
+    
+    .edit-title {
+        font-size: 28px;
+    }
+    
+    .edit-subtitle {
+        font-size: 14px;
+    }
+    
+    .form-wrapper {
+        padding: 32px 24px;
+        border-radius: 20px;
+    }
+    
+    .avatar-section {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .file-upload-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-row,
+    .form-row-three {
         grid-template-columns: 1fr;
     }
     
+    .form-actions {
+        flex-direction: column-reverse;
+    }
     
-    .container {
-        padding: 1rem;
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-icon {
+        font-size: 40px;
+    }
+    
+    .edit-title {
+        font-size: 24px;
+    }
+    
+    .form-wrapper {
+        padding: 24px 20px;
+    }
+    
+    .avatar-preview,
+    .avatar-placeholder {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .avatar-placeholder {
+        font-size: 32px;
     }
 }
 </style>
@@ -369,20 +570,28 @@ document.getElementById('id_avatar').addEventListener('change', function(e) {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const preview = document.querySelector('.avatar-preview');
+            const preview = document.getElementById('avatarPreview');
+            const placeholder = document.getElementById('avatarPlaceholder');
+            
             if (preview) {
+                // Update existing image
                 preview.src = e.target.result;
-            } else {
+            } else if (placeholder) {
                 // Replace placeholder with image
-                const placeholder = document.querySelector('.avatar-placeholder');
-                if (placeholder) {
-                    placeholder.innerHTML = `<img src="${e.target.result}" alt="Preview" class="avatar-preview">`;
-                }
+                placeholder.outerHTML = `<img src="${e.target.result}" alt="Avatar preview" class="avatar-preview" id="avatarPreview">`;
             }
         };
         reader.readAsDataURL(file);
     }
 });
 
+// Add visual feedback when file is selected
+document.getElementById('id_avatar').addEventListener('change', function(e) {
+    const fileName = e.target.files[0]?.name;
+    if (fileName) {
+        // You could show the filename here if desired
+        console.log('Selected file:', fileName);
+    }
+});
 </script>
 {% endblock %}
