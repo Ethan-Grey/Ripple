@@ -1,6 +1,15 @@
 {% extends 'base.html' %}
 {% block title %} · Messages{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Hide Django messages popup on messages page */
+    .page-body > .alert {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <style>
 .messages-container {

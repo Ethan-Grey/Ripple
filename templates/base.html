@@ -1,4 +1,5 @@
 {% load static %}
+{% load skills_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -176,6 +177,16 @@
                 <a class="nav-item" href="{% url 'chat:messages' %}">
                     <i class="bi bi-chat-dots nav-icon"></i>
                     <span class="nav-text">Messages</span>
+                </a>
+                <a class="nav-item" href="{% url 'skills:trade_offers' %}">
+                    <i class="bi bi-arrow-left-right nav-icon"></i>
+                    <span class="nav-text">Trade Offers</span>
+                    {% if user.is_authenticated %}
+                        {% pending_trade_offers_count as pending_count %}
+                        {% if pending_count > 0 %}
+                            <span style="background:#ef4444;color:white;border-radius:10px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:auto;">{{ pending_count }}</span>
+                        {% endif %}
+                    {% endif %}
                 </a>
                 <a class="nav-item" href="{% url 'users:profile' %}">
                     <i class="bi bi-person nav-icon"></i>
