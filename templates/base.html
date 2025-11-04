@@ -177,7 +177,10 @@
                     <i class="bi bi-person nav-icon"></i>
                     <span class="nav-text">Profile</span>
                 </a>
-                
+                <a class="nav-item" href="{% url 'users:applications' %}">
+                    <i class="bi bi-clipboard2-plus nav-icon"></i>
+                    <span class="nav-text">Applications</span>
+                </a>
                 {% if user.is_staff %}
                     <hr class="my-3 border-secondary">
                     <div class="admin-section-label">Admin Section</div>

@@ -17,7 +17,7 @@ from skills.models import UserSkill, Skill, SkillEvidence
 from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
 from .message_utils import clear_all_messages
-
+from communities.models import CommunityRequest
 # Create your views here.
 
 def custom_login(request):
@@ -689,3 +689,57 @@ def view_verification_status(request):
         'latest_submission': latest_submission,
     }
     return render(request, 'users/profile/verification_status.html', context)
+
+@login_required
+def applications_view(request):
+    """Centralized view for all user applications and requests"""
+    
+    # Get user's community requests
+    community_requests = CommunityRequest.objects.filter(
+        requester=request.user
+    ).select_related('skill', 'reviewed_by').order_by('-created_at')
+    
+    # Get user's skill verifications (teaching applications)
+    skill_verifications = UserSkill.objects.filter(
+        user=request.user,
+        can_teach=True
+    ).select_related('skill').prefetch_related('evidence').order_by('-updated_at')
+    
+    # Get user's identity verification status
+    profile = request.user.profile
+    identity_submissions = profile.identity_submissions.order_by('-created_at')
+    latest_identity = identity_submissions.first()
+    
+    # Count statistics
+    stats = {
+        'total_applications': (
+            community_requests.count() + 
+            skill_verifications.count() + 
+            (1 if latest_identity else 0)
+        ),
+        'pending_count': (
+            community_requests.filter(status='pending').count() + 
+            skill_verifications.filter(verification_status='pending').count() +
+            (1 if profile.verification_status == 'pending' else 0)
+        ),
+        'approved_count': (
+            community_requests.filter(status='approved').count() + 
+            skill_verifications.filter(verification_status='verified').count() +
+            (1 if profile.verification_status == 'verified' else 0)
+        ),
+        'rejected_count': (
+            community_requests.filter(status='rejected').count() + 
+            skill_verifications.filter(verification_status='rejected').count()
+        ),
+    }
+    
+    context = {
+        'community_requests': community_requests,
+        'skill_verifications': skill_verifications,
+        'profile': profile,
+        'latest_identity': latest_identity,
+        'identity_submissions': identity_submissions,
+        'stats': stats,
+    }
+    
+    return render(request, 'users/applications.html', context)

@@ -69,6 +69,36 @@
     background: #fecaca;
 }
 
+.learning-badge {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.filter-section {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-section label {
+    font-weight: 600;
+}
+
+.filter-section select {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: white;
+    cursor: pointer;
+}
+
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
@@ -84,11 +114,24 @@
     </div>
 
     {% if whitelist %}
+    <div class="filter-section">
+        <label for="filter-select">Filter:</label>
+        <select id="filter-select">
+            <option value="all">All Skills</option>
+            <option value="learning">Skills I Want to Learn</option>
+        </select>
+    </div>
+    
     <div class="skill-list">
         {% for swipe in whitelist %}
-        <div class="skill-item" id="skill-{{ swipe.skill.id }}">
+        <div class="skill-item" id="skill-{{ swipe.skill.id }}" data-is-learning="{% if swipe.skill.id in learning_skill_ids %}true{% else %}false{% endif %}">
             <div class="skill-info">
-                <h3>{{ swipe.skill.name }}</h3>
+                <h3>
+                    {{ swipe.skill.name }}
+                    {% if swipe.skill.id in learning_skill_ids %}
+                    <span class="learning-badge">📚 Want to Learn</span>
+                    {% endif %}
+                </h3>
                 <p>Added {{ swipe.created_at|timesince }} ago</p>
             </div>
             <div class="skill-actions">
@@ -140,6 +183,44 @@ document.addEventListener('DOMContentLoaded', function() {
             removeSwipe(skillId);
         });
     });
+    
+    // Filter functionality
+    const filterSelect = document.getElementById('filter-select');
+    if (filterSelect) {
+        filterSelect.addEventListener('change', function() {
+            const filterValue = this.value;
+            const skillItems = document.querySelectorAll('.skill-item');
+            
+            skillItems.forEach(item => {
+                if (filterValue === 'all') {
+                    item.style.display = 'flex';
+                } else if (filterValue === 'learning') {
+                    const isLearning = item.getAttribute('data-is-learning') === 'true';
+                    item.style.display = isLearning ? 'flex' : 'none';
+                }
+            });
+            
+            // Check if any items are visible
+            const visibleItems = Array.from(skillItems).filter(item => item.style.display !== 'none');
+            if (visibleItems.length === 0) {
+                // Show message if no items match filter
+                const existingMessage = document.querySelector('.filter-empty-message');
+                if (!existingMessage) {
+                    const message = document.createElement('div');
+                    message.className = 'filter-empty-message';
+                    message.style.cssText = 'text-align: center; padding: 3rem 2rem; background: white; border-radius: 12px; margin-top: 1rem;';
+                    message.innerHTML = '<p style="color: #6b7280; font-size: 1.1rem;">No skills match this filter</p>';
+                    document.querySelector('.skill-list').appendChild(message);
+                }
+            } else {
+                // Remove empty message if it exists
+                const existingMessage = document.querySelector('.filter-empty-message');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+            }
+        });
+    }
 });
 </script>
 {% endblock %}
