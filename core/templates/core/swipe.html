@@ -7,6 +7,7 @@
     max-width: 600px;
     margin: 0 auto;
     padding: 2rem 1rem;
+    user-select: none;
 }
 
 .swipe-stats {
@@ -23,6 +24,11 @@
     border-radius: 12px;
     text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
 }
 
 .stat-number {
@@ -48,9 +54,15 @@
 .card-container {
     perspective: 1000px;
     margin-bottom: 2rem;
+    position: relative;
+    height: 450px;
 }
 
 .skill-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     background: white;
     border-radius: 16px;
     padding: 3rem 2rem;
@@ -60,7 +72,17 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    cursor: grab;
+    touch-action: none;
+}
+
+.skill-card:active {
+    cursor: grabbing;
+}
+
+.skill-card.swiping {
+    transition: none;
 }
 
 .skill-card.swipe-left {
@@ -83,6 +105,30 @@
         transform: translateX(150%) rotate(30deg);
         opacity: 0;
     }
+}
+
+.swipe-indicator {
+    position: absolute;
+    top: 20px;
+    font-size: 6rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.swipe-indicator.left {
+    left: 20px;
+    color: #ef4444;
+}
+
+.swipe-indicator.right {
+    right: 20px;
+    color: #10b981;
+}
+
+.swipe-indicator.active {
+    opacity: 0.8;
 }
 
 .skill-card h2 {
@@ -195,30 +241,69 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+
+.keyboard-hint {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+    .swipe-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .card-container {
+        height: 400px;
+    }
+
+    .skill-card {
+        padding: 2rem 1.5rem;
+        min-height: 350px;
+    }
+
+    .skill-card h2 {
+        font-size: 2rem;
+    }
+
+    .swipe-indicator {
+        font-size: 4rem;
+    }
+}
 </style>
 
 <div class="swipe-container">
     <!-- Stats -->
-    <div class="swipe-stats">
-        <a href="{% url 'core:whitelist' %}" class="stat-card whitelist">
-            <span class="stat-number" id="whitelist-count">{{ whitelist_count }}</span>
-            <span class="stat-label">Interested</span>
-        </a>
-        
-        <div class="stat-card">
-            <span class="stat-number">{{ swiped_count }}/{{ total_skills }}</span>
-            <span class="stat-label">Swiped</span>
-        </div>
-        
-        <a href="{% url 'core:blacklist' %}" class="stat-card blacklist">
-            <span class="stat-number" id="blacklist-count">{{ blacklist_count }}</span>
-            <span class="stat-label">Not Interested</span>
-        </a>
-    </div>
+    <div
+  id="swipe-stats"
+  class="swipe-stats{% if not has_swiped %} hidden{% endif %}"
+  role="region"
+  aria-label="Swipe statistics"
+>
+  <a href="{% url 'core:blacklist' %}" class="stat-card blacklist" aria-label="Not Interested">
+    <span class="stat-number" id="blacklist-count" aria-live="polite">{{ blacklist_count|default:0 }}</span>
+    <span class="stat-label">Not Interested</span>
+  </a>
+
+  <div class="stat-card" aria-hidden="false">
+    <span class="stat-number" aria-live="polite">
+      <span id="swiped-count">{{ swiped_count|default:0 }}</span>/<span id="total-skills">{{ total_skills|default:0 }}</span>
+    </span>
+    <span class="stat-label">Swiped</span>
+  </div>
+
+  <a href="{% url 'core:whitelist' %}" class="stat-card whitelist" aria-label="Interested">
+    <span class="stat-number" id="whitelist-count" aria-live="polite">{{ whitelist_count|default:0 }}</span>
+    <span class="stat-label">Interested</span>
+  </a>
+</div>
 
     <!-- Card Container -->
     <div class="card-container">
         {% if card_skill %}
+        <div class="swipe-indicator left">✕</div>
+        <div class="swipe-indicator right">❤</div>
         <div class="skill-card" id="skill-card" data-skill-id="{{ card_skill.id }}">
             <h2>{{ card_skill.name }}</h2>
             <hr style="width: 100px; margin: 1rem auto; border: 2px solid #e5e7eb;"/>
@@ -247,6 +332,10 @@
             ❤
         </button>
     </div>
+    
+    <div class="keyboard-hint">
+        💡 Use ← and → arrow keys or swipe the card
+    </div>
     {% endif %}
 
     <!-- View Lists -->
@@ -262,9 +351,19 @@
 
 <script>
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+const card = document.getElementById('skill-card');
+const leftIndicator = document.querySelector('.swipe-indicator.left');
+const rightIndicator = document.querySelector('.swipe-indicator.right');
+
+// Touch/Mouse tracking
+let isDragging = false;
+let startX = 0;
+let currentX = 0;
+let cardStartX = 0;
 
 function swipe(action) {
-    const card = document.getElementById('skill-card');
+    if (!card) return;
+    
     const skillId = card.dataset.skillId;
     
     // Add animation
@@ -295,7 +394,8 @@ function swipe(action) {
                     card.classList.remove('swipe-left', 'swipe-right');
                     card.dataset.skillId = data.next_skill.id;
                     card.querySelector('h2').textContent = data.next_skill.name;
-                    card.querySelector('p').textContent = data.next_skill.description;
+                    card.querySelector('p').textContent = data.next_skill.description || 'Discover this skill and connect with others who share your interest!';
+                    card.style.transform = '';
                 } else {
                     // No more skills
                     card.parentElement.innerHTML = `
@@ -316,11 +416,100 @@ function swipe(action) {
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
+    if (!card) return;
+    
     if (e.key === 'ArrowLeft') {
         swipe('left');
     } else if (e.key === 'ArrowRight') {
         swipe('right');
     }
 });
+
+// Touch/Mouse events for swiping
+if (card) {
+    // Mouse events
+    card.addEventListener('mousedown', handleStart);
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleEnd);
+    
+    // Touch events
+    card.addEventListener('touchstart', handleStart, { passive: false });
+    document.addEventListener('touchmove', handleMove, { passive: false });
+    document.addEventListener('touchend', handleEnd);
+}
+
+function handleStart(e) {
+    if (!card) return;
+    
+    isDragging = true;
+    card.classList.add('swiping');
+    
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    startX = clientX;
+    cardStartX = 0;
+    
+    if (e.type.includes('touch')) {
+        e.preventDefault();
+    }
+}
+
+function handleMove(e) {
+    if (!isDragging || !card) return;
+    
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    currentX = clientX - startX;
+    
+    // Apply transform
+    const rotation = currentX / 20;
+    card.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
+    
+    // Show indicators
+    if (currentX < -50) {
+        leftIndicator.classList.add('active');
+        rightIndicator.classList.remove('active');
+    } else if (currentX > 50) {
+        rightIndicator.classList.add('active');
+        leftIndicator.classList.remove('active');
+    } else {
+        leftIndicator.classList.remove('active');
+        rightIndicator.classList.remove('active');
+    }
+}
+
+function handleEnd(e) {
+    if (!isDragging || !card) return;
+    
+    isDragging = false;
+    card.classList.remove('swiping');
+    
+    // Hide indicators
+    leftIndicator.classList.remove('active');
+    rightIndicator.classList.remove('active');
+    
+    // Determine swipe action
+    const threshold = 100;
+    
+    if (currentX < -threshold) {
+        // Swipe left
+        swipe('left');
+    } else if (currentX > threshold) {
+        // Swipe right
+        swipe('right');
+    } else {
+        // Return to center
+        card.style.transform = '';
+    }
+    
+    currentX = 0;
+}
+
+// Prevent default touch behaviors on the card
+if (card) {
+    card.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+}
 </script>
 {% endblock %}

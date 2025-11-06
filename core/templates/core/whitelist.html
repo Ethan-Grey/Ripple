@@ -22,6 +22,98 @@
     gap: 0.5rem;
 }
 
+.filter-section {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.search-box .clear-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0.25rem;
+    display: none;
+    transition: color 0.2s;
+}
+
+.search-box .clear-btn:hover {
+    color: #ef4444;
+}
+
+.search-box .clear-btn.visible {
+    display: block;
+}
+
+.filter-dropdown {
+    position: relative;
+}
+
+.filter-dropdown select {
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: white;
+    cursor: pointer;
+    appearance: none;
+    transition: all 0.2s;
+}
+
+.filter-dropdown select:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.filter-dropdown::after {
+    content: '▼';
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #6b7280;
+}
+
+.results-count {
+    padding: 0.5rem 1rem;
+    background: #f3f4f6;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
 .skill-list {
     display: flex;
     flex-direction: column;
@@ -36,6 +128,23 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: all 0.2s ease;
+    opacity: 1;
+    transform: scale(1);
+}
+
+.skill-item.hidden {
+    display: none;
+}
+
+.skill-item.fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.skill-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .skill-info h3 {
@@ -63,10 +172,12 @@
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
+    transition: all 0.2s;
 }
 
 .btn-remove:hover {
     background: #fecaca;
+    transform: scale(1.05);
 }
 
 .learning-badge {
@@ -80,51 +191,70 @@
     margin-left: 0.5rem;
 }
 
-.filter-section {
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.filter-section label {
-    font-weight: 600;
-}
-
-.filter-section select {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    border: 1px solid #d1d5db;
-    background: white;
-    cursor: pointer;
-}
-
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
     background: white;
     border-radius: 12px;
 }
+
+.no-results {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 12px;
+    color: #6b7280;
+}
+
+.no-results-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 640px) {
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-box {
+        width: 100%;
+    }
+
+    .filter-dropdown {
+        width: 100%;
+    }
+
+    .filter-dropdown select {
+        width: 100%;
+    }
+}
 </style>
 
 <div class="list-container">
     <div class="list-header">
-        <h1>Interested Skills</h1>
+        <h1>✨ Interested Skills</h1>
         <p>Skills you're interested in learning or exploring</p>
     </div>
 
     {% if whitelist %}
     <div class="filter-section">
-        <label for="filter-select">Filter:</label>
-        <select id="filter-select">
-            <option value="all">All Skills</option>
-            <option value="learning">Skills I Want to Learn</option>
-        </select>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Search skills..." autocomplete="off">
+            <button class="clear-btn" id="clear-search" aria-label="Clear search">✕</button>
+        </div>
+
+        <div class="results-count">
+            <span id="results-count">{{ whitelist|length }}</span> skill{{ whitelist|length|pluralize }}
+        </div>
     </div>
     
-    <div class="skill-list">
+    <div class="skill-list" id="skill-list">
         {% for swipe in whitelist %}
-        <div class="skill-item" id="skill-{{ swipe.skill.id }}" data-is-learning="{% if swipe.skill.id in learning_skill_ids %}true{% else %}false{% endif %}">
+        <div class="skill-item" 
+             data-skill-id="{{ swipe.skill.id }}"
+             data-skill-name="{{ swipe.skill.name|lower }}"
+             data-is-learning="{% if swipe.skill.id in learning_skill_ids %}true{% else %}false{% endif %}">
             <div class="skill-info">
                 <h3>
                     {{ swipe.skill.name }}
@@ -140,6 +270,12 @@
         </div>
         {% endfor %}
     </div>
+
+    <div class="no-results" id="no-results" style="display: none;">
+        <div class="no-results-icon">🔍</div>
+        <h3>No skills found</h3>
+        <p>Try adjusting your search or filter</p>
+    </div>
     {% else %}
     <div class="empty-state">
         <h3>No interested skills yet</h3>
@@ -152,74 +288,117 @@
 <script>
 const csrftoken = '{{ csrf_token }}';
 
-function removeSwipe(skillId) {
-    if (!confirm('Remove this skill from your whitelist?')) return;
-    
-    fetch(`/swipe/remove/${skillId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const el = document.getElementById(`skill-${skillId}`);
-            if (el) el.remove();
-            
-            // Reload if no more skills
-            if (document.querySelectorAll('.skill-item').length === 0) {
-                location.reload();
-            }
+// Filter and search functionality
+const searchInput = document.getElementById('search-input');
+const clearBtn = document.getElementById('clear-search');
+const skillList = document.getElementById('skill-list');
+const resultsCount = document.getElementById('results-count');
+const noResults = document.getElementById('no-results');
+const skillItems = document.querySelectorAll('.skill-item');
+
+function updateResults() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    skillItems.forEach(item => {
+        const skillName = item.dataset.skillName;
+        const matchesSearch = !searchTerm || skillName.includes(searchTerm);
+        
+        if (matchesSearch) {
+            item.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            item.classList.add('hidden');
         }
     });
+
+    resultsCount.textContent = visibleCount;
+
+    if (visibleCount === 0 && skillItems.length > 0) {
+        skillList.style.display = 'none';
+        noResults.style.display = 'block';
+    } else {
+        skillList.style.display = 'flex';
+        noResults.style.display = 'none';
+    }
+
+    if (searchTerm) {
+        clearBtn.classList.add('visible');
+    } else {
+        clearBtn.classList.remove('visible');
+    }
 }
 
-// attach click handlers to buttons (avoid inline onclick with template braces)
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.btn-remove').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const skillId = this.getAttribute('data-skill-id') || this.dataset.skillId;
-            removeSwipe(skillId);
-        });
-    });
+searchInput.addEventListener('input', updateResults);
+
+clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    updateResults();
+    searchInput.focus();
+});
+
+// Remove skill with animation - FIXED VERSION
+function removeSwipe(skillId, buttonElement) {
+    if (!confirm('Remove this skill from your whitelist?')) return;
     
-    // Filter functionality
-    const filterSelect = document.getElementById('filter-select');
-    if (filterSelect) {
-        filterSelect.addEventListener('change', function() {
-            const filterValue = this.value;
-            const skillItems = document.querySelectorAll('.skill-item');
-            
-            skillItems.forEach(item => {
-                if (filterValue === 'all') {
-                    item.style.display = 'flex';
-                } else if (filterValue === 'learning') {
-                    const isLearning = item.getAttribute('data-is-learning') === 'true';
-                    item.style.display = isLearning ? 'flex' : 'none';
-                }
-            });
-            
-            // Check if any items are visible
-            const visibleItems = Array.from(skillItems).filter(item => item.style.display !== 'none');
-            if (visibleItems.length === 0) {
-                // Show message if no items match filter
-                const existingMessage = document.querySelector('.filter-empty-message');
-                if (!existingMessage) {
-                    const message = document.createElement('div');
-                    message.className = 'filter-empty-message';
-                    message.style.cssText = 'text-align: center; padding: 3rem 2rem; background: white; border-radius: 12px; margin-top: 1rem;';
-                    message.innerHTML = '<p style="color: #6b7280; font-size: 1.1rem;">No skills match this filter</p>';
-                    document.querySelector('.skill-list').appendChild(message);
+    const skillItem = buttonElement.closest('.skill-item');
+    if (!skillItem) {
+        console.error('Could not find skill item');
+        return;
+    }
+    
+    skillItem.classList.add('fade-out');
+    
+    setTimeout(() => {
+        fetch(`/swipe/remove/${skillId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                skillItem.remove();
+                
+                const remainingSkills = document.querySelectorAll('.skill-item:not(.hidden)').length;
+                resultsCount.textContent = remainingSkills;
+                
+                if (document.querySelectorAll('.skill-item').length === 0) {
+                    location.reload();
+                } else {
+                    updateResults();
                 }
             } else {
-                // Remove empty message if it exists
-                const existingMessage = document.querySelector('.filter-empty-message');
-                if (existingMessage) {
-                    existingMessage.remove();
-                }
+                skillItem.classList.remove('fade-out');
+                alert('Failed to remove skill. Please try again.');
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            skillItem.classList.remove('fade-out');
+            alert('An error occurred. Please try again.');
         });
+    }, 200);
+}
+
+// Attach click handlers - FIXED VERSION
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-remove').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const skillId = this.getAttribute('data-skill-id');
+            console.log('Remove clicked for skill:', skillId);
+            removeSwipe(skillId, this);
+        });
+    });
+});
+
+// Keyboard shortcuts
+searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        searchInput.value = '';
+        updateResults();
     }
 });
 </script>

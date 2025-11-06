@@ -177,6 +177,7 @@ def swipe(request):
         'blacklist_count': blacklist_count,
         'total_skills': Skill.objects.count(),
         'swiped_count': len(swiped_skill_ids),
+        'has_swiped': len(swiped_skill_ids) > 0,  # Show stats only if user has swiped
     }
     return render(request, 'core/swipe.html', context)
 
@@ -252,8 +253,16 @@ def view_whitelist(request):
         action=SwipeAction.SWIPE_RIGHT
     ).select_related('skill')
     
-    return render(request, 'core/whitelist.html', {'whitelist': whitelist})
-
+    # Get learning skill IDs for badges
+    learning_skill_ids = UserSkill.objects.filter(
+        user=request.user,
+        wants_to_learn=True
+    ).values_list('skill_id', flat=True)
+    
+    return render(request, 'core/whitelist.html', {
+        'whitelist': whitelist,
+        'learning_skill_ids': learning_skill_ids
+    })
 
 @login_required
 def view_blacklist(request):
