@@ -1,19 +1,515 @@
 {% extends 'base.html' %}
-
-{% block title %} · Swipe{% endblock %}
+{% block title %} · Swipe Skills{% endblock %}
 
 {% block content %}
-<div style="display:flex;gap:20px;align-items:center;justify-content:center;min-height:60vh">
-  <button class="nav-item" onclick="location.reload()" style="background:#f5d6d6">⟲</button>
-  <div class="card hero" style="width:520px;text-align:center">
-    <h2>{% if card_skill %}{{ card_skill.name }}{% else %}No skills yet{% endif %}</h2>
-    <hr/>
-    <p>{% if card_skill %}{{ card_skill.description|default:'No description' }}{% endif %}</p>
-  </div>
-  <div style="display:flex;gap:12px">
-    <button class="nav-item" style="background:#ffd9df" onclick="alert('Dislike')">✕</button>
-    <button class="nav-item" style="background:#d9ffe2" onclick="alert('Like')">❤</button>
-  </div>
-</div>
-{% endblock %}
+<style>
+.swipe-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    user-select: none;
+}
 
+.swipe-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.stat-card {
+    flex: 1;
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.stat-card.whitelist .stat-number {
+    color: #10b981;
+}
+
+.stat-card.blacklist .stat-number {
+    color: #ef4444;
+}
+
+.card-container {
+    perspective: 1000px;
+    margin-bottom: 2rem;
+    position: relative;
+    height: 450px;
+}
+
+.skill-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    cursor: grab;
+    touch-action: none;
+}
+
+.skill-card:active {
+    cursor: grabbing;
+}
+
+.skill-card.swiping {
+    transition: none;
+}
+
+.skill-card.swipe-left {
+    animation: swipeLeft 0.5s ease-out forwards;
+}
+
+.skill-card.swipe-right {
+    animation: swipeRight 0.5s ease-out forwards;
+}
+
+@keyframes swipeLeft {
+    to {
+        transform: translateX(-150%) rotate(-30deg);
+        opacity: 0;
+    }
+}
+
+@keyframes swipeRight {
+    to {
+        transform: translateX(150%) rotate(30deg);
+        opacity: 0;
+    }
+}
+
+.swipe-indicator {
+    position: absolute;
+    top: 20px;
+    font-size: 6rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.swipe-indicator.left {
+    left: 20px;
+    color: #ef4444;
+}
+
+.swipe-indicator.right {
+    right: 20px;
+    color: #10b981;
+}
+
+.swipe-indicator.active {
+    opacity: 0.8;
+}
+
+.skill-card h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: #1f2937;
+}
+
+.skill-card p {
+    font-size: 1.1rem;
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+.swipe-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.swipe-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.swipe-btn:hover {
+    transform: scale(1.1);
+}
+
+.swipe-btn:active {
+    transform: scale(0.95);
+}
+
+.swipe-btn.dislike {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.swipe-btn.dislike:hover {
+    background: #fecaca;
+}
+
+.swipe-btn.like {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+.swipe-btn.like:hover {
+    background: #a7f3d0;
+}
+
+.swipe-btn.undo {
+    background: #f3f4f6;
+    color: #6b7280;
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+}
+
+.no-more-skills {
+    background: white;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.no-more-skills h3 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.view-lists {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.view-lists a {
+    flex: 1;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.view-lists a.whitelist-link {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.view-lists a.blacklist-link {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.view-lists a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.keyboard-hint {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+    .swipe-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .card-container {
+        height: 400px;
+    }
+
+    .skill-card {
+        padding: 2rem 1.5rem;
+        min-height: 350px;
+    }
+
+    .skill-card h2 {
+        font-size: 2rem;
+    }
+
+    .swipe-indicator {
+        font-size: 4rem;
+    }
+}
+</style>
+
+<div class="swipe-container">
+    <!-- Stats -->
+    <div
+  id="swipe-stats"
+  class="swipe-stats{% if not has_swiped %} hidden{% endif %}"
+  role="region"
+  aria-label="Swipe statistics"
+>
+  <a href="{% url 'core:blacklist' %}" class="stat-card blacklist" aria-label="Not Interested">
+    <span class="stat-number" id="blacklist-count" aria-live="polite">{{ blacklist_count|default:0 }}</span>
+    <span class="stat-label">Not Interested</span>
+  </a>
+
+  <div class="stat-card" aria-hidden="false">
+    <span class="stat-number" aria-live="polite">
+      <span id="swiped-count">{{ swiped_count|default:0 }}</span>/<span id="total-skills">{{ total_skills|default:0 }}</span>
+    </span>
+    <span class="stat-label">Swiped</span>
+  </div>
+
+  <a href="{% url 'core:whitelist' %}" class="stat-card whitelist" aria-label="Interested">
+    <span class="stat-number" id="whitelist-count" aria-live="polite">{{ whitelist_count|default:0 }}</span>
+    <span class="stat-label">Interested</span>
+  </a>
+</div>
+
+    <!-- Card Container -->
+    <div class="card-container">
+        {% if card_skill %}
+        <div class="swipe-indicator left">✕</div>
+        <div class="swipe-indicator right">❤</div>
+        <div class="skill-card" id="skill-card" data-skill-id="{{ card_skill.id }}">
+            <h2>{{ card_skill.name }}</h2>
+            <hr style="width: 100px; margin: 1rem auto; border: 2px solid #e5e7eb;"/>
+            <p>{{ card_skill.description|default:"Discover this skill and connect with others who share your interest!" }}</p>
+        </div>
+        {% else %}
+        <div class="no-more-skills">
+            <h3>🎉 You've seen all skills!</h3>
+            <p>Check out your whitelist and blacklist below.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Swipe Buttons -->
+    {% if card_skill %}
+    <div class="swipe-buttons">
+        <button class="swipe-btn dislike" onclick="swipe('left')">
+            ✕
+        </button>
+        
+        <button class="swipe-btn undo" onclick="location.reload()" title="Refresh">
+            ⟲
+        </button>
+        
+        <button class="swipe-btn like" onclick="swipe('right')">
+            ❤
+        </button>
+    </div>
+    
+    <div class="keyboard-hint">
+        💡 Use ← and → arrow keys or swipe the card
+    </div>
+    {% endif %}
+
+    <!-- View Lists -->
+    <div class="view-lists">
+        <a href="{% url 'core:blacklist' %}" class="blacklist-link">
+            View Not Interested Skills
+        </a>
+        <a href="{% url 'core:whitelist' %}" class="whitelist-link">
+            View Interested Skills
+        </a>
+    </div>
+</div>
+
+<script>
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+const card = document.getElementById('skill-card');
+const leftIndicator = document.querySelector('.swipe-indicator.left');
+const rightIndicator = document.querySelector('.swipe-indicator.right');
+
+// Touch/Mouse tracking
+let isDragging = false;
+let startX = 0;
+let currentX = 0;
+let cardStartX = 0;
+
+function swipe(action) {
+    if (!card) return;
+    
+    const skillId = card.dataset.skillId;
+    
+    // Add animation
+    card.classList.add(action === 'left' ? 'swipe-left' : 'swipe-right');
+    
+    // Send to server
+    fetch('{% url "core:swipe_action" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            skill_id: skillId,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update counts
+            document.getElementById('whitelist-count').textContent = data.whitelist_count;
+            document.getElementById('blacklist-count').textContent = data.blacklist_count;
+            
+            // Load next skill after animation
+            setTimeout(() => {
+                if (data.next_skill) {
+                    card.classList.remove('swipe-left', 'swipe-right');
+                    card.dataset.skillId = data.next_skill.id;
+                    card.querySelector('h2').textContent = data.next_skill.name;
+                    card.querySelector('p').textContent = data.next_skill.description || 'Discover this skill and connect with others who share your interest!';
+                    card.style.transform = '';
+                } else {
+                    // No more skills
+                    card.parentElement.innerHTML = `
+                        <div class="no-more-skills">
+                            <h3>🎉 You've seen all skills!</h3>
+                            <p>Check out your lists below.</p>
+                        </div>
+                    `;
+                }
+            }, 500);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Something went wrong. Please try again.');
+    });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (!card) return;
+    
+    if (e.key === 'ArrowLeft') {
+        swipe('left');
+    } else if (e.key === 'ArrowRight') {
+        swipe('right');
+    }
+});
+
+// Touch/Mouse events for swiping
+if (card) {
+    // Mouse events
+    card.addEventListener('mousedown', handleStart);
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleEnd);
+    
+    // Touch events
+    card.addEventListener('touchstart', handleStart, { passive: false });
+    document.addEventListener('touchmove', handleMove, { passive: false });
+    document.addEventListener('touchend', handleEnd);
+}
+
+function handleStart(e) {
+    if (!card) return;
+    
+    isDragging = true;
+    card.classList.add('swiping');
+    
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    startX = clientX;
+    cardStartX = 0;
+    
+    if (e.type.includes('touch')) {
+        e.preventDefault();
+    }
+}
+
+function handleMove(e) {
+    if (!isDragging || !card) return;
+    
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    currentX = clientX - startX;
+    
+    // Apply transform
+    const rotation = currentX / 20;
+    card.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
+    
+    // Show indicators
+    if (currentX < -50) {
+        leftIndicator.classList.add('active');
+        rightIndicator.classList.remove('active');
+    } else if (currentX > 50) {
+        rightIndicator.classList.add('active');
+        leftIndicator.classList.remove('active');
+    } else {
+        leftIndicator.classList.remove('active');
+        rightIndicator.classList.remove('active');
+    }
+}
+
+function handleEnd(e) {
+    if (!isDragging || !card) return;
+    
+    isDragging = false;
+    card.classList.remove('swiping');
+    
+    // Hide indicators
+    leftIndicator.classList.remove('active');
+    rightIndicator.classList.remove('active');
+    
+    // Determine swipe action
+    const threshold = 100;
+    
+    if (currentX < -threshold) {
+        // Swipe left
+        swipe('left');
+    } else if (currentX > threshold) {
+        // Swipe right
+        swipe('right');
+    } else {
+        // Return to center
+        card.style.transform = '';
+    }
+    
+    currentX = 0;
+}
+
+// Prevent default touch behaviors on the card
+if (card) {
+    card.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+}
+</script>
+{% endblock %}
