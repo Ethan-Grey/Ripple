@@ -31,7 +31,30 @@ SECRET_KEY = 'django-insecure-w4er*aj_!(usv$t#i5561ihfz^+hl&)ri6ul*-)be7c_1c_hu0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Allow connections from localhost and any local network IP
+# This automatically works on any WiFi network
+import socket
+def get_local_ip():
+    """Get the local IP address of this machine"""
+    try:
+        # Connect to a remote address to determine local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return '127.0.0.1'
+
+LOCAL_IP = get_local_ip()
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', LOCAL_IP]
+
+# Print the IP for easy access
+if DEBUG:
+    print(f"\n{'='*60}")
+    print(f"🌐 Server accessible at: http://{LOCAL_IP}:8000")
+    print(f"📱 Use this IP on other devices (same WiFi)")
+    print(f"{'='*60}\n")
 
 
 # Application definition
