@@ -139,3 +139,149 @@ class SwipeAction(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.skill.name} - {self.action}"
+
+
+class TeacherApplication(models.Model):
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (APPROVED, 'Approved'),
+        (REJECTED, 'Rejected'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    bio = models.TextField(blank=True)
+    intro_video = models.FileField(upload_to='teacher_applications/', blank=True, null=True)
+    portfolio_links = models.TextField(blank=True, help_text='Comma or newline separated links')
+    expertise_topics = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+    decision_notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='teacher_applications')
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name='reviewed_teacher_applications')
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.applicant.username} - {self.title} ({self.status})"
+
+
+class TeachingClass(models.Model):
+    BEGINNER = 'beginner'
+    INTERMEDIATE = 'intermediate'
+    ADVANCED = 'advanced'
+    DIFFICULTY_CHOICES = [
+        (BEGINNER, 'Beginner'),
+        (INTERMEDIATE, 'Intermediate'),
+        (ADVANCED, 'Advanced'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True)
+    short_description = models.CharField(max_length=300, blank=True)
+    full_description = models.TextField(blank=True)
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default=BEGINNER)
+    duration_minutes = models.PositiveIntegerField(default=0)
+    price_cents = models.PositiveIntegerField(default=0, help_text='Price in cents (e.g., 1999 = $19.99)')
+    is_tradeable = models.BooleanField(default=False)
+    trade_notes = models.CharField(max_length=200, blank=True)
+    intro_video = models.FileField(upload_to='class_intros/', blank=True, null=True)
+    thumbnail = models.ImageField(upload_to='class_thumbs/', blank=True, null=True)
+    is_published = models.BooleanField(default=False)
+    avg_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
+    reviews_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='teaching_classes')
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.title
+
+
+class ClassTopic(models.Model):
+    name = models.CharField(max_length=80)
+    teaching_class = models.ForeignKey(TeachingClass, on_delete=models.CASCADE, related_name='topics')
+    
+    def __str__(self):
+        return f"{self.teaching_class.title} - {self.name}"
+
+
+class ClassReview(models.Model):
+    rating = models.PositiveSmallIntegerField()
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='class_reviews')
+    teaching_class = models.ForeignKey(TeachingClass, on_delete=models.CASCADE, related_name='reviews')
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('teaching_class', 'reviewer')
+    
+    def __str__(self):
+        return f"{self.reviewer.username} - {self.teaching_class.title} ({self.rating})"
+
+
+class ClassEnrollment(models.Model):
+    PENDING = 'pending'
+    ACTIVE = 'active'
+    REFUNDED = 'refunded'
+    REVOKED = 'revoked'
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (ACTIVE, 'Active'),
+        (REFUNDED, 'Refunded'),
+        (REVOKED, 'Revoked'),
+    ]
+    
+    PURCHASE = 'purchase'
+    TRADE = 'trade'
+    GRANTED_VIA_CHOICES = [
+        (PURCHASE, 'Purchase'),
+        (TRADE, 'Trade'),
+    ]
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    granted_via = models.CharField(max_length=20, choices=GRANTED_VIA_CHOICES)
+    purchase_id = models.CharField(max_length=120, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='class_enrollments')
+    teaching_class = models.ForeignKey(TeachingClass, on_delete=models.CASCADE, related_name='enrollments')
+    
+    class Meta:
+        unique_together = ('user', 'teaching_class')
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.teaching_class.title} ({self.status})"
+
+
+class ClassTradeOffer(models.Model):
+    PENDING = 'pending'
+    ACCEPTED = 'accepted'
+    DECLINED = 'declined'
+    CANCELLED = 'cancelled'
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (ACCEPTED, 'Accepted'),
+        (DECLINED, 'Declined'),
+        (CANCELLED, 'Cancelled'),
+    ]
+    
+    message = models.CharField(max_length=300, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    decided_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    proposer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='proposed_class_trades')
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_class_trades')
+    offered_class = models.ForeignKey(TeachingClass, on_delete=models.CASCADE, related_name='offers_made')
+    requested_class = models.ForeignKey(TeachingClass, on_delete=models.CASCADE, related_name='offers_received')
+    
+    def __str__(self):
+        return f"{self.proposer.username} → {self.receiver.username}: {self.offered_class.title} ↔ {self.requested_class.title} ({self.status})"
