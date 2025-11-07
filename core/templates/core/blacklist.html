@@ -253,42 +253,45 @@
 
 <div class="list-container">
     <div class="list-header">
-        <h1>⛔ Not Interested Skills</h1>
-        <p>Skills you've passed on - you can always change your mind!</p>
+        <h1>⛔ Not Interested Classes</h1>
+        <p>Classes you've passed on - you can always change your mind!</p>
     </div>
 
     {% if blacklist %}
     <div class="filter-section">
         <div class="search-box">
-            <input type="text" id="search-input" placeholder="Search skills..." autocomplete="off">
+            <input type="text" id="search-input" placeholder="Search classes..." autocomplete="off">
             <button class="clear-btn" id="clear-search" aria-label="Clear search">✕</button>
         </div>
 
         <div class="results-count">
-            <span id="results-count">{{ blacklist|length }}</span> skill{{ blacklist|length|pluralize }}
+            <span id="results-count">{{ blacklist|length }}</span> class{{ blacklist|length|pluralize:"es" }}
         </div>
     </div>
     
     <div class="skill-list" id="skill-list">
         {% for swipe in blacklist %}
         <div class="skill-item" 
-             data-skill-id="{{ swipe.skill.id }}"
-             data-skill-name="{{ swipe.skill.name|lower }}"
-             data-is-learning="{% if swipe.skill.id in learning_skill_ids %}true{% else %}false{% endif %}">
+             data-class-id="{{ swipe.teaching_class.id }}"
+             data-class-name="{{ swipe.teaching_class.title|lower }}">
             <div class="skill-info">
                 <h3>
-                    {{ swipe.skill.name }}
-                    {% if swipe.skill.id in learning_skill_ids %}
-                    <span class="learning-badge">📚 Want to Learn</span>
-                    {% endif %}
+                    <a href="{% url 'skills:class_detail' swipe.teaching_class.slug %}" style="text-decoration: none; color: inherit;">
+                        {{ swipe.teaching_class.title }}
+                    </a>
                 </h3>
-                <p>Passed {{ swipe.created_at|timesince }} ago</p>
+                <p style="color: #6b7280; margin: 0.25rem 0;">
+                    <strong>Teacher:</strong> {{ swipe.teaching_class.teacher.username }} · 
+                    <strong>Level:</strong> {{ swipe.teaching_class.get_difficulty_display }} · 
+                    <strong>Duration:</strong> {{ swipe.teaching_class.duration_minutes }}m
+                </p>
+                <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 0.25rem;">Passed {{ swipe.created_at|timesince }} ago</p>
             </div>
             <div class="skill-actions">
-                <button class="btn-undo" data-skill-id="{{ swipe.skill.id }}" data-action="right">
+                <button class="btn-undo" data-class-id="{{ swipe.teaching_class.id }}" data-action="right">
                     ↻ Interested
                 </button>
-                <button class="btn-remove" data-skill-id="{{ swipe.skill.id }}">
+                <button class="btn-remove" data-class-id="{{ swipe.teaching_class.id }}">
                     Remove
                 </button>
             </div>
@@ -298,14 +301,14 @@
 
     <div class="no-results" id="no-results" style="display: none;">
         <div class="no-results-icon">🔍</div>
-        <h3>No skills found</h3>
+        <h3>No classes found</h3>
         <p>Try adjusting your search or filter</p>
     </div>
     {% else %}
     <div class="empty-state">
         <div class="empty-state-icon">✨</div>
-        <h3>No blacklisted skills</h3>
-        <p>You haven't passed on any skills yet!</p>
+        <h3>No blacklisted classes</h3>
+        <p>You haven't passed on any classes yet!</p>
         <a href="{% url 'core:swipe' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block; padding: 0.75rem 1.5rem; background: #ef4444; color: white; text-decoration: none; border-radius: 8px;">Go to Swipe</a>
     </div>
     {% endif %}
@@ -327,10 +330,9 @@ function updateResults() {
     let visibleCount = 0;
 
     skillItems.forEach(item => {
-        const skillName = item.dataset.skillName;
-        const isLearning = item.dataset.isLearning === 'true';
+        const className = item.dataset.className;
         
-        const matchesSearch = !searchTerm || skillName.includes(searchTerm);
+        const matchesSearch = !searchTerm || className.includes(searchTerm);
         
         if (matchesSearch) {
             item.classList.remove('hidden');
@@ -365,20 +367,20 @@ clearBtn.addEventListener('click', () => {
     searchInput.focus();
 });
 
-// Remove skill with animation - FIXED VERSION
-function removeSwipe(skillId, buttonElement) {
-    if (!confirm('Remove this skill from your blacklist?')) return;
+// Remove class with animation - FIXED VERSION
+function removeSwipe(classId, buttonElement) {
+    if (!confirm('Remove this class from your blacklist?')) return;
     
     const skillItem = buttonElement.closest('.skill-item');
     if (!skillItem) {
-        console.error('Could not find skill item');
+        console.error('Could not find class item');
         return;
     }
     
     skillItem.classList.add('fade-out');
     
     setTimeout(() => {
-        fetch(`/swipe/remove/${skillId}/`, {
+        fetch(`/swipe/remove/${classId}/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrftoken
@@ -389,8 +391,8 @@ function removeSwipe(skillId, buttonElement) {
             if (data.success) {
                 skillItem.remove();
                 
-                const remainingSkills = document.querySelectorAll('.skill-item:not(.hidden)').length;
-                resultsCount.textContent = remainingSkills;
+                const remainingClasses = document.querySelectorAll('.skill-item:not(.hidden)').length;
+                resultsCount.textContent = remainingClasses;
                 
                 if (document.querySelectorAll('.skill-item').length === 0) {
                     location.reload();
@@ -399,7 +401,7 @@ function removeSwipe(skillId, buttonElement) {
                 }
             } else {
                 skillItem.classList.remove('fade-out');
-                alert('Failed to remove skill. Please try again.');
+                alert('Failed to remove class. Please try again.');
             }
         })
         .catch(error => {
@@ -410,11 +412,11 @@ function removeSwipe(skillId, buttonElement) {
     }, 200);
 }
 
-// Undo skill (move to whitelist) - FIXED VERSION
-function undoSwipe(skillId, newAction, buttonElement) {
+// Undo class (move to whitelist) - FIXED VERSION
+function undoSwipe(classId, newAction, buttonElement) {
     const skillItem = buttonElement.closest('.skill-item');
     if (!skillItem) {
-        console.error('Could not find skill item');
+        console.error('Could not find class item');
         return;
     }
     
@@ -428,7 +430,7 @@ function undoSwipe(skillId, newAction, buttonElement) {
                 'X-CSRFToken': csrftoken
             },
             body: JSON.stringify({
-                skill_id: skillId,
+                class_id: classId,
                 action: newAction
             })
         })
@@ -444,15 +446,15 @@ function undoSwipe(skillId, newAction, buttonElement) {
                 
                 setTimeout(() => message.remove(), 2000);
                 
-                const remainingSkills = document.querySelectorAll('.skill-item').length;
-                if (remainingSkills === 0) {
+                const remainingClasses = document.querySelectorAll('.skill-item').length;
+                if (remainingClasses === 0) {
                     setTimeout(() => location.reload(), 2000);
                 } else {
                     updateResults();
                 }
             } else {
                 skillItem.classList.remove('fade-out');
-                alert('Failed to update skill. Please try again.');
+                alert('Failed to update class. Please try again.');
             }
         })
         .catch(error => {
@@ -468,19 +470,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.btn-remove').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            const skillId = this.getAttribute('data-skill-id');
-            console.log('Remove clicked for skill:', skillId);
-            removeSwipe(skillId, this);
+            const classId = this.getAttribute('data-class-id');
+            console.log('Remove clicked for class:', classId);
+            removeSwipe(classId, this);
         });
     });
 
     document.querySelectorAll('.btn-undo').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            const skillId = this.getAttribute('data-skill-id');
+            const classId = this.getAttribute('data-class-id');
             const action = this.getAttribute('data-action') || 'right';
-            console.log('Undo clicked for skill:', skillId, 'action:', action);
-            undoSwipe(skillId, action, this);
+            console.log('Undo clicked for class:', classId, 'action:', action);
+            undoSwipe(classId, action, this);
         });
     });
 });

@@ -28,6 +28,6 @@ class MatchAdmin(admin.ModelAdmin):
 
 @admin.register(SwipeAction)
 class SwipeActionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'skill', 'action', 'created_at')
+    list_display = ('user', 'teaching_class', 'action', 'created_at')
     list_filter = ('action', 'created_at')
-    search_fields = ('user__username', 'skill__name')
+    search_fields = ('user__username', 'teaching_class__title')

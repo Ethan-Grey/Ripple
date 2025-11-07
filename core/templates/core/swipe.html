@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %} · Swipe Skills{% endblock %}
+{% block title %} · Swipe Classes{% endblock %}
 
 {% block content %}
 <style>
@@ -288,7 +288,7 @@
 
   <div class="stat-card" aria-hidden="false">
     <span class="stat-number" aria-live="polite">
-      <span id="swiped-count">{{ swiped_count|default:0 }}</span>/<span id="total-skills">{{ total_skills|default:0 }}</span>
+      <span id="swiped-count">{{ swiped_count|default:0 }}</span>/<span id="total-classes">{{ total_classes|default:0 }}</span>
     </span>
     <span class="stat-label">Swiped</span>
   </div>
@@ -301,24 +301,56 @@
 
     <!-- Card Container -->
     <div class="card-container">
-        {% if card_skill %}
+        {% if card_class %}
         <div class="swipe-indicator left">✕</div>
         <div class="swipe-indicator right">❤</div>
-        <div class="skill-card" id="skill-card" data-skill-id="{{ card_skill.id }}">
-            <h2>{{ card_skill.name }}</h2>
+        <div class="skill-card" id="class-card" data-class-id="{{ card_class.id }}">
+            <h2>{{ card_class.title }}</h2>
             <hr style="width: 100px; margin: 1rem auto; border: 2px solid #e5e7eb;"/>
-            <p>{{ card_skill.description|default:"Discover this skill and connect with others who share your interest!" }}</p>
+            <p style="margin-bottom: 1rem;">{{ card_class.short_description|default:card_class.full_description|default:"Discover this class and learn something new!" }}</p>
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 0.95rem; color: #6b7280; margin: 0.5rem 0;">
+                    <strong>Teacher:</strong> {{ card_class.teacher.username }}
+                </p>
+                <p style="font-size: 0.95rem; color: #6b7280; margin: 0.5rem 0;">
+                    <strong>Level:</strong> {{ card_class.get_difficulty_display }}
+                </p>
+                <p style="font-size: 0.95rem; color: #6b7280; margin: 0.5rem 0;">
+                    <strong>Duration:</strong> {{ card_class.duration_minutes }} minutes
+                </p>
+                {% if card_class.price_cents > 0 %}
+                <p style="font-size: 0.95rem; color: #6b7280; margin: 0.5rem 0;">
+                    <strong>Price:</strong> ${% widthratio card_class.price_cents 100 1 %}
+                </p>
+                {% else %}
+                <p style="font-size: 0.95rem; color: #10b981; margin: 0.5rem 0; font-weight: 600;">
+                    Free
+                </p>
+                {% endif %}
+                {% if card_class.topics.all %}
+                <div style="margin-top: 1rem;">
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;"><strong>Topics:</strong></p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        {% for topic in card_class.topics.all|slice:":5" %}
+                        <span style="background: #f3f4f6; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; color: #4b5563;">
+                            {{ topic.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
         </div>
         {% else %}
         <div class="no-more-skills">
-            <h3>🎉 You've seen all skills!</h3>
+            <h3>🎉 You've seen all classes!</h3>
             <p>Check out your whitelist and blacklist below.</p>
         </div>
         {% endif %}
     </div>
 
     <!-- Swipe Buttons -->
-    {% if card_skill %}
+    {% if card_class %}
     <div class="swipe-buttons">
         <button class="swipe-btn dislike" onclick="swipe('left')">
             ✕
@@ -341,17 +373,17 @@
     <!-- View Lists -->
     <div class="view-lists">
         <a href="{% url 'core:blacklist' %}" class="blacklist-link">
-            View Not Interested Skills
+            View Not Interested Classes
         </a>
         <a href="{% url 'core:whitelist' %}" class="whitelist-link">
-            View Interested Skills
+            View Interested Classes
         </a>
     </div>
 </div>
 
 <script>
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
-const card = document.getElementById('skill-card');
+const card = document.getElementById('class-card');
 const leftIndicator = document.querySelector('.swipe-indicator.left');
 const rightIndicator = document.querySelector('.swipe-indicator.right');
 
@@ -364,7 +396,7 @@ let cardStartX = 0;
 function swipe(action) {
     if (!card) return;
     
-    const skillId = card.dataset.skillId;
+    const classId = card.dataset.classId;
     
     // Add animation
     card.classList.add(action === 'left' ? 'swipe-left' : 'swipe-right');
@@ -377,7 +409,7 @@ function swipe(action) {
             'X-CSRFToken': csrftoken
         },
         body: JSON.stringify({
-            skill_id: skillId,
+            class_id: classId,
             action: action
         })
     })
@@ -387,20 +419,61 @@ function swipe(action) {
             // Update counts
             document.getElementById('whitelist-count').textContent = data.whitelist_count;
             document.getElementById('blacklist-count').textContent = data.blacklist_count;
+            document.getElementById('swiped-count').textContent = data.whitelist_count + data.blacklist_count;
             
-            // Load next skill after animation
+            // Load next class after animation
             setTimeout(() => {
-                if (data.next_skill) {
+                if (data.next_class) {
                     card.classList.remove('swipe-left', 'swipe-right');
-                    card.dataset.skillId = data.next_skill.id;
-                    card.querySelector('h2').textContent = data.next_skill.name;
-                    card.querySelector('p').textContent = data.next_skill.description || 'Discover this skill and connect with others who share your interest!';
+                    card.dataset.classId = data.next_class.id;
+                    card.querySelector('h2').textContent = data.next_class.title;
+                    
+                    // Update class details
+                    const mainContent = card.querySelector('p');
+                    mainContent.textContent = data.next_class.short_description || 'Discover this class and learn something new!';
+                    
+                    // Update details section
+                    const detailsSection = card.querySelector('div[style*="margin-top: 1.5rem"]');
+                    if (detailsSection) {
+                        detailsSection.innerHTML = `
+                            <p style="font-size: 0.95rem; color: #6b7280; margin: 0.5rem 0;">
+                                <strong>Teacher:</strong> ${data.next_class.teacher}
+                            </p>
+                            <p style="font-size: 0.95rem; color: #6b7280; margin: 0.5rem 0;">
+                                <strong>Level:</strong> ${data.next_class.difficulty}
+                            </p>
+                            <p style="font-size: 0.95rem; color: #6b7280; margin: 0.5rem 0;">
+                                <strong>Duration:</strong> ${data.next_class.duration_minutes} minutes
+                            </p>
+                            ${data.next_class.price_cents > 0 ? 
+                                `<p style="font-size: 0.95rem; color: #6b7280; margin: 0.5rem 0;">
+                                    <strong>Price:</strong> $${(data.next_class.price_cents / 100).toFixed(2)}
+                                </p>` :
+                                `<p style="font-size: 0.95rem; color: #10b981; margin: 0.5rem 0; font-weight: 600;">
+                                    Free
+                                </p>`
+                            }
+                            ${data.next_class.topics && data.next_class.topics.length > 0 ? `
+                                <div style="margin-top: 1rem;">
+                                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;"><strong>Topics:</strong></p>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                        ${data.next_class.topics.map(topic => 
+                                            `<span style="background: #f3f4f6; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; color: #4b5563;">
+                                                ${topic}
+                                            </span>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        `;
+                    }
+                    
                     card.style.transform = '';
                 } else {
-                    // No more skills
+                    // No more classes
                     card.parentElement.innerHTML = `
                         <div class="no-more-skills">
-                            <h3>🎉 You've seen all skills!</h3>
+                            <h3>🎉 You've seen all classes!</h3>
                             <p>Check out your lists below.</p>
                         </div>
                     `;

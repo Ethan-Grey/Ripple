@@ -108,7 +108,7 @@ class Match(models.Model):
         return f"{self.user_a.username} ↔ {self.user_b.username}"
 
 class SwipeAction(models.Model):
-    """Track user swipe actions on skills"""
+    """Track user swipe actions on classes"""
     SWIPE_RIGHT = 'right'  # Whitelist
     SWIPE_LEFT = 'left'    # Blacklist
     
@@ -122,8 +122,8 @@ class SwipeAction(models.Model):
         on_delete=models.CASCADE,
         related_name='swipe_actions'
     )
-    skill = models.ForeignKey(
-        'Skill',
+    teaching_class = models.ForeignKey(
+        'TeachingClass',
         on_delete=models.CASCADE,
         related_name='swipe_actions'
     )
@@ -134,11 +134,11 @@ class SwipeAction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = ['user', 'skill']
+        unique_together = ['user', 'teaching_class']
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.user.username} - {self.skill.name} - {self.action}"
+        return f"{self.user.username} - {self.teaching_class.title} - {self.action}"
 
 
 class TeacherApplication(models.Model):
@@ -151,11 +151,25 @@ class TeacherApplication(models.Model):
         (REJECTED, 'Rejected'),
     ]
     
+    BEGINNER = 'beginner'
+    INTERMEDIATE = 'intermediate'
+    ADVANCED = 'advanced'
+    DIFFICULTY_CHOICES = [
+        (BEGINNER, 'Beginner'),
+        (INTERMEDIATE, 'Intermediate'),
+        (ADVANCED, 'Advanced'),
+    ]
+    
     title = models.CharField(max_length=200)
     bio = models.TextField(blank=True)
     intro_video = models.FileField(upload_to='teacher_applications/', blank=True, null=True)
+    thumbnail = models.ImageField(upload_to='teacher_applications/', blank=True, null=True)
     portfolio_links = models.TextField(blank=True, help_text='Comma or newline separated links')
     expertise_topics = models.TextField(blank=True)
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default=BEGINNER)
+    duration_minutes = models.PositiveIntegerField(default=0)
+    price_cents = models.PositiveIntegerField(default=0)
+    is_tradeable = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
     reviewed_at = models.DateTimeField(blank=True, null=True)
     decision_notes = models.TextField(blank=True)
@@ -165,6 +179,11 @@ class TeacherApplication(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+    
+    @property
+    def price_dollars(self):
+        """Return price in dollars as a float"""
+        return self.price_cents / 100.0
     
     def __str__(self):
         return f"{self.applicant.username} - {self.title} ({self.status})"

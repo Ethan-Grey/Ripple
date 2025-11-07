@@ -700,6 +700,7 @@ def view_verification_status(request):
 @login_required
 def applications_view(request):
     """Centralized view for all user applications and requests"""
+    from skills.models import TeacherApplication
     
     # Get user's community requests
     community_requests = CommunityRequest.objects.filter(
@@ -712,6 +713,11 @@ def applications_view(request):
         can_teach=True
     ).select_related('skill').prefetch_related('evidence').order_by('-updated_at')
     
+    # Get user's class applications (TeacherApplication)
+    class_applications = TeacherApplication.objects.filter(
+        applicant=request.user
+    ).select_related('reviewer').order_by('-created_at')
+    
     # Get user's identity verification status
     profile = request.user.profile
     identity_submissions = profile.identity_submissions.order_by('-created_at')
@@ -722,27 +728,32 @@ def applications_view(request):
         'total_applications': (
             community_requests.count() + 
             skill_verifications.count() + 
+            class_applications.count() +
             (1 if latest_identity else 0)
         ),
         'pending_count': (
             community_requests.filter(status='pending').count() + 
             skill_verifications.filter(verification_status='pending').count() +
+            class_applications.filter(status=TeacherApplication.PENDING).count() +
             (1 if profile.verification_status == 'pending' else 0)
         ),
         'approved_count': (
             community_requests.filter(status='approved').count() + 
             skill_verifications.filter(verification_status='verified').count() +
+            class_applications.filter(status=TeacherApplication.APPROVED).count() +
             (1 if profile.verification_status == 'verified' else 0)
         ),
         'rejected_count': (
             community_requests.filter(status='rejected').count() + 
-            skill_verifications.filter(verification_status='rejected').count()
+            skill_verifications.filter(verification_status='rejected').count() +
+            class_applications.filter(status=TeacherApplication.REJECTED).count()
         ),
     }
     
     context = {
         'community_requests': community_requests,
         'skill_verifications': skill_verifications,
+        'class_applications': class_applications,
         'profile': profile,
         'latest_identity': latest_identity,
         'identity_submissions': identity_submissions,

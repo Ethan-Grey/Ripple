@@ -326,8 +326,119 @@
         </div>
         {% endfor %}
 
+        <!-- Class Applications -->
+        {% for application in class_applications %}
+        <div class="application-card" data-status="{{ application.status }}" data-type="class">
+            <div class="card-header">
+                <div class="header-left">
+                    <div class="app-icon class">
+                        <i class="bi bi-book-fill"></i>
+                    </div>
+                    <div class="app-info">
+                        <h3>Class Application: {{ application.title }}</h3>
+                        <p class="app-meta">
+                            Level: {{ application.get_difficulty_display }} • 
+                            Duration: {{ application.duration_minutes }}m • 
+                            Submitted {{ application.created_at|timesince }} ago
+                        </p>
+                    </div>
+                </div>
+                <div class="status-badge status-{{ application.status }}">
+                    {% if application.status == 'approved' %}
+                        <i class="bi bi-check-circle-fill"></i> Approved
+                    {% elif application.status == 'pending' %}
+                        <i class="bi bi-clock-fill"></i> Pending
+                    {% else %}
+                        <i class="bi bi-x-circle-fill"></i> Rejected
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if application.status == 'approved' %}
+                    <div class="success-message">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div>
+                            <strong>Application Approved!</strong>
+                            <p>Your class "{{ application.title }}" has been approved! You can now publish and start teaching.</p>
+                            {% if application.reviewed_at %}
+                                <p class="review-meta">Approved {{ application.reviewed_at|timesince }} ago{% if application.reviewer %} by {{ application.reviewer.username }}{% endif %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% elif application.status == 'pending' %}
+                    <div class="pending-message">
+                        <i class="bi bi-clock-fill"></i>
+                        <div>
+                            <strong>Under Review</strong>
+                            <p>Your class application is being reviewed by our team. This typically takes 1-2 business days.</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="error-message">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <div>
+                            <strong>Application Rejected</strong>
+                            {% if application.decision_notes %}
+                                <p>{{ application.decision_notes }}</p>
+                            {% else %}
+                                <p>Your class application was not approved. Please review the guidelines and try again with a different proposal.</p>
+                            {% endif %}
+                            {% if application.reviewed_at %}
+                                <p class="review-meta">Reviewed {{ application.reviewed_at|timesince }} ago{% if application.reviewer %} by {{ application.reviewer.username }}{% endif %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="application-details">
+                    {% if application.bio %}
+                    <div class="detail-row">
+                        <span class="detail-label">Bio:</span>
+                        <span class="detail-value">{{ application.bio|truncatewords:30 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="detail-row">
+                        <span class="detail-label">Price:</span>
+                        <span class="detail-value">
+                            {% if application.price_cents > 0 %}
+                                ${{ application.price_dollars|floatformat:2 }}
+                            {% else %}
+                                Free
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if application.is_tradeable %}
+                    <div class="detail-row">
+                        <span class="detail-label">Tradeable:</span>
+                        <span class="detail-value">Yes</span>
+                    </div>
+                    {% endif %}
+                    {% if application.expertise_topics %}
+                    <div class="detail-row">
+                        <span class="detail-label">Topics:</span>
+                        <span class="detail-value">{{ application.expertise_topics|truncatewords:20 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                {% if application.status == 'approved' %}
+                    <a href="{% url 'skills:class_list' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-right"></i> View Classes
+                    </a>
+                {% elif application.status == 'rejected' %}
+                    <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Submit New Application
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
         <!-- Empty State -->
-        {% if not latest_identity and not skill_verifications and not community_requests %}
+        {% if not latest_identity and not skill_verifications and not community_requests and not class_applications %}
         <div class="empty-state">
             <div class="empty-icon">📋</div>
             <h3>No Applications Yet</h3>
@@ -341,6 +452,9 @@
                 </a>
                 <a href="{% url 'communities:request_community' %}" class="btn btn-secondary">
                     <i class="bi bi-people"></i> Request Community
+                </a>
+                <a href="{% url 'skills:teacher_apply' %}" class="btn btn-secondary">
+                    <i class="bi bi-book"></i> Apply to Teach a Class
                 </a>
             </div>
         </div>
@@ -495,6 +609,7 @@
 .app-icon.identity { background: #3b82f6; }
 .app-icon.skill { background: #f59e0b; }
 .app-icon.community { background: #8b5cf6; }
+.app-icon.class { background: #10b981; }
 
 .app-info {
     flex: 1;
