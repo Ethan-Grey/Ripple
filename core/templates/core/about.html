@@ -1,0 +1,556 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Ripple</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1a1a1a;
+            overflow-x: hidden;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #233455;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #5a5a5a;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #233455;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #233455;
+            color: white;
+            box-shadow: 0 4px 15px rgba(35, 52, 85, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(35, 52, 85, 0.4);
+            background: #2b3a57;
+        }
+
+        .hero {
+            padding: 140px 40px 80px;
+            background: #233455;
+            color: #e6ecf5;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 52px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 20px;
+            opacity: 0.95;
+            line-height: 1.6;
+        }
+
+        .mission {
+            padding: 100px 40px;
+            background: white;
+        }
+
+        .mission-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .mission h2 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            color: #1a1a1a;
+        }
+
+        .mission p {
+            font-size: 20px;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .story {
+            padding: 100px 40px;
+            background: #f6f7f9;
+        }
+
+        .story-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .story h2 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 32px;
+            color: #1a1a1a;
+            text-align: center;
+        }
+
+        .story-content {
+            background: white;
+            padding: 60px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .story-content p {
+            font-size: 18px;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 24px;
+        }
+
+        .values {
+            padding: 100px 40px;
+            background: white;
+        }
+
+        .values-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-title h2 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+        }
+
+        .section-title p {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .value-card {
+            background: #f6f7f9;
+            padding: 40px;
+            border-radius: 16px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .value-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .value-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .value-card h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .value-card p {
+            color: #666;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .stats {
+            padding: 100px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            text-align: center;
+        }
+
+        .stat-item h3 {
+            font-size: 56px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .stat-item p {
+            font-size: 18px;
+            opacity: 0.95;
+        }
+
+        .cta {
+            padding: 100px 40px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .cta p {
+            font-size: 20px;
+            margin-bottom: 40px;
+            opacity: 0.95;
+        }
+
+        .btn-white {
+            background: white;
+            color: #233455;
+        }
+
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-large {
+            padding: 16px 40px;
+            font-size: 18px;
+        }
+
+        footer {
+            background: #1a1a1a;
+            color: white;
+            padding: 60px 40px 40px;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h4 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .footer-section p,
+        .footer-section a {
+            color: #aaa;
+            text-decoration: none;
+            line-height: 2;
+            display: block;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid #333;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 18px;
+            }
+
+            .nav-links {
+                gap: 15px;
+            }
+
+            .nav-links a:not(.btn) {
+                display: none;
+            }
+
+            .section-title h2,
+            .mission h2,
+            .story h2 {
+                font-size: 32px;
+            }
+
+            .story-content {
+                padding: 30px;
+            }
+
+            .stat-item h3 {
+                font-size: 42px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="{% url 'core:landing' %}" class="logo">Ripple</a>
+            <div class="nav-links">
+                <a href="{% url 'core:landing' %}#features">Features</a>
+                <a href="{% url 'core:landing' %}#how-it-works">How It Works</a>
+                <a href="{% url 'core:about' %}">About</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'core:home' %}" class="btn btn-primary">Dashboard</a>
+                {% else %}
+                    <a href="{% url 'users:register' %}" class="btn btn-primary">Get Started</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Building a World Where Everyone Can Learn</h1>
+            <p>We believe that knowledge should be accessible to all. Ripple connects people to share skills, swap expertise, and grow together in a collaborative learning community.</p>
+        </div>
+    </section>
+
+    <section class="mission">
+        <div class="mission-container">
+            <h2>Our Mission</h2>
+            <p>At Ripple, we're on a mission to democratize learning by creating a platform where anyone can teach what they know and learn what they need. We believe that every person has valuable skills to share, and that the best learning happens through genuine human connection.</p>
+            <p>By removing financial barriers and fostering skill exchange, we're building a more equitable world where knowledge flows freely and everyone has the opportunity to grow.</p>
+        </div>
+    </section>
+
+    <section class="story">
+        <div class="story-container">
+            <h2>Our Story</h2>
+            <div class="story-content">
+                <p>Ripple was born from a simple observation: people everywhere have skills they'd love to teach, and things they're eager to learn, but traditional education is often too expensive or inaccessible.</p>
+                <p>Our founders experienced this firsthand—wanting to learn photography but unable to afford classes, yet being able to teach web development. What if there was a way to trade these skills directly?</p>
+                <p>From that question, Ripple emerged. We started with a vision of creating ripples of knowledge that spread outward, touching lives and empowering people to learn without barriers. Today, thousands of people use Ripple to connect, teach, and learn—proving that the best education comes from shared human experience.</p>
+                <p>We're just getting started, and we're excited to have you join us on this journey.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="values">
+        <div class="values-container">
+            <div class="section-title">
+                <h2>Our Values</h2>
+                <p>The principles that guide everything we do</p>
+            </div>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">🤝</div>
+                    <h3>Community First</h3>
+                    <p>We put our community at the heart of every decision. Ripple exists to serve learners and teachers, and we're committed to building features that truly help people connect and grow.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🌍</div>
+                    <h3>Accessible to All</h3>
+                    <p>Learning should never be limited by finances or geography. We're dedicated to keeping Ripple accessible, affordable, and open to everyone who wants to learn.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">💡</div>
+                    <h3>Knowledge Sharing</h3>
+                    <p>Everyone has something valuable to teach. We celebrate the diversity of skills and experiences in our community, believing that peer-to-peer learning is powerful and transformative.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🚀</div>
+                    <h3>Continuous Growth</h3>
+                    <p>We're always learning and improving. Just like our users, we believe in the power of growth, feedback, and iterating to build something better every day.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">✨</div>
+                    <h3>Quality Connections</h3>
+                    <p>We prioritize meaningful matches over quantity. Our goal is to facilitate genuine relationships where both parties benefit and grow from the exchange.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🔒</div>
+                    <h3>Trust & Safety</h3>
+                    <p>We're committed to creating a safe, respectful environment. Through verification, community guidelines, and responsive support, we protect our users and foster trust.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="stats-container">
+            <div class="section-title" style="color: white; margin-bottom: 60px;">
+                <h2>Ripple by the Numbers</h2>
+                <p style="color: rgba(255, 255, 255, 0.9);">The impact we're making together</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>0+</h3>
+                    <p>Active Users</p>
+                </div>
+                <div class="stat-item">
+                    <h3>0+</h3>
+                    <p>Different Skills</p>
+                </div>
+                <div class="stat-item">
+                    <h3>0+</h3>
+                    <p>Skill Swaps</p>
+                </div>
+                <div class="stat-item">
+                    <h3>0+</h3>
+                    <p>Countries</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="hero-content">
+            <h2>Join the Movement</h2>
+            <p>Be part of a global community that's transforming how we learn and share knowledge</p>
+            {% if user.is_authenticated %}
+                <a href="{% url 'core:home' %}" class="btn btn-white btn-large">Go to Dashboard</a>
+            {% else %}
+                <a href="{% url 'users:register' %}" class="btn btn-white btn-large">Start Your Journey</a>
+            {% endif %}
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Ripple</h4>
+                <p>A community-driven platform where people swap skills, share knowledge, and grow together.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <a href="{% url 'core:landing' %}#features">Features</a>
+                <a href="{% url 'core:landing' %}#how-it-works">How It Works</a>
+                <a href="/communities/">Communities</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="{% url 'core:about' %}">About Us</a>
+                <a href="#">Contact</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <div class="footer-section">
+                <h4>Get Started</h4>
+                {% if user.is_authenticated %}
+                    <a href="/home/">Dashboard</a>
+                    <a href="/swipe/">Start Swiping</a>
+                {% else %}
+                    <a href="/register/">Sign Up</a>
+                    <a href="/login/">Log In</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Ripple. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -46,6 +46,12 @@ def register(request):
     clear_all_messages(request)
     
     if request.method == 'POST':
+        # Check agree_terms checkbox FIRST
+        if not request.POST.get('agree_terms'):
+            messages.error(request, 'You must agree to the Terms of Service and Privacy Policy to register.')
+            form = UserCreationForm(request.POST)
+            return render(request, 'users/register.html', {'form': form})
+        
         form = UserCreationForm(request.POST)
         if form.is_valid():
             # Get form data

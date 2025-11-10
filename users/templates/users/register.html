@@ -9,6 +9,156 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .checkbox-group {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 8px 0;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      margin-top: 4px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--brand);
+    }
+
+    .checkbox-group label {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.5;
+      cursor: pointer;
+    }
+
+    .checkbox-group a {
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .checkbox-group a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      background: var(--surface);
+      max-width: 700px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 40px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+      position: relative;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 32px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+      color: var(--text);
+      transform: rotate(90deg);
+    }
+
+    .modal-body {
+      color: var(--text);
+      line-height: 1.8;
+    }
+
+    .modal-body h3 {
+      margin: 24px 0 12px 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--brand);
+    }
+
+    .modal-body p {
+      margin: 12px 0;
+      font-size: 15px;
+    }
+
+    .modal-body ul {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+
+    .modal-body li {
+      margin: 8px 0;
+      font-size: 15px;
+    }
+
+    .cta:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .cta:disabled:hover {
+      box-shadow: none;
+    }
+  </style>
 </head>
 <body class="auth-body">
   <div class="auth-split">
@@ -25,7 +175,7 @@
     </section>
     <section class="auth-right">
       <h3>Register</h3>
-      <form method="post" action="{% url 'users:register' %}" class="auth-form">
+      <form method="post" action="{% url 'users:register' %}" class="auth-form" id="registerForm">
         {% csrf_token %}
         {% if messages %}
           {% for message in messages %}
@@ -51,7 +201,13 @@
         <div class="form-group">
           <input class="input" type="password" name="password2" placeholder="Confirm Password" required>
         </div>
-        <button type="submit" class="cta">Create account</button>
+        <div class="checkbox-group">
+          <input type="checkbox" id="agree-terms" name="agree_terms" required>
+          <label for="agree-terms">
+            I agree to the <a href="#" id="tosLink">Terms of Service</a> and <a href="#" id="privacyLink">Privacy Policy</a>
+          </label>
+        </div>
+        <button type="submit" class="cta" id="submitBtn">Create account</button>
       </form>
       <div class="muted">Already have an account? <a class="link" href="{% url 'users:login' %}">Login</a></div>
       <div class="muted" style="margin-top: 16px; text-align: center;">
@@ -61,6 +217,190 @@
       </div>
     </section>
   </div>
+
+  <!-- Terms of Service Modal -->
+  <div id="tosModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Terms of Service</h2>
+        <button class="modal-close" id="tosClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Last Updated:</strong> November 10, 2025</p>
+        
+        <h3>1. Acceptance of Terms</h3>
+        <p>By accessing and using Ripple, you accept and agree to be bound by the terms and provision of this agreement.</p>
+        
+        <h3>2. User Accounts</h3>
+        <p>When you create an account with us, you must provide accurate, complete, and current information. Failure to do so constitutes a breach of the Terms.</p>
+        <ul>
+          <li>You are responsible for safeguarding your password</li>
+          <li>You must notify us immediately of any unauthorized use</li>
+          <li>You must be at least 13 years old to use this service</li>
+        </ul>
+        
+        <h3>3. Community Guidelines</h3>
+        <p>Users must respect community standards and engage in good faith skill-sharing. Prohibited activities include:</p>
+        <ul>
+          <li>Harassment or discrimination of any kind</li>
+          <li>Fraudulent or deceptive skill exchanges</li>
+          <li>Spam or unauthorized commercial activity</li>
+          <li>Violation of intellectual property rights</li>
+        </ul>
+        
+        <h3>4. Content Ownership</h3>
+        <p>You retain ownership of content you post. By posting, you grant Ripple a license to use, modify, and display your content in connection with the service.</p>
+        
+        <h3>5. Termination</h3>
+        <p>We reserve the right to terminate or suspend your account immediately, without prior notice, for conduct that we believe violates these Terms or is harmful to other users.</p>
+        
+        <h3>6. Limitation of Liability</h3>
+        <p>Ripple shall not be liable for any indirect, incidental, special, consequential or punitive damages resulting from your use of the service.</p>
+        
+        <h3>7. Changes to Terms</h3>
+        <p>We reserve the right to modify these terms at any time. Continued use of the service after changes constitutes acceptance of the modified terms.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Policy Modal -->
+  <div id="privacyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Privacy Policy</h2>
+        <button class="modal-close" id="privacyClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Last Updated:</strong> November 10, 2025</p>
+        
+        <h3>1. Information We Collect</h3>
+        <p>We collect information you provide directly to us, including:</p>
+        <ul>
+          <li>Account information (username, email, password)</li>
+          <li>Profile information (skills, interests, bio)</li>
+          <li>Communication data (messages, posts, comments)</li>
+          <li>Usage data (pages visited, features used)</li>
+        </ul>
+        
+        <h3>2. How We Use Your Information</h3>
+        <p>We use the information we collect to:</p>
+        <ul>
+          <li>Provide, maintain, and improve our services</li>
+          <li>Connect you with other users for skill-sharing</li>
+          <li>Send you technical notices and support messages</li>
+          <li>Respond to your comments and questions</li>
+          <li>Protect against fraud and abuse</li>
+        </ul>
+        
+        <h3>3. Information Sharing</h3>
+        <p>We do not sell your personal information. We may share your information:</p>
+        <ul>
+          <li>With other users as part of the skill-sharing platform</li>
+          <li>With service providers who assist in our operations</li>
+          <li>When required by law or to protect our rights</li>
+          <li>With your consent or at your direction</li>
+        </ul>
+        
+        <h3>4. Data Security</h3>
+        <p>We implement appropriate security measures to protect your personal information. However, no method of transmission over the Internet is 100% secure.</p>
+        
+        <h3>5. Your Rights</h3>
+        <p>You have the right to:</p>
+        <ul>
+          <li>Access and update your personal information</li>
+          <li>Delete your account and associated data</li>
+          <li>Opt-out of marketing communications</li>
+          <li>Request a copy of your data</li>
+        </ul>
+        
+        <h3>6. Cookies and Tracking</h3>
+        <p>We use cookies and similar tracking technologies to track activity on our service and hold certain information to improve user experience.</p>
+        
+        <h3>7. Children's Privacy</h3>
+        <p>Our service is not intended for children under 13. We do not knowingly collect information from children under 13.</p>
+        
+        <h3>8. Contact Us</h3>
+        <p>If you have questions about this Privacy Policy, please contact us at privacy@ripple.com</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Get elements
+    const tosLink = document.getElementById('tosLink');
+    const privacyLink = document.getElementById('privacyLink');
+    const tosModal = document.getElementById('tosModal');
+    const privacyModal = document.getElementById('privacyModal');
+    const tosClose = document.getElementById('tosClose');
+    const privacyClose = document.getElementById('privacyClose');
+    const agreeCheckbox = document.getElementById('agree-terms');
+    const submitBtn = document.getElementById('submitBtn');
+    const registerForm = document.getElementById('registerForm');
+
+    // Initially disable submit button
+    submitBtn.disabled = true;
+
+    // Enable/disable submit button based on checkbox
+    agreeCheckbox.addEventListener('change', function() {
+      submitBtn.disabled = !this.checked;
+    });
+
+    // Open modals
+    tosLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      tosModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    });
+
+    privacyLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      privacyModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    });
+
+    // Close modals
+    tosClose.addEventListener('click', function() {
+      tosModal.classList.remove('active');
+      document.body.style.overflow = '';
+    });
+
+    privacyClose.addEventListener('click', function() {
+      privacyModal.classList.remove('active');
+      document.body.style.overflow = '';
+    });
+
+    // Close modals when clicking outside
+    tosModal.addEventListener('click', function(e) {
+      if (e.target === tosModal) {
+        tosModal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+
+    privacyModal.addEventListener('click', function(e) {
+      if (e.target === privacyModal) {
+        privacyModal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        tosModal.classList.remove('active');
+        privacyModal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Form validation on submit
+    registerForm.addEventListener('submit', function(e) {
+      if (!agreeCheckbox.checked) {
+        e.preventDefault();
+        alert('You must agree to the Terms of Service and Privacy Policy to register.');
+        return false;
+      }
+    });
+  </script>
 </body>
 </html>
-

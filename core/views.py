@@ -10,6 +10,10 @@ def landing(request):
         return redirect('core:home')
     return render(request, 'core/landing.html')
 
+def about(request):
+    """About Us page"""
+    return render(request, 'core/about.html')
+    
 def home(request):
     user = request.user if request.user.is_authenticated else None
 
