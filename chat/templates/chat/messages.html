@@ -1,6 +1,15 @@
 {% extends 'base.html' %}
 {% block title %} · Messages{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Hide Django messages popup on messages page */
+    .page-body > .alert {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <style>
 .messages-container {
@@ -118,10 +127,11 @@
     color: #6b7280;
 }
 
-/* Chat Area */
 .chat-area {
     display: flex;
     flex-direction: column;
+    min-height: 0; /* Important for flexbox to work correctly */
+    overflow: hidden; /* Prevent overflow */
 }
 
 .chat-header {
@@ -158,6 +168,7 @@
     overflow-y: auto;
     padding: 24px;
     background: #f9fafb;
+    min-height: 0; /* Important for flexbox to work correctly */
 }
 
 .message {
@@ -209,6 +220,8 @@
     padding: 16px 24px;
     border-top: 1px solid #e5e7eb;
     background: white;
+    flex-shrink: 0; /* Prevent shrinking */
+    z-index: 10; /* Ensure it's above other content */
 }
 
 .message-form {
@@ -348,7 +361,7 @@
             <!-- Messages Area -->
             <div class="messages-area" id="messagesArea">
                 {% for message in messages %}
-                <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}">
                     <div class="message-bubble">
                         <div class="message-content">{{ message.content }}</div>
                         <div class="message-time">{{ message.timestamp|date:"H:i" }}</div>
@@ -387,22 +400,176 @@
 </div>
 
 <script>
+const conversationId = {% if selected_conversation %}{{ selected_conversation.id }}{% else %}null{% endif %};
+let lastMessageId = {{ last_message_id|default:"0" }};
+let pollingInterval = null;
+let isPolling = false;
+
 // Auto-scroll to bottom of messages
 const messagesArea = document.getElementById('messagesArea');
 if (messagesArea && messagesArea.children.length > 0) {
     messagesArea.scrollTop = messagesArea.scrollHeight;
 }
 
-// Handle form submission (optional: could add AJAX here)
+// AJAX message sending
 const messageForm = document.getElementById('messageForm');
 if (messageForm) {
     messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
         const input = this.querySelector('input[name="content"]');
-        if (!input.value.trim()) {
-            e.preventDefault();
+        const content = input.value.trim();
+        
+        if (!content || !conversationId) {
             return;
         }
+        
+        // Disable form while sending
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+        
+        // Send via AJAX
+        fetch(`{% url 'chat:send_message' 0 %}`.replace('0', conversationId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `content=${encodeURIComponent(content)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Clear input
+                input.value = '';
+                
+                // Add message to UI immediately
+                addMessageToUI(data.message, true);
+                
+                // Update last message ID
+                lastMessageId = data.message.id;
+            } else {
+                alert('Failed to send message. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to send message. Please try again.');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
     });
 }
+
+// Add message to UI
+function addMessageToUI(messageData, isSent) {
+    const messagesArea = document.getElementById('messagesArea');
+    if (!messagesArea) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+    messageDiv.dataset.messageId = messageData.id;
+    
+    messageDiv.innerHTML = `
+        <div class="message-bubble">
+            <div class="message-content">${escapeHtml(messageData.content)}</div>
+            <div class="message-time">${messageData.timestamp}</div>
+        </div>
+    `;
+    
+    messagesArea.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Poll for new messages
+function pollForNewMessages() {
+    if (!conversationId || isPolling) return;
+    
+    isPolling = true;
+    fetch(`{% url 'chat:get_new_messages' 0 %}?last_message_id=${lastMessageId}`.replace('0', conversationId))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    addMessageToUI(msg, msg.is_sent);
+                    lastMessageId = Math.max(lastMessageId, msg.id);
+                });
+                
+                // Update unread counts in sidebar
+                updateConversationsList();
+            }
+        })
+        .catch(error => {
+            console.error('Polling error:', error);
+        })
+        .finally(() => {
+            isPolling = false;
+        });
+}
+
+// Update conversations list
+function updateConversationsList() {
+    fetch('{% url "chat:get_conversations_update" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update unread badges in sidebar
+                data.conversations.forEach(conv => {
+                    const convItem = document.querySelector(`.conversation-item[href*="conversation=${conv.id}"]`);
+                    if (convItem) {
+                        const badge = convItem.querySelector('.unread-badge');
+                        if (conv.unread_count > 0) {
+                            if (!badge) {
+                                const meta = convItem.querySelector('.conversation-meta');
+                                const badgeEl = document.createElement('span');
+                                badgeEl.className = 'unread-badge';
+                                badgeEl.textContent = conv.unread_count;
+                                meta.appendChild(badgeEl);
+                            } else {
+                                badge.textContent = conv.unread_count;
+                            }
+                        } else if (badge) {
+                            badge.remove();
+                        }
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Update conversations error:', error);
+        });
+}
+
+// Start polling when conversation is selected
+if (conversationId) {
+    // Poll every 3 seconds
+    pollingInterval = setInterval(pollForNewMessages, 3000);
+    
+    // Also poll immediately
+    setTimeout(pollForNewMessages, 1000);
+    
+    // Update conversations list every 5 seconds
+    setInterval(updateConversationsList, 5000);
+}
+
+// Clean up on page unload
+window.addEventListener('beforeunload', function() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+    }
+});
 </script>
 {% endblock %}

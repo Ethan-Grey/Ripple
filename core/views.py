@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
-from skills.models import Skill, UserSkill, Match
+from skills.models import Skill, UserSkill, Match, TeachingClass, SwipeAction
 from communities.models import Community
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+import json
 
 def landing(request):
     # If user is already logged in, redirect to dashboard
@@ -144,3 +147,158 @@ def skill_detail(request, skill_id):
         'learners_count': learners.count(),
     }
     return render(request, 'core/skill_detail.html', context)
+
+@login_required
+def swipe(request):
+    """Swipe interface for discovering classes"""
+    # Get classes user hasn't swiped on yet (only published classes)
+    swiped_class_ids = SwipeAction.objects.filter(
+        user=request.user
+    ).values_list('teaching_class_id', flat=True)
+    
+    # Get next class to show (only published classes)
+    available_classes = TeachingClass.objects.filter(
+        is_published=True
+    ).exclude(
+        id__in=swiped_class_ids
+    ).select_related('teacher').prefetch_related('topics').order_by('?')
+    
+    card_class = available_classes.first()
+    
+    # Get whitelist and blacklist counts
+    whitelist_count = SwipeAction.objects.filter(
+        user=request.user,
+        action=SwipeAction.SWIPE_RIGHT
+    ).count()
+    
+    blacklist_count = SwipeAction.objects.filter(
+        user=request.user,
+        action=SwipeAction.SWIPE_LEFT
+    ).count()
+    
+    context = {
+        'card_class': card_class,
+        'whitelist_count': whitelist_count,
+        'blacklist_count': blacklist_count,
+        'total_classes': TeachingClass.objects.filter(is_published=True).count(),
+        'swiped_count': len(swiped_class_ids),
+        'has_swiped': len(swiped_class_ids) > 0,  # Show stats only if user has swiped
+    }
+    return render(request, 'core/swipe.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def swipe_action(request):
+    """Handle swipe left/right actions via AJAX"""
+    try:
+        data = json.loads(request.body)
+        class_id = data.get('class_id')
+        action = data.get('action')  # 'left' or 'right'
+        
+        if not class_id or action not in ['left', 'right']:
+            return JsonResponse({'error': 'Invalid data'}, status=400)
+        
+        teaching_class = get_object_or_404(TeachingClass, id=class_id, is_published=True)
+        
+        # Create or update swipe action
+        swipe, created = SwipeAction.objects.update_or_create(
+            user=request.user,
+            teaching_class=teaching_class,
+            defaults={'action': action}
+        )
+        
+        # Get next class
+        swiped_class_ids = SwipeAction.objects.filter(
+            user=request.user
+        ).values_list('teaching_class_id', flat=True)
+        
+        next_class = TeachingClass.objects.filter(
+            is_published=True
+        ).exclude(
+            id__in=swiped_class_ids
+        ).select_related('teacher').prefetch_related('topics').order_by('?').first()
+        
+        # Get updated counts
+        whitelist_count = SwipeAction.objects.filter(
+            user=request.user,
+            action=SwipeAction.SWIPE_RIGHT
+        ).count()
+        
+        blacklist_count = SwipeAction.objects.filter(
+            user=request.user,
+            action=SwipeAction.SWIPE_LEFT
+        ).count()
+        
+        response_data = {
+            'success': True,
+            'action': action,
+            'whitelist_count': whitelist_count,
+            'blacklist_count': blacklist_count,
+        }
+        
+        if next_class:
+            response_data['next_class'] = {
+                'id': next_class.id,
+                'title': next_class.title,
+                'short_description': next_class.short_description or 'No description available',
+                'teacher': next_class.teacher.username,
+                'difficulty': next_class.get_difficulty_display(),
+                'duration_minutes': next_class.duration_minutes,
+                'price_cents': next_class.price_cents,
+                'topics': [topic.name for topic in next_class.topics.all()[:3]],
+                'slug': next_class.slug,
+            }
+        else:
+            response_data['no_more_classes'] = True
+        
+        return JsonResponse(response_data)
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def view_whitelist(request):
+    """View whitelisted classes"""
+    whitelist = SwipeAction.objects.filter(
+        user=request.user,
+        action=SwipeAction.SWIPE_RIGHT
+    ).select_related('teaching_class', 'teaching_class__teacher').prefetch_related('teaching_class__topics')
+    
+    # Get enrolled class IDs for badges
+    from skills.models import ClassEnrollment
+    enrolled_class_ids = ClassEnrollment.objects.filter(
+        user=request.user,
+        status=ClassEnrollment.ACTIVE
+    ).values_list('teaching_class_id', flat=True)
+    
+    return render(request, 'core/whitelist.html', {
+        'whitelist': whitelist,
+        'enrolled_class_ids': enrolled_class_ids
+    })
+
+@login_required
+def view_blacklist(request):
+    """View blacklisted classes"""
+    blacklist = SwipeAction.objects.filter(
+        user=request.user,
+        action=SwipeAction.SWIPE_LEFT
+    ).select_related('teaching_class', 'teaching_class__teacher').prefetch_related('teaching_class__topics')
+    
+    return render(request, 'core/blacklist.html', {'blacklist': blacklist})
+
+
+@login_required
+@require_http_methods(["POST"])
+def remove_swipe_action(request, class_id):
+    """Remove a swipe action (undo swipe)"""
+    try:
+        SwipeAction.objects.filter(
+            user=request.user,
+            teaching_class_id=class_id
+        ).delete()
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

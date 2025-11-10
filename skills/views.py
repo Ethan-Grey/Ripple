@@ -1,15 +1,19 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Prefetch
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
+from django.utils import timezone
+from django.contrib import messages
 
 from .models import TeachingClass, ClassTopic, ClassReview, ClassEnrollment, ClassTradeOffer, TeacherApplication
+from chat.views import get_or_create_conversation
+from chat.models import Message
 from decimal import Decimal, InvalidOperation
 import json
 
@@ -74,16 +78,224 @@ class ClassTradeProposeView(LoginRequiredMixin, View):
         offered_id = request.POST.get('offered_class_id')
         message = request.POST.get('message', '').strip()
         if not offered_id:
+            messages.error(request, 'Please select a class to offer.')
             return HttpResponseRedirect(reverse('skills:class_detail', args=[requested_class.slug]))
         offered_class = get_object_or_404(TeachingClass, pk=offered_id, teacher=request.user)
-        ClassTradeOffer.objects.create(
+        
+        # Check if there's already a pending offer
+        existing = ClassTradeOffer.objects.filter(
             proposer=request.user,
             receiver=requested_class.teacher,
-            offered_class=offered_class,
             requested_class=requested_class,
-            message=message,
-        )
+            offered_class=offered_class,
+            status=ClassTradeOffer.PENDING
+        ).first()
+        
+        if existing:
+            messages.info(request, 'You already have a pending trade offer for this class.')
+        else:
+            trade_offer = ClassTradeOffer.objects.create(
+                proposer=request.user,
+                receiver=requested_class.teacher,
+                offered_class=offered_class,
+                requested_class=requested_class,
+                message=message,
+            )
+            messages.success(request, 'Trade offer sent successfully!')
+            
+            # Create a message in the chat system
+            conversation = get_or_create_conversation(request.user, requested_class.teacher)
+            message_content = f"Hi! I'd like to propose a trade: I'll offer my class '{offered_class.title}' in exchange for your class '{requested_class.title}'."
+            if message:
+                message_content += f"\n\nNote: {message}"
+            message_content += f"\n\nView the trade offer: {request.build_absolute_uri(reverse('skills:trade_offers'))}"
+            
+            Message.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                content=message_content
+            )
         return HttpResponseRedirect(reverse('skills:class_detail', args=[requested_class.slug]))
+
+
+class TradeOffersListView(LoginRequiredMixin, View):
+    """View to list all trade offers (received and sent)"""
+    template_name = 'skills/trade_offers.html'
+    
+    def get(self, request):
+        # Get filter parameter (show all or only active)
+        show_all = request.GET.get('show_all', 'false').lower() == 'true'
+        
+        # Get received trade offers (offers where user is the receiver)
+        received_queryset = ClassTradeOffer.objects.filter(
+            receiver=request.user
+        ).select_related('proposer', 'offered_class', 'requested_class')
+        
+        # Filter out declined/cancelled if not showing all
+        if not show_all:
+            received_queryset = received_queryset.exclude(
+                status__in=[ClassTradeOffer.DECLINED, ClassTradeOffer.CANCELLED]
+            )
+        
+        received_offers = received_queryset.order_by('-created_at')
+        
+        # Get sent trade offers (offers where user is the proposer)
+        sent_queryset = ClassTradeOffer.objects.filter(
+            proposer=request.user
+        ).select_related('receiver', 'offered_class', 'requested_class')
+        
+        # Filter out declined/cancelled if not showing all
+        if not show_all:
+            sent_queryset = sent_queryset.exclude(
+                status__in=[ClassTradeOffer.DECLINED, ClassTradeOffer.CANCELLED]
+            )
+        
+        sent_offers = sent_queryset.order_by('-created_at')
+        
+        context = {
+            'received_offers': received_offers,
+            'sent_offers': sent_offers,
+            'show_all': show_all,
+        }
+        return render(request, self.template_name, context)
+
+
+class AcceptTradeOfferView(LoginRequiredMixin, View):
+    """Accept a trade offer and enroll both users"""
+    def post(self, request, offer_id):
+        trade_offer = get_object_or_404(
+            ClassTradeOffer,
+            id=offer_id,
+            receiver=request.user,
+            status=ClassTradeOffer.PENDING
+        )
+        
+        # Check if both classes are still available and tradeable
+        if not trade_offer.requested_class.is_published or not trade_offer.requested_class.is_tradeable:
+            messages.error(request, 'The requested class is no longer available for trading.')
+            return HttpResponseRedirect(reverse('skills:trade_offers'))
+        
+        if not trade_offer.offered_class.is_published or not trade_offer.offered_class.is_tradeable:
+            messages.error(request, 'The offered class is no longer available for trading.')
+            return HttpResponseRedirect(reverse('skills:trade_offers'))
+        
+        # Check if either user is already enrolled
+        if ClassEnrollment.objects.filter(
+            user=trade_offer.proposer,
+            teaching_class=trade_offer.requested_class,
+            status=ClassEnrollment.ACTIVE
+        ).exists():
+            messages.warning(request, 'The proposer is already enrolled in the requested class.')
+            trade_offer.status = ClassTradeOffer.CANCELLED
+            trade_offer.decided_at = timezone.now()
+            trade_offer.save()
+            return HttpResponseRedirect(reverse('skills:trade_offers'))
+        
+        if ClassEnrollment.objects.filter(
+            user=trade_offer.receiver,
+            teaching_class=trade_offer.offered_class,
+            status=ClassEnrollment.ACTIVE
+        ).exists():
+            messages.warning(request, 'You are already enrolled in the offered class.')
+            trade_offer.status = ClassTradeOffer.CANCELLED
+            trade_offer.decided_at = timezone.now()
+            trade_offer.save()
+            return HttpResponseRedirect(reverse('skills:trade_offers'))
+        
+        # Enroll both users
+        ClassEnrollment.objects.update_or_create(
+            user=trade_offer.proposer,
+            teaching_class=trade_offer.requested_class,
+            defaults={
+                'status': ClassEnrollment.ACTIVE,
+                'granted_via': ClassEnrollment.TRADE,
+                'purchase_id': f'trade_{trade_offer.id}'
+            }
+        )
+        
+        ClassEnrollment.objects.update_or_create(
+            user=trade_offer.receiver,
+            teaching_class=trade_offer.offered_class,
+            defaults={
+                'status': ClassEnrollment.ACTIVE,
+                'granted_via': ClassEnrollment.TRADE,
+                'purchase_id': f'trade_{trade_offer.id}'
+            }
+        )
+        
+        # Update trade offer status
+        trade_offer.status = ClassTradeOffer.ACCEPTED
+        trade_offer.decided_at = timezone.now()
+        trade_offer.save()
+        
+        # Create a message in the chat system
+        conversation = get_or_create_conversation(request.user, trade_offer.proposer)
+        message_content = f"Great news! I've accepted your trade offer. 🎉\n\nYou are now enrolled in '{trade_offer.requested_class.title}' and I'm enrolled in '{trade_offer.offered_class.title}'.\n\nLet's learn together!"
+        
+        Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            content=message_content
+        )
+        
+        messages.success(request, f'Trade accepted! You are now enrolled in "{trade_offer.offered_class.title}" and {trade_offer.proposer.username} is enrolled in "{trade_offer.requested_class.title}".')
+        return HttpResponseRedirect(reverse('skills:trade_offers'))
+
+
+class DeclineTradeOfferView(LoginRequiredMixin, View):
+    """Decline a trade offer"""
+    def post(self, request, offer_id):
+        trade_offer = get_object_or_404(
+            ClassTradeOffer,
+            id=offer_id,
+            receiver=request.user,
+            status=ClassTradeOffer.PENDING
+        )
+        
+        trade_offer.status = ClassTradeOffer.DECLINED
+        trade_offer.decided_at = timezone.now()
+        trade_offer.save()
+        
+        # Create a message in the chat system
+        conversation = get_or_create_conversation(request.user, trade_offer.proposer)
+        message_content = f"I've declined your trade offer for '{trade_offer.requested_class.title}'.\n\nThanks for your interest! Feel free to reach out if you have other trade proposals."
+        
+        Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            content=message_content
+        )
+        
+        messages.info(request, 'Trade offer declined.')
+        return HttpResponseRedirect(reverse('skills:trade_offers'))
+
+
+class CancelTradeOfferView(LoginRequiredMixin, View):
+    """Cancel a trade offer (by the proposer)"""
+    def post(self, request, offer_id):
+        trade_offer = get_object_or_404(
+            ClassTradeOffer,
+            id=offer_id,
+            proposer=request.user,
+            status=ClassTradeOffer.PENDING
+        )
+        
+        trade_offer.status = ClassTradeOffer.CANCELLED
+        trade_offer.decided_at = timezone.now()
+        trade_offer.save()
+        
+        # Create a message in the chat system
+        conversation = get_or_create_conversation(request.user, trade_offer.receiver)
+        message_content = f"I've cancelled my trade offer for '{trade_offer.requested_class.title}'.\n\nSorry for any inconvenience. Feel free to reach out if you'd like to discuss other trade opportunities!"
+        
+        Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            content=message_content
+        )
+        
+        messages.info(request, 'Trade offer cancelled.')
+        return HttpResponseRedirect(reverse('skills:trade_offers'))
 
 
 class TeacherApplicationCreateView(LoginRequiredMixin, CreateView):

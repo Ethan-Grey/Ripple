@@ -1,0 +1,937 @@
+{% extends 'base.html' %}
+{% block title %} · My Applications{% endblock %}
+
+{% block content %}
+<div class="applications-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>My Applications</h1>
+        <p class="subtitle">Track all your requests, verifications, and applications in one place</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <div class="stat-icon">📋</div>
+            <div class="stat-content">
+                <div class="stat-number">{{ stats.total_applications }}</div>
+                <div class="stat-label">Total Applications</div>
+            </div>
+        </div>
+        
+        <div class="stat-card pending">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-content">
+                <div class="stat-number">{{ stats.pending_count }}</div>
+                <div class="stat-label">Pending Review</div>
+            </div>
+        </div>
+        
+        <div class="stat-card approved">
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+                <div class="stat-number">{{ stats.approved_count }}</div>
+                <div class="stat-label">Approved</div>
+            </div>
+        </div>
+        
+        <div class="stat-card rejected">
+            <div class="stat-icon">❌</div>
+            <div class="stat-content">
+                <div class="stat-number">{{ stats.rejected_count }}</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All Applications</button>
+        <button class="filter-tab" data-filter="pending">Pending</button>
+        <button class="filter-tab" data-filter="approved">Approved</button>
+        <button class="filter-tab" data-filter="rejected">Rejected</button>
+    </div>
+
+    <!-- Applications List -->
+    <div class="applications-list">
+        
+        <!-- Identity Verification -->
+        {% if latest_identity or profile.verification_status == 'pending' or profile.verification_status == 'unverified' %}
+        <div class="application-card" data-status="{{ profile.verification_status }}" data-type="identity">
+            <div class="card-header">
+                <div class="header-left">
+                    <div class="app-icon identity">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="app-info">
+                        <h3>Identity Verification</h3>
+                        <p class="app-meta">
+                            {% if latest_identity %}
+                                Submitted {{ latest_identity.created_at|timesince }} ago
+                            {% else %}
+                                Not yet submitted
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="status-badge status-{{ profile.verification_status }}">
+                    {% if profile.verification_status == 'verified' %}
+                        <i class="bi bi-check-circle-fill"></i> Verified
+                    {% elif profile.verification_status == 'pending' %}
+                        <i class="bi bi-clock-fill"></i> Pending Review
+                    {% else %}
+                        <i class="bi bi-exclamation-triangle-fill"></i> Not Submitted
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if profile.verification_status == 'verified' %}
+                    <div class="success-message">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div>
+                            <strong>Verified Successfully!</strong>
+                            <p>Your identity has been verified. You have full access to all platform features.</p>
+                        </div>
+                    </div>
+                {% elif profile.verification_status == 'pending' %}
+                    <div class="pending-message">
+                        <i class="bi bi-clock-fill"></i>
+                        <div>
+                            <strong>Under Review</strong>
+                            <p>Your identity verification is being reviewed by our team. This typically takes 1-3 business days.</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="info-message">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <div>
+                            <strong>Verification Required</strong>
+                            <p>Verify your identity to increase trust and unlock premium features.</p>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% if latest_identity %}
+                <div class="application-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Name:</span>
+                        <span class="detail-value">{{ latest_identity.first_name }} {{ latest_identity.last_name }}</span>
+                    </div>
+                    {% if latest_identity.nationality %}
+                    <div class="detail-row">
+                        <span class="detail-label">Nationality:</span>
+                        <span class="detail-value">{{ latest_identity.nationality }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer">
+                <a href="{% url 'users:verification_status' %}" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-eye"></i> View Details
+                </a>
+                {% if profile.verification_status == 'unverified' %}
+                    <a href="{% url 'users:verify_identity' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-upload"></i> Submit Verification
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Skill Verifications -->
+        {% for skill in skill_verifications %}
+        <div class="application-card" data-status="{{ skill.verification_status }}" data-type="skill">
+            <div class="card-header">
+                <div class="header-left">
+                    <div class="app-icon skill">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                    <div class="app-info">
+                        <h3>Teaching Verification: {{ skill.skill.name }}</h3>
+                        <p class="app-meta">
+                            Skill level: {{ skill.get_level_display }} • 
+                            Updated {{ skill.updated_at|timesince }} ago
+                        </p>
+                    </div>
+                </div>
+                <div class="status-badge status-{{ skill.verification_status }}">
+                    {% if skill.verification_status == 'verified' %}
+                        <i class="bi bi-check-circle-fill"></i> Verified
+                    {% elif skill.verification_status == 'pending' %}
+                        <i class="bi bi-clock-fill"></i> Pending
+                    {% elif skill.verification_status == 'rejected' %}
+                        <i class="bi bi-x-circle-fill"></i> Rejected
+                    {% else %}
+                        <i class="bi bi-exclamation-triangle-fill"></i> Unverified
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if skill.verification_status == 'verified' %}
+                    <div class="success-message">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div>
+                            <strong>Verified Successfully!</strong>
+                            <p>Your teaching ability for {{ skill.skill.name }} has been verified. You can now offer lessons!</p>
+                        </div>
+                    </div>
+                {% elif skill.verification_status == 'pending' %}
+                    <div class="pending-message">
+                        <i class="bi bi-clock-fill"></i>
+                        <div>
+                            <strong>Under Review</strong>
+                            <p>Your skill verification is being reviewed by our team. You'll be notified once complete.</p>
+                        </div>
+                    </div>
+                {% elif skill.verification_status == 'rejected' %}
+                    <div class="error-message">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <div>
+                            <strong>Verification Rejected</strong>
+                            {% if skill.verification_message %}
+                                <p>{{ skill.verification_message }}</p>
+                            {% else %}
+                                <p>Your skill verification was not approved. Please submit additional evidence or improve the quality of your documentation.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="info-message">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <div>
+                            <strong>Evidence Required</strong>
+                            <p>Submit evidence to verify your teaching ability for {{ skill.skill.name }}.</p>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% if skill.evidence.exists %}
+                <div class="application-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Evidence Submitted:</span>
+                        <span class="detail-value">{{ skill.evidence.count }} document{{ skill.evidence.count|pluralize }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer">
+                <a href="{% url 'users:verify_skill' skill.skill.id %}" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-eye"></i> View Details
+                </a>
+                {% if skill.verification_status != 'verified' %}
+                    <a href="{% url 'users:verify_skill' skill.skill.id %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-upload"></i> 
+                        {% if skill.verification_status == 'rejected' %}Resubmit Evidence{% else %}Submit Evidence{% endif %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Community Requests -->
+        {% for request in community_requests %}
+        <div class="application-card" data-status="{{ request.status }}" data-type="community">
+            <div class="card-header">
+                <div class="header-left">
+                    <div class="app-icon community">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="app-info">
+                        <h3>Community Request: {{ request.name }}</h3>
+                        <p class="app-meta">
+                            Skill: {{ request.skill.name }} • 
+                            Submitted {{ request.created_at|timesince }} ago
+                        </p>
+                    </div>
+                </div>
+                <div class="status-badge status-{{ request.status }}">
+                    {% if request.status == 'approved' %}
+                        <i class="bi bi-check-circle-fill"></i> Approved
+                    {% elif request.status == 'pending' %}
+                        <i class="bi bi-clock-fill"></i> Pending
+                    {% else %}
+                        <i class="bi bi-x-circle-fill"></i> Rejected
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if request.status == 'approved' %}
+                    <div class="success-message">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div>
+                            <strong>Community Created!</strong>
+                            <p>Your community "{{ request.name }}" has been approved and created!</p>
+                            {% if request.reviewed_at %}
+                                <p class="review-meta">Approved {{ request.reviewed_at|timesince }} ago by {{ request.reviewed_by.username }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% elif request.status == 'pending' %}
+                    <div class="pending-message">
+                        <i class="bi bi-clock-fill"></i>
+                        <div>
+                            <strong>Under Review</strong>
+                            <p>Your community request is awaiting admin review. This typically takes 1-2 business days.</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="error-message">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <div>
+                            <strong>Request Rejected</strong>
+                            {% if request.admin_notes %}
+                                <p>{{ request.admin_notes }}</p>
+                            {% else %}
+                                <p>Your community request was not approved. Please review the guidelines and try again with a different proposal.</p>
+                            {% endif %}
+                            {% if request.reviewed_at %}
+                                <p class="review-meta">Reviewed {{ request.reviewed_at|timesince }} ago by {{ request.reviewed_by.username }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="application-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Description:</span>
+                        <span class="detail-value">{{ request.description|truncatewords:30 }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Your Reason:</span>
+                        <span class="detail-value">{{ request.reason|truncatewords:20 }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <a href="{% url 'communities:my_requests' %}" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-eye"></i> View All Requests
+                </a>
+                {% if request.status == 'rejected' %}
+                    <a href="{% url 'communities:request_community' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Create New Request
+                    </a>
+                {% elif request.status == 'approved' %}
+                    <a href="{% url 'communities:communities' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-right"></i> Go to Community
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Class Applications -->
+        {% for application in class_applications %}
+        <div class="application-card" data-status="{{ application.status }}" data-type="class">
+            <div class="card-header">
+                <div class="header-left">
+                    <div class="app-icon class">
+                        <i class="bi bi-book-fill"></i>
+                    </div>
+                    <div class="app-info">
+                        <h3>Class Application: {{ application.title }}</h3>
+                        <p class="app-meta">
+                            Level: {{ application.get_difficulty_display }} • 
+                            Duration: {{ application.duration_minutes }}m • 
+                            Submitted {{ application.created_at|timesince }} ago
+                        </p>
+                    </div>
+                </div>
+                <div class="status-badge status-{{ application.status }}">
+                    {% if application.status == 'approved' %}
+                        <i class="bi bi-check-circle-fill"></i> Approved
+                    {% elif application.status == 'pending' %}
+                        <i class="bi bi-clock-fill"></i> Pending
+                    {% else %}
+                        <i class="bi bi-x-circle-fill"></i> Rejected
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if application.status == 'approved' %}
+                    <div class="success-message">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div>
+                            <strong>Application Approved!</strong>
+                            <p>Your class "{{ application.title }}" has been approved! You can now publish and start teaching.</p>
+                            {% if application.reviewed_at %}
+                                <p class="review-meta">Approved {{ application.reviewed_at|timesince }} ago{% if application.reviewer %} by {{ application.reviewer.username }}{% endif %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% elif application.status == 'pending' %}
+                    <div class="pending-message">
+                        <i class="bi bi-clock-fill"></i>
+                        <div>
+                            <strong>Under Review</strong>
+                            <p>Your class application is being reviewed by our team. This typically takes 1-2 business days.</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="error-message">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <div>
+                            <strong>Application Rejected</strong>
+                            {% if application.decision_notes %}
+                                <p>{{ application.decision_notes }}</p>
+                            {% else %}
+                                <p>Your class application was not approved. Please review the guidelines and try again with a different proposal.</p>
+                            {% endif %}
+                            {% if application.reviewed_at %}
+                                <p class="review-meta">Reviewed {{ application.reviewed_at|timesince }} ago{% if application.reviewer %} by {{ application.reviewer.username }}{% endif %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="application-details">
+                    {% if application.bio %}
+                    <div class="detail-row">
+                        <span class="detail-label">Bio:</span>
+                        <span class="detail-value">{{ application.bio|truncatewords:30 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="detail-row">
+                        <span class="detail-label">Price:</span>
+                        <span class="detail-value">
+                            {% if application.price_cents > 0 %}
+                                ${{ application.price_dollars|floatformat:2 }}
+                            {% else %}
+                                Free
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if application.is_tradeable %}
+                    <div class="detail-row">
+                        <span class="detail-label">Tradeable:</span>
+                        <span class="detail-value">Yes</span>
+                    </div>
+                    {% endif %}
+                    {% if application.expertise_topics %}
+                    <div class="detail-row">
+                        <span class="detail-label">Topics:</span>
+                        <span class="detail-value">{{ application.expertise_topics|truncatewords:20 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                {% if application.status == 'approved' %}
+                    <a href="{% url 'skills:class_list' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-right"></i> View Classes
+                    </a>
+                {% elif application.status == 'rejected' %}
+                    <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Submit New Application
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Empty State -->
+        {% if not latest_identity and not skill_verifications and not community_requests and not class_applications %}
+        <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3>No Applications Yet</h3>
+            <p>You haven't submitted any applications or verification requests.</p>
+            <div class="empty-actions">
+                <a href="{% url 'users:verify_identity' %}" class="btn btn-primary">
+                    <i class="bi bi-shield-check"></i> Verify Identity
+                </a>
+                <a href="{% url 'users:profile' %}" class="btn btn-secondary">
+                    <i class="bi bi-lightning-charge"></i> Add Teaching Skills
+                </a>
+                <a href="{% url 'communities:request_community' %}" class="btn btn-secondary">
+                    <i class="bi bi-people"></i> Request Community
+                </a>
+                <a href="{% url 'skills:teacher_apply' %}" class="btn btn-secondary">
+                    <i class="bi bi-book"></i> Apply to Teach a Class
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.applications-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.subtitle {
+    color: #6b7280;
+    font-size: 1.1rem;
+}
+
+/* Statistics Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid transparent;
+}
+
+.stat-card.total { border-left-color: #3b82f6; }
+.stat-card.pending { border-left-color: #f59e0b; }
+.stat-card.approved { border-left-color: #10b981; }
+.stat-card.rejected { border-left-color: #ef4444; }
+
+.stat-icon {
+    font-size: 2.5rem;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+/* Filter Tabs */
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
+}
+
+.filter-tab {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #6b7280;
+}
+
+.filter-tab:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.filter-tab.active {
+    background: #3b82f6;
+    color: white;
+}
+
+/* Application Cards */
+.applications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.application-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.application-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.app-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.app-icon.identity { background: #3b82f6; }
+.app-icon.skill { background: #f59e0b; }
+.app-icon.community { background: #8b5cf6; }
+.app-icon.class { background: #10b981; }
+
+.app-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.app-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.app-meta {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.status-badge.status-verified,
+.status-badge.status-approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.status-rejected,
+.status-badge.status-unverified {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.success-message,
+.pending-message,
+.error-message,
+.info-message {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.success-message i,
+.pending-message i,
+.error-message i,
+.info-message i {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+}
+
+.success-message {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
+.pending-message {
+    background: #fef3c7;
+    color: #92400e;
+    border-left: 4px solid #f59e0b;
+}
+
+.error-message {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+.info-message {
+    background: #dbeafe;
+    color: #1e40af;
+    border-left: 4px solid #3b82f6;
+}
+
+.success-message p,
+.pending-message p,
+.error-message p,
+.info-message p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.95rem;
+}
+
+.success-message strong,
+.pending-message strong,
+.error-message strong,
+.info-message strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.review-meta {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-top: 0.5rem !important;
+}
+
+.application-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.detail-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #6b7280;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    color: #1f2937;
+    word-break: break-word;
+}
+
+.card-footer {
+    padding: 1rem 1.5rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    background: white;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background: #f9fafb;
+    color: #1f2937;
+    text-decoration: none;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.empty-state p {
+    color: #6b7280;
+    margin-bottom: 2rem;
+}
+
+.empty-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .applications-container {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .status-badge {
+        align-self: flex-start;
+    }
+    
+    .card-footer {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .detail-label {
+        min-width: auto;
+    }
+}
+</style>
+
+<script>
+// Filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const applicationCards = document.querySelectorAll('.application-card');
+    
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            
+            // Update active tab
+            filterTabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter cards
+            let visibleCount = 0;
+            applicationCards.forEach(card => {
+                const status = card.dataset.status;
+                
+                if (filter === 'all') {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    if (status === filter) {
+                        card.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Show empty state if no cards visible
+            const emptyState = document.querySelector('.empty-state');
+            if (visibleCount === 0 && !emptyState) {
+                const applicationsList = document.querySelector('.applications-list');
+                const tempEmpty = document.createElement('div');
+                tempEmpty.className = 'empty-state temp-empty';
+                tempEmpty.innerHTML = `
+                    <div class="empty-icon">🔍</div>
+                    <h3>No ${filter} Applications</h3>
+                    <p>You don't have any ${filter} applications at the moment.</p>
+                `;
+                applicationsList.appendChild(tempEmpty);
+            } else if (visibleCount > 0) {
+                const tempEmpty = document.querySelector('.temp-empty');
+                if (tempEmpty) tempEmpty.remove();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
