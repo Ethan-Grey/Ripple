@@ -5,46 +5,385 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register · Ripple</title>
-  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .auth-container {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Left Side - Welcome Section */
+    .auth-welcome {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 80px 60px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 500px;
+    }
+
+    .welcome-icon {
+      font-size: 80px;
+      margin-bottom: 32px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .welcome-title {
+      font-size: 48px;
+      font-weight: 900;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+      line-height: 1.2;
+    }
+
+    .welcome-subtitle {
+      font-size: 20px;
+      line-height: 1.6;
+      opacity: 0.95;
+      font-weight: 500;
+    }
+
+    .welcome-features {
+      margin-top: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      text-align: left;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 16px 20px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .feature-text {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* Decorative Shapes */
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.1;
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    .shape-1 {
+      width: 300px;
+      height: 300px;
+      background: white;
+      top: -100px;
+      left: -100px;
+    }
+
+    .shape-2 {
+      width: 200px;
+      height: 200px;
+      background: white;
+      bottom: -50px;
+      right: -50px;
+      animation-delay: 1s;
+    }
+
+    .shape-3 {
+      width: 150px;
+      height: 150px;
+      background: white;
+      top: 50%;
+      right: 10%;
+      animation-delay: 2s;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.1; }
+      50% { transform: scale(1.1); opacity: 0.15; }
+    }
+
+    /* Right Side - Register Form */
+    .auth-form-section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 80px 60px;
+      background: #ffffff;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .form-wrapper {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .form-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #111827;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .form-subtitle {
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    /* Alert Messages */
+    .auth-alert {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+      padding: 14px 18px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 2px solid #fca5a5;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .auth-alert::before {
+      content: '⚠️';
+      font-size: 18px;
+    }
+
+    /* Form Styles */
+    .register-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f9fafb;
+      font-size: 15px;
+      font-family: inherit;
+      color: #111827;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: #9ca3af;
+    }
+
+    /* Checkbox Group */
     .checkbox-group {
       display: flex;
-      align-items: flex-start;
+      align-items: start;
       gap: 12px;
-      margin: 8px 0;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+      border: 2px solid rgba(102, 126, 234, 0.15);
+      border-radius: 12px;
+      margin-top: 8px;
     }
 
-    .checkbox-group input[type="checkbox"] {
-      margin-top: 4px;
-      width: 18px;
-      height: 18px;
+    .checkbox-input {
+      width: 20px;
+      height: 20px;
       cursor: pointer;
-      accent-color: var(--brand);
+      accent-color: #667eea;
+      flex-shrink: 0;
+      margin-top: 2px;
     }
 
-    .checkbox-group label {
-      color: var(--muted);
+    .checkbox-label {
       font-size: 14px;
+      color: #374151;
+      line-height: 1.6;
       font-weight: 500;
-      line-height: 1.5;
       cursor: pointer;
     }
 
-    .checkbox-group a {
-      color: var(--brand);
+    .checkbox-link {
+      color: #667eea;
       text-decoration: none;
-      font-weight: 600;
-      transition: color 0.2s ease;
+      font-weight: 700;
+      transition: color 0.2s;
     }
 
-    .checkbox-group a:hover {
-      color: var(--accent);
+    .checkbox-link:hover {
+      color: #5a67d8;
       text-decoration: underline;
     }
 
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      margin-top: 8px;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .submit-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .form-footer {
+      margin-top: 32px;
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 15px;
+      color: #6b7280;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+
+    .footer-link {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 700;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+      color: #5a67d8;
+      text-decoration: underline;
+    }
+
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #9ca3af;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+
+    .back-home:hover {
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .back-home svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Divider */
+    .divider {
+      margin: 24px 0;
+      text-align: center;
+      position: relative;
+    }
+
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #e5e7eb;
+    }
+
+    .divider-text {
+      position: relative;
+      display: inline-block;
+      padding: 0 16px;
+      background: white;
+      font-size: 13px;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+
+    /* Modal Styles */
     .modal {
       display: none;
       position: fixed;
@@ -70,11 +409,12 @@
     }
 
     .modal-content {
-      background: var(--surface);
+      background: white;
       max-width: 700px;
       width: 100%;
       max-height: 80vh;
       overflow-y: auto;
+      border-radius: 20px;
       padding: 40px;
       box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
       position: relative;
@@ -91,26 +431,26 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 2px solid var(--border);
+      padding-bottom: 20px;
+      border-bottom: 2px solid #f3f4f6;
     }
 
-    .modal-header h2 {
+    .modal-title {
       margin: 0;
       font-size: 28px;
-      font-weight: 700;
-      color: var(--text);
+      font-weight: 800;
+      color: #111827;
     }
 
     .modal-close {
-      background: none;
+      background: #f3f4f6;
       border: none;
-      font-size: 32px;
-      color: var(--muted);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      font-size: 24px;
+      color: #6b7280;
       cursor: pointer;
-      padding: 0;
-      width: 36px;
-      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -118,20 +458,21 @@
     }
 
     .modal-close:hover {
-      color: var(--text);
+      background: #e5e7eb;
+      color: #111827;
       transform: rotate(90deg);
     }
 
     .modal-body {
-      color: var(--text);
+      color: #374151;
       line-height: 1.8;
     }
 
     .modal-body h3 {
       margin: 24px 0 12px 0;
       font-size: 20px;
-      font-weight: 600;
-      color: var(--brand);
+      font-weight: 700;
+      color: #111827;
     }
 
     .modal-body p {
@@ -149,34 +490,91 @@
       font-size: 15px;
     }
 
-    .cta:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none !important;
+    .modal-body strong {
+      color: #111827;
     }
 
-    .cta:disabled:hover {
-      box-shadow: none;
+    /* Responsive Design */
+    @media (max-width: 968px) {
+      .auth-container {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-welcome {
+        display: none;
+      }
+
+      .auth-form-section {
+        padding: 60px 24px;
+      }
+
+      .form-wrapper {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .auth-form-section {
+        padding: 40px 20px;
+      }
+
+      .form-title {
+        font-size: 28px;
+      }
+
+      .form-subtitle {
+        font-size: 14px;
+      }
+
+      .modal-content {
+        padding: 28px 20px;
+      }
+
+      .modal-title {
+        font-size: 24px;
+      }
     }
   </style>
 </head>
-<body class="auth-body">
-  <div class="auth-split">
-    <section class="auth-left">
-      <div class="welcome">
-        <h1>Create your account</h1>
-        <p>Join communities and swap skills today.</p>
+<body>
+  <div class="auth-container">
+    <!-- Left Side - Welcome -->
+    <div class="auth-welcome">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      
+      <div class="welcome-content">
+        <div class="welcome-icon">✨</div>
+        <h1 class="welcome-title">Start Your Journey</h1>
+        <p class="welcome-subtitle">Join thousands of learners building skills and growing together</p>
+        
+        <div class="welcome-features">
+          <div class="feature-item">
+            <span class="feature-icon">🚀</span>
+            <span class="feature-text">Get started in under 2 minutes</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🎯</span>
+            <span class="feature-text">Connect with skilled mentors</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🌍</span>
+            <span class="feature-text">Join global learning communities</span>
+          </div>
+        </div>
       </div>
-      <div class="shapes">
-        <div class="s1"></div>
-        <div class="s2"></div>
-        <div class="s3"></div>
-      </div>
-    </section>
-    <section class="auth-right">
-      <h3>Register</h3>
-      <form method="post" action="{% url 'users:register' %}" class="auth-form" id="registerForm">
-        {% csrf_token %}
+    </div>
+
+    <!-- Right Side - Register Form -->
+    <div class="auth-form-section">
+      <div class="form-wrapper">
+        <div class="form-header">
+          <h2 class="form-title">Create Account</h2>
+          <p class="form-subtitle">Sign up to start learning and sharing skills</p>
+        </div>
+
+        <!-- Error Messages -->
         {% if messages %}
           {% for message in messages %}
             <div class="auth-alert">{{ message }}</div>
@@ -189,40 +587,98 @@
             {% endfor %}
           {% endfor %}
         {% endif %}
-        <div class="form-group">
-          <input class="input" type="text" name="username" placeholder="Username" value="{{ request.POST.username }}" required>
+
+        <!-- Register Form -->
+        <form method="post" action="{% url 'users:register' %}" class="register-form" id="registerForm">
+          {% csrf_token %}
+          
+          <div class="form-group">
+            <label for="username" class="form-label">Username</label>
+            <input 
+              class="form-input" 
+              type="text" 
+              id="username"
+              name="username" 
+              placeholder="Choose a unique username" 
+              value="{{ request.POST.username }}" 
+              required
+              autofocus
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="email" class="form-label">Email Address</label>
+            <input 
+              class="form-input" 
+              type="email" 
+              id="email"
+              name="email" 
+              placeholder="your.email@example.com" 
+              value="{{ request.POST.email }}" 
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="password1" class="form-label">Password</label>
+            <input 
+              class="form-input" 
+              type="password" 
+              id="password1"
+              name="password1" 
+              placeholder="Create a strong password" 
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="password2" class="form-label">Confirm Password</label>
+            <input 
+              class="form-input" 
+              type="password" 
+              id="password2"
+              name="password2" 
+              placeholder="Re-enter your password" 
+              required
+            >
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="agree-terms" name="agree_terms" class="checkbox-input" required>
+            <label for="agree-terms" class="checkbox-label">
+              I agree to the <a href="#" id="tosLink" class="checkbox-link">Terms of Service</a> and <a href="#" id="privacyLink" class="checkbox-link">Privacy Policy</a>
+            </label>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn" disabled>Create Account</button>
+        </form>
+
+        <div class="divider">
+          <span class="divider-text">OR</span>
         </div>
-        <div class="form-group">
-          <input class="input" type="text" name="email" placeholder="Email" value="{{ request.POST.email }}" required>
+
+        <div class="form-footer">
+          <p class="footer-text">
+            Already have an account? 
+            <a class="footer-link" href="{% url 'users:login' %}">Sign in</a>
+          </p>
+          
+          <a href="{% url 'core:landing' %}" class="back-home">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Home
+          </a>
         </div>
-        <div class="form-group">
-          <input class="input" type="password" name="password1" placeholder="Password" required>
-        </div>
-        <div class="form-group">
-          <input class="input" type="password" name="password2" placeholder="Confirm Password" required>
-        </div>
-        <div class="checkbox-group">
-          <input type="checkbox" id="agree-terms" name="agree_terms" required>
-          <label for="agree-terms">
-            I agree to the <a href="#" id="tosLink">Terms of Service</a> and <a href="#" id="privacyLink">Privacy Policy</a>
-          </label>
-        </div>
-        <button type="submit" class="cta" id="submitBtn">Create account</button>
-      </form>
-      <div class="muted">Already have an account? <a class="link" href="{% url 'users:login' %}">Login</a></div>
-      <div class="muted" style="margin-top: 16px; text-align: center;">
-        <a href="{% url 'core:landing' %}" class="link" style="font-size: 14px; opacity: 0.7;">
-          ← Back to Home
-        </a>
       </div>
-    </section>
+    </div>
   </div>
 
   <!-- Terms of Service Modal -->
   <div id="tosModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Terms of Service</h2>
+        <h2 class="modal-title">Terms of Service</h2>
         <button class="modal-close" id="tosClose">&times;</button>
       </div>
       <div class="modal-body">
@@ -267,7 +723,7 @@
   <div id="privacyModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Privacy Policy</h2>
+        <h2 class="modal-title">Privacy Policy</h2>
         <button class="modal-close" id="privacyClose">&times;</button>
       </div>
       <div class="modal-body">
@@ -337,9 +793,6 @@
     const submitBtn = document.getElementById('submitBtn');
     const registerForm = document.getElementById('registerForm');
 
-    // Initially disable submit button
-    submitBtn.disabled = true;
-
     // Enable/disable submit button based on checkbox
     agreeCheckbox.addEventListener('change', function() {
       submitBtn.disabled = !this.checked;
@@ -399,6 +852,14 @@
         e.preventDefault();
         alert('You must agree to the Terms of Service and Privacy Policy to register.');
         return false;
+      }
+    });
+
+    // Auto-focus on username field
+    document.addEventListener('DOMContentLoaded', () => {
+      const usernameInput = document.getElementById('username');
+      if (usernameInput && !usernameInput.value) {
+        usernameInput.focus();
       }
     });
   </script>
