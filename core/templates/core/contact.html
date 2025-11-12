@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us · Ripple</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .contact-container {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Left Side - Contact Info */
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 80px 60px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .info-content {
+      position: relative;
+      z-index: 2;
+      max-width: 500px;
+    }
+
+    .info-icon {
+      font-size: 80px;
+      margin-bottom: 32px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .info-title {
+      font-size: 48px;
+      font-weight: 900;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+      line-height: 1.2;
+    }
+
+    .info-subtitle {
+      font-size: 20px;
+      line-height: 1.6;
+      opacity: 0.95;
+      font-weight: 500;
+      margin-bottom: 48px;
+    }
+
+    .contact-methods {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .contact-method {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 24px;
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .contact-method:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateX(5px);
+    }
+
+    .method-icon {
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+
+    .method-details h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .method-details p {
+      font-size: 15px;
+      opacity: 0.9;
+      line-height: 1.5;
+    }
+
+    .method-details a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .method-details a:hover {
+      text-decoration: underline;
+    }
+
+    /* Decorative Shapes */
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.1;
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    .shape-1 {
+      width: 300px;
+      height: 300px;
+      background: white;
+      top: -100px;
+      left: -100px;
+    }
+
+    .shape-2 {
+      width: 200px;
+      height: 200px;
+      background: white;
+      bottom: -50px;
+      right: -50px;
+      animation-delay: 1s;
+    }
+
+    .shape-3 {
+      width: 150px;
+      height: 150px;
+      background: white;
+      top: 50%;
+      right: 10%;
+      animation-delay: 2s;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.1; }
+      50% { transform: scale(1.1); opacity: 0.15; }
+    }
+
+    /* Right Side - Contact Form */
+    .contact-form-section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 80px 60px;
+      background: #ffffff;
+      position: relative;
+    }
+
+    .form-wrapper {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .form-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #111827;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .form-subtitle {
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    /* Success Message */
+    .success-message {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      color: #065f46;
+      padding: 14px 18px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 2px solid #6ee7b7;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .success-message.show {
+      display: flex;
+    }
+
+    .success-message::before {
+      content: '✓';
+      font-size: 18px;
+    }
+
+    /* Form Styles */
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f9fafb;
+      font-size: 15px;
+      font-family: inherit;
+      color: #111827;
+      transition: all 0.2s ease;
+    }
+
+    .form-textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+      color: #9ca3af;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      margin-top: 8px;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .form-footer {
+      margin-top: 32px;
+      text-align: center;
+    }
+
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #9ca3af;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+
+    .back-home:hover {
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .back-home svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 968px) {
+      .contact-container {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-info {
+        padding: 60px 40px;
+      }
+
+      .contact-form-section {
+        padding: 60px 24px;
+      }
+
+      .form-wrapper {
+        max-width: 100%;
+      }
+
+      .info-title {
+        font-size: 36px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .contact-info {
+        padding: 40px 20px;
+      }
+
+      .contact-form-section {
+        padding: 40px 20px;
+      }
+
+      .form-title {
+        font-size: 28px;
+      }
+
+      .form-subtitle {
+        font-size: 14px;
+      }
+
+      .info-title {
+        font-size: 32px;
+      }
+
+      .info-subtitle {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="contact-container">
+    <!-- Left Side - Contact Info -->
+    <div class="contact-info">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      
+      <div class="info-content">
+        <div class="info-icon">💬</div>
+        <h1 class="info-title">Get in Touch</h1>
+        <p class="info-subtitle">Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+        
+        <div class="contact-methods">
+          <div class="contact-method">
+            <span class="method-icon">📧</span>
+            <div class="method-details">
+              <h3>Email Us</h3>
+              <p><a href="mailto:support@ripple.com">support@ripple.com</a></p>
+              <p style="margin-top: 4px; font-size: 13px;">We'll respond within 24 hours</p>
+            </div>
+          </div>
+          
+          <div class="contact-method">
+            <span class="method-icon">💼</span>
+            <div class="method-details">
+              <h3>Business Inquiries</h3>
+              <p><a href="mailto:business@ripple.com">business@ripple.com</a></p>
+              <p style="margin-top: 4px; font-size: 13px;">For partnerships and collaborations</p>
+            </div>
+          </div>
+          
+          <div class="contact-method">
+            <span class="method-icon">🌐</span>
+            <div class="method-details">
+              <h3>Community</h3>
+              <p>Join our active community forums</p>
+              <p style="margin-top: 4px; font-size: 13px;">Connect with other learners and teachers</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side - Contact Form -->
+    <div class="contact-form-section">
+      <div class="form-wrapper">
+        <div class="form-header">
+          <h2 class="form-title">Send us a Message</h2>
+          <p class="form-subtitle">Fill out the form below and we'll get back to you shortly</p>
+        </div>
+
+        <!-- Success Message -->
+        <div class="success-message" id="successMessage">
+          Your message has been sent successfully! We'll be in touch soon.
+        </div>
+
+        <!-- Contact Form -->
+        <form id="contactForm" class="contact-form">
+          <div class="form-group">
+            <label for="name" class="form-label">Full Name</label>
+            <input 
+              class="form-input" 
+              type="text" 
+              id="name"
+              name="name" 
+              placeholder="Enter your full name" 
+              required
+              autofocus
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="email" class="form-label">Email Address</label>
+            <input 
+              class="form-input" 
+              type="email" 
+              id="email"
+              name="email" 
+              placeholder="Enter your email address" 
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="subject" class="form-label">Subject</label>
+            <input 
+              class="form-input" 
+              type="text" 
+              id="subject"
+              name="subject" 
+              placeholder="What is this regarding?" 
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="message" class="form-label">Message</label>
+            <textarea 
+              class="form-textarea" 
+              id="message"
+              name="message" 
+              placeholder="Tell us more about your inquiry..." 
+              required
+            ></textarea>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">Send Message</button>
+        </form>
+
+        <div class="form-footer">
+          <a href="/" class="back-home">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Home
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Handle form submission
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const successMessage = document.getElementById('successMessage');
+      
+      // Disable button and show loading state
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      
+      // Simulate form submission (in production, this would be an actual API call)
+      setTimeout(() => {
+        // Show success message
+        successMessage.classList.add('show');
+        
+        // Reset form
+        document.getElementById('contactForm').reset();
+        
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Message';
+        
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          successMessage.classList.remove('show');
+        }, 5000);
+        
+        // Log form data (for demonstration)
+        console.log('Form submitted successfully!');
+      }, 1500);
+    });
+
+    // Auto-focus on name field
+    document.addEventListener('DOMContentLoaded', () => {
+      const nameInput = document.getElementById('name');
+      if (nameInput) {
+        nameInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>

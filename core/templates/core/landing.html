@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ripple - Swap Skills, Share Knowledge</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,7 +13,9 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             color: #1a1a1a;
             overflow-x: hidden;
         }
@@ -40,8 +42,11 @@
 
         .logo {
             font-size: 28px;
-            font-weight: 700;
-            color: #233455;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .nav-links {
@@ -53,49 +58,49 @@
         .nav-links a {
             text-decoration: none;
             color: #5a5a5a;
-            font-weight: 500;
+            font-weight: 600;
             transition: color 0.3s;
         }
 
         .nav-links a:hover {
-            color: #233455;
+            color: #667eea;
         }
 
         .btn {
             padding: 12px 28px;
-            border-radius: 8px;
+            border-radius: 12px;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 700;
             transition: all 0.3s;
             display: inline-block;
         }
 
         .btn-primary {
-            background: #233455;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            box-shadow: 0 4px 15px rgba(35, 52, 85, 0.3);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(35, 52, 85, 0.4);
-            background: #2b3a57;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
 
         .btn-secondary {
-            border: 2px solid #233455;
-            color: #233455;
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
         }
 
         .btn-secondary:hover {
-            background: #233455;
-            color: #e6ecf5;
+            background: #667eea;
+            color: white;
         }
 
         .hero {
             padding: 140px 40px 100px;
-            background: #233455;
-            color: #e6ecf5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -112,49 +117,43 @@
             opacity: 0.3;
         }
 
-        /* Ripple Animation */
-        .ripple-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 99999;
-            overflow: hidden;
-        }
-
-        .ripple {
+        /* Decorative shapes */
+        .shape {
             position: absolute;
             border-radius: 50%;
-            border: 5px solid rgba(35, 52, 85, 0.8);
-            animation: ripple-animation 2.5s ease-out;
-            pointer-events: none;
-            box-shadow: 0 0 20px rgba(35, 52, 85, 0.4);
+            opacity: 0.1;
+            animation: pulse 4s ease-in-out infinite;
         }
 
-        @keyframes ripple-animation {
-            0% {
-                width: 0;
-                height: 0;
-                opacity: 1;
-            }
-            100% {
-                width: 1600px;
-                height: 1600px;
-                opacity: 0;
-            }
+        .shape-1 {
+            width: 400px;
+            height: 400px;
+            background: white;
+            top: -150px;
+            left: -150px;
         }
 
-        .fade-out {
-            animation: fadeOut 1s ease-out forwards;
+        .shape-2 {
+            width: 300px;
+            height: 300px;
+            background: white;
+            bottom: -100px;
+            right: -100px;
+            animation-delay: 1s;
         }
 
-        @keyframes fadeOut {
-            to {
-                opacity: 0;
-                visibility: hidden;
-            }
+        .shape-3 {
+            width: 200px;
+            height: 200px;
+            background: white;
+            top: 40%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.1; }
+            50% { transform: scale(1.1); opacity: 0.15; }
         }
 
         .hero-content {
@@ -166,9 +165,10 @@
 
         .hero h1 {
             font-size: 56px;
-            font-weight: 800;
+            font-weight: 900;
             margin-bottom: 24px;
             line-height: 1.2;
+            letter-spacing: -1px;
         }
 
         .hero p {
@@ -176,6 +176,7 @@
             margin-bottom: 40px;
             opacity: 0.95;
             line-height: 1.6;
+            font-weight: 500;
         }
 
         .hero-buttons {
@@ -192,7 +193,8 @@
 
         .btn-white {
             background: white;
-            color: #233455;
+            color: #667eea;
+            font-weight: 800;
         }
 
         .btn-white:hover {
@@ -200,9 +202,20 @@
             box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
         }
 
+        .btn-outline {
+            border: 2px solid white;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
         .features {
             padding: 100px 40px;
-            background: #f6f7f9;
+            background: #f9fafb;
         }
 
         .features-container {
@@ -217,33 +230,37 @@
 
         .section-title h2 {
             font-size: 42px;
-            font-weight: 800;
+            font-weight: 900;
             margin-bottom: 16px;
-            color: #1a1a1a;
+            color: #111827;
+            letter-spacing: -0.5px;
         }
 
         .section-title p {
             font-size: 18px;
-            color: #666;
+            color: #6b7280;
+            font-weight: 500;
         }
 
         .features-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 40px;
+            gap: 30px;
         }
 
         .feature-card {
-            background: #f0f1f3;
+            background: white;
             padding: 40px;
             border-radius: 16px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
         }
 
         .feature-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
         }
 
         .feature-icon {
@@ -253,14 +270,15 @@
 
         .feature-card h3 {
             font-size: 24px;
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 12px;
-            color: #1a1a1a;
+            color: #111827;
         }
 
         .feature-card p {
-            color: #666;
+            color: #6b7280;
             line-height: 1.6;
+            font-weight: 500;
         }
 
         .how-it-works {
@@ -286,50 +304,69 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: #233455;
-            color: #e6ecf5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 32px;
-            font-weight: 800;
-            box-shadow: 0 8px 20px rgba(35, 52, 85, 0.3);
+            font-weight: 900;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         }
 
         .step-content h3 {
             font-size: 28px;
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 12px;
-            color: #1a1a1a;
+            color: #111827;
         }
 
         .step-content p {
             font-size: 18px;
-            color: #666;
+            color: #6b7280;
             line-height: 1.6;
+            font-weight: 500;
         }
 
         .cta {
             padding: 100px 40px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+            opacity: 0.3;
         }
 
         .cta h2 {
             font-size: 42px;
-            font-weight: 800;
+            font-weight: 900;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .cta p {
             font-size: 20px;
             margin-bottom: 40px;
             opacity: 0.95;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
         }
 
         footer {
-            background: #1a1a1a;
+            background: #111827;
             color: white;
             padding: 60px 40px 40px;
         }
@@ -345,16 +382,17 @@
 
         .footer-section h4 {
             font-size: 18px;
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 16px;
         }
 
         .footer-section p,
         .footer-section a {
-            color: #aaa;
+            color: #9ca3af;
             text-decoration: none;
             line-height: 2;
             display: block;
+            font-weight: 500;
         }
 
         .footer-section a:hover {
@@ -364,8 +402,9 @@
         .footer-bottom {
             text-align: center;
             padding-top: 40px;
-            border-top: 1px solid #333;
-            color: #888;
+            border-top: 1px solid #374151;
+            color: #6b7280;
+            font-weight: 500;
         }
 
         @media (max-width: 768px) {
@@ -389,41 +428,37 @@
             .section-title h2 {
                 font-size: 32px;
             }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Ripple Animation Container -->
-    <div class="ripple-container" id="rippleContainer"></div>
-
     <nav>
         <div class="nav-container">
             <div class="logo">Ripple</div>
             <div class="nav-links">
                 <a href="#features">Features</a>
                 <a href="#how-it-works">How It Works</a>
-                {% if user.is_authenticated %}
-                    <a href="/" class="btn btn-primary">Dashboard</a>
-                {% else %}
-                    <a href="{% url 'users:login' %}" class="btn btn-secondary">Log In</a>
-                    <a href="{% url 'users:register' %}" class="btn btn-primary" style="color: white;">Sign Up</a>
-                {% endif %}
+                <a href="{% url 'users:login' %}" class="btn btn-secondary">Log In</a>
+                <a href="{% url 'users:register' %}" class="btn btn-primary">Sign Up</a>
             </div>
         </div>
     </nav>
 
     <section class="hero">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        
         <div class="hero-content">
             <h1>Swap Skills. Share Knowledge. Grow Together.</h1>
             <p>Connect with people around the world to teach what you know and learn what you don't. Trade skills or use our Tip Bar feature to support learning.</p>
             <div class="hero-buttons">
-                {% if user.is_authenticated %}
-                    <a href="/" class="btn btn-white btn-large">Go to Dashboard</a>
-                    <a href="/swipe/" class="btn btn-secondary btn-large">Start Swiping</a>
-                {% else %}
-                    <a href="{% url 'users:register' %}" class="btn btn-white btn-large">Get Started Free</a>
-                    <a href="#how-it-works" class="btn btn-secondary btn-large">Learn More</a>
-                {% endif %}
+                <a href="/register/" class="btn btn-white btn-large">Get Started Free</a>
+                <a href="#how-it-works" class="btn btn-outline btn-large">Learn More</a>
             </div>
         </div>
     </section>
@@ -436,32 +471,32 @@
             </div>
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="bi bi-heart-fill"></i></div>
+                    <div class="feature-icon">💜</div>
                     <h3>Swipe to Connect</h3>
                     <p>Swipe right on skills you want to learn or can teach. Swipe left to pass. It's that simple! Match with people who complement your abilities.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="bi bi-arrow-repeat"></i></div>
+                    <div class="feature-icon">🔄</div>
                     <h3>Flexible Learning Options</h3>
                     <p>Swap skills with others or use our Tip Bar feature to pay for lessons. Learn your way—whether through skill exchange or supporting talented teachers.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="bi bi-people-fill"></i></div>
+                    <div class="feature-icon">👥</div>
                     <h3>Join Communities</h3>
                     <p>Find like-minded learners and teachers. Join communities based on skills, interests, or location. Learn together, grow together.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="bi bi-bullseye"></i></div>
+                    <div class="feature-icon">🎯</div>
                     <h3>Smart Matching</h3>
                     <p>Our algorithm finds the perfect skill partners for you. We match complementary skills so everyone benefits.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="bi bi-check-circle-fill"></i></div>
+                    <div class="feature-icon">✓</div>
                     <h3>Verified Skills</h3>
                     <p>Build trust with skill verification. Showcase your expertise with evidence and get verified by the community.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="bi bi-globe"></i></div>
+                    <div class="feature-icon">🌐</div>
                     <h3>Global Network</h3>
                     <p>Connect with talented people worldwide. Learn from diverse perspectives and teach across borders.</p>
                 </div>
@@ -505,11 +540,7 @@
         <div class="hero-content">
             <h2>Ready to Start Your Learning Journey?</h2>
             <p>Join thousands of people already sharing and learning new skills on Ripple</p>
-            {% if user.is_authenticated %}
-                <a href="/" class="btn btn-white btn-large">Go to Dashboard</a>
-            {% else %}
-                <a href="{% url 'users:register' %}" class="btn btn-white btn-large">Join Ripple Today</a>
-            {% endif %}
+            <a href="/register/" class="btn btn-white btn-large">Join Ripple Today</a>
         </div>
     </section>
 
@@ -528,17 +559,12 @@
             <div class="footer-section">
                 <h4>Company</h4>
                 <a href="/about/">About Us</a>
-                <a href="#">Contact</a>
+                <a href="/contact/">Contact</a>
             </div>
             <div class="footer-section">
                 <h4>Get Started</h4>
-                {% if user.is_authenticated %}
-                    <a href="/">Dashboard</a>
-                    <a href="/swipe/">Start Swiping</a>
-                {% else %}
-                    <a href="{% url 'users:register' %}">Sign Up</a>
-                    <a href="{% url 'users:login' %}">Log In</a>
-                {% endif %}
+                <a href="{% url 'users:register' %}">Sign Up</a>
+                <a href="{% url 'users:login' %}">Log In</a>
             </div>
         </div>
         <div class="footer-bottom">
@@ -547,41 +573,6 @@
     </footer>
 
     <script>
-        // Create ripple effect on page load
-        function createRipple(x, y) {
-            const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-            ripple.style.left = (x - 800) + 'px';
-            ripple.style.top = (y - 800) + 'px';
-            
-            const container = document.getElementById('rippleContainer');
-            container.appendChild(ripple);
-            
-            setTimeout(() => {
-                ripple.remove();
-            }, 2500);
-        }
-
-        // Create initial ripples on page load
-        window.addEventListener('load', () => {
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            
-            // Center ripple - BIG
-            createRipple(centerX, centerY);
-            
-            // Multiple ripples with delay for dramatic effect
-            setTimeout(() => createRipple(centerX - 300, centerY - 150), 150);
-            setTimeout(() => createRipple(centerX + 300, centerY - 150), 300);
-            setTimeout(() => createRipple(centerX - 200, centerY + 200), 450);
-            setTimeout(() => createRipple(centerX + 200, centerY + 200), 600);
-            
-            // Fade out ripple container after animation
-            setTimeout(() => {
-                document.getElementById('rippleContainer').classList.add('fade-out');
-            }, 4000);
-        });
-
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {

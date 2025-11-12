@@ -16,6 +16,10 @@ def landing(request):
 def about(request):
     """About Us page"""
     return render(request, 'core/about.html')
+
+def contact(request):
+    """Contact Us page"""
+    return render(request, 'core/contact.html')
     
 def home(request):
     user = request.user if request.user.is_authenticated else None
