@@ -75,6 +75,8 @@ INSTALLED_APPS = [
     # email auth
     'allauth',
     'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -178,26 +180,36 @@ AUTHENTICATION_BACKENDS = [
 
 
 # Email settings - easily switch between console and real emails
-USE_CONSOLE_EMAIL = False  # Set to False to send real emails or true for console emails
+USE_CONSOLE_EMAIL = os.getenv('USE_CONSOLE_EMAIL', 'True' if DEBUG else 'False').lower() == 'true'
 
-if USE_CONSOLE_EMAIL:
+# Check if SMTP credentials are available
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+# In DEBUG mode or if SMTP credentials are missing, use console email
+# This prevents SMTP errors during development
+if USE_CONSOLE_EMAIL or DEBUG or not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
     # For development: emails will be printed to console
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     DEFAULT_FROM_EMAIL = 'noreply@ripple.com'
 else:
-    # For real emails: use SMTP
+    # For production: use SMTP
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
 
 # AllAuth settings
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # Enable email verification
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # Enable email verification for regular signups
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_USERNAME_MIN_LENGTH = 3
+
+# Social account settings - skip email verification since Google already verified it
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Don't require email verification for social accounts
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically create account on social login
+SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email for social accounts (Google provides it)
+SOCIALACCOUNT_QUERY_EMAIL = True  # Request email from Google OAuth
 
 # New AllAuth settings format
 ACCOUNT_LOGIN_METHODS = {'email'}
@@ -211,3 +223,34 @@ PASSWORD_RESET_TIMEOUT = 86400  # 24 hours
 
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+
+# Site ID for allauth (required for social accounts)
+SITE_ID = 1
+
+# Provider specific settings
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+            'key': ''
+        }
+    }
+}
+
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# Custom adapters to handle email verification
+SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
+ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
+
+# Redirect cancelled/error social logins back to login page
+SOCIALACCOUNT_LOGIN_CANCELLED_URL = '/users/login/'
+SOCIALACCOUNT_LOGIN_ERROR_URL = '/users/login/'

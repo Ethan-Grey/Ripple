@@ -64,4 +64,8 @@ urlpatterns = [
     path('admin-user-skills/', views.admin_user_skills, name='admin_user_skills'),
     path('admin-delete-skill/<int:user_id>/<int:skill_id>/', views.admin_delete_user_skill, name='admin_delete_user_skill'),
     
+    # Admin: User classes management
+    path('admin-user-classes/', views.admin_user_classes, name='admin_user_classes'),
+    path('admin-delete-class/<int:class_id>/', views.admin_delete_class, name='admin_delete_class'),
+    
 ]

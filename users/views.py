@@ -643,6 +643,64 @@ def admin_user_skills(request):
 
 
 @staff_member_required
+def admin_user_classes(request):
+    """List all teaching classes grouped by teacher for admin management."""
+    search_query = request.GET.get('search', '')
+    class_filter = request.GET.get('class', '')
+    status_filter = request.GET.get('status', '')
+
+    classes_qs = TeachingClass.objects.select_related('teacher', 'teacher__profile').prefetch_related('topics').order_by('teacher__username', 'title')
+
+    if search_query:
+        classes_qs = classes_qs.filter(teacher__username__icontains=search_query)
+
+    if class_filter:
+        classes_qs = classes_qs.filter(title__icontains=class_filter)
+
+    if status_filter == 'published':
+        classes_qs = classes_qs.filter(is_published=True)
+    elif status_filter == 'unpublished':
+        classes_qs = classes_qs.filter(is_published=False)
+
+    classes_list = list(classes_qs)
+
+    for teaching_class in classes_list:
+        price_cents = teaching_class.price_cents or 0
+        teaching_class.admin_price_display = f"${price_cents / 100:.2f}"
+
+    teacher_map = {}
+    for teaching_class in classes_list:
+        teacher_id = teaching_class.teacher_id
+        if teacher_id not in teacher_map:
+            teacher_map[teacher_id] = {
+                'teacher': teaching_class.teacher,
+                'classes': [],
+            }
+        teacher_map[teacher_id]['classes'].append(teaching_class)
+
+    teacher_data = []
+    for data in teacher_map.values():
+        classes = sorted(data['classes'], key=lambda cls: cls.created_at, reverse=True)
+        teacher_data.append({
+            'teacher': data['teacher'],
+            'classes': classes,
+            'published_count': sum(1 for cls in classes if cls.is_published),
+            'unpublished_count': sum(1 for cls in classes if not cls.is_published),
+        })
+
+    teacher_data.sort(key=lambda entry: entry['teacher'].username.lower())
+
+    context = {
+        'teacher_data': teacher_data,
+        'search_query': search_query,
+        'class_filter': class_filter,
+        'status_filter': status_filter,
+        'total_classes': len(classes_list),
+    }
+    return render(request, 'users/profile/admin_user_classes.html', context)
+
+
+@staff_member_required
 def admin_delete_user_skill(request, user_id, skill_id):
     """Delete a specific skill from a user's profile."""
     try:
@@ -683,6 +741,41 @@ def admin_delete_user_skill(request, user_id, skill_id):
         else:
             messages.error(request, f'Error deleting skill: {str(e)}')
             return redirect('users:admin_user_skills')
+
+
+@staff_member_required
+def admin_delete_class(request, class_id):
+    """Delete a specific teaching class."""
+    try:
+        teaching_class = get_object_or_404(TeachingClass, id=class_id)
+        class_title = teaching_class.title
+        teacher_username = teaching_class.teacher.username
+
+        if teaching_class.thumbnail:
+            teaching_class.thumbnail.delete(save=False)
+        if teaching_class.intro_video:
+            teaching_class.intro_video.delete(save=False)
+
+        teaching_class.delete()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Successfully deleted class "{class_title}" taught by {teacher_username}.'
+            })
+        else:
+            messages.success(request, f'Successfully deleted class "{class_title}" taught by {teacher_username}.')
+            return redirect('users:admin_user_classes')
+
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': f'Error deleting class: {str(e)}'
+            })
+        else:
+            messages.error(request, f'Error deleting class: {str(e)}')
+            return redirect('users:admin_user_classes')
 
 
 @login_required
