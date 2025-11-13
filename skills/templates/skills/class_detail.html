@@ -79,7 +79,7 @@
             {% endif %}
           </div>
           <div class="teacher-info">
-            <div class="teacher-name">{{ cls.teacher.username }}</div>
+            <a href="{% url 'users:view_profile' cls.teacher.username %}" class="teacher-name">{{ cls.teacher.username }}</a>
             <div class="teacher-role">Instructor</div>
           </div>
         </div>
@@ -213,7 +213,9 @@
           {% endif %}
         </div>
         <div class="teacher-bio">
-          <h3 class="teacher-name-lg">{{ cls.teacher.username }}</h3>
+          <h3 class="teacher-name-lg">
+            <a href="{% url 'users:view_profile' cls.teacher.username %}">{{ cls.teacher.username }}</a>
+          </h3>
           {% if cls.teacher.profile.bio %}
             <p class="bio-text">{{ cls.teacher.profile.bio }}</p>
           {% else %}
@@ -529,6 +531,14 @@
   font-size: 16px;
   font-weight: 700;
   color: white;
+  text-decoration: none;
+  transition: color 0.2s;
+  display: inline-block;
+}
+
+.teacher-name:hover {
+  color: #cbd5e1;
+  text-decoration: underline;
 }
 
 .teacher-role {
@@ -741,6 +751,17 @@
   font-weight: 800;
   color: var(--text);
   margin: 0 0 12px 0;
+}
+
+.teacher-name-lg a {
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.teacher-name-lg a:hover {
+  color: var(--brand);
+  text-decoration: underline;
 }
 
 .bio-text {
