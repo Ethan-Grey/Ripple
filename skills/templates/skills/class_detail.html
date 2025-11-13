@@ -93,15 +93,12 @@
               Book a Session
             </a>
           {% elif not is_enrolled and cls.price_cents and cls.price_cents > 0 %}
-            <form method="post" action="{% url 'skills:class_checkout' cls.slug %}" style="display:inline-block;">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-primary">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
-                </svg>
-                Join for {{ cls.price_display }}
-              </button>
-            </form>
+            <button type="button" class="btn btn-primary" onclick="openBookingModal('{{ cls.slug }}')">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+              </svg>
+              Join for {{ cls.price_display }}
+            </button>
           {% endif %}
           {% if request.user.id == cls.teacher_id %}
             <a href="{% url 'skills:manage_schedule' cls.slug %}" class="btn btn-secondary">
@@ -1114,5 +1111,721 @@ const formStyles = `
 const styleEl = document.createElement('style');
 styleEl.textContent = formStyles;
 document.head.appendChild(styleEl);
+
+// Booking Modal JavaScript
+let bookingModalState = {
+  step: 1,
+  selectedSlot: null,
+  slotsByDate: {},
+  currentMonth: new Date(),
+  classSlug: null,
+};
+
+function openBookingModal(slug) {
+  bookingModalState.classSlug = slug;
+  bookingModalState.step = 1;
+  bookingModalState.selectedSlot = null;
+  document.getElementById('booking-modal').style.display = 'flex';
+  loadAvailableSlots(slug);
+}
+
+function closeBookingModal() {
+  document.getElementById('booking-modal').style.display = 'none';
+  bookingModalState.selectedSlot = null;
+  bookingModalState.step = 1;
+}
+
+function loadAvailableSlots(slug) {
+  const loadingEl = document.getElementById('slots-loading');
+  const errorEl = document.getElementById('slots-error');
+  const slotsContainer = document.getElementById('available-slots');
+  
+  loadingEl.style.display = 'block';
+  errorEl.style.display = 'none';
+  slotsContainer.innerHTML = '';
+  
+  fetch(`/classes/${slug}/available-slots/`)
+    .then(response => response.json())
+    .then(data => {
+      loadingEl.style.display = 'none';
+      bookingModalState.slotsByDate = data.slots_by_date;
+      
+      if (Object.keys(data.slots_by_date).length === 0) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = 'No available time slots. Please check back later.';
+      } else {
+        // Set current month to first month with available slots
+        const dates = Object.keys(data.slots_by_date).sort();
+        if (dates.length > 0) {
+          const firstDate = new Date(dates[0] + 'T00:00:00');
+          bookingModalState.currentMonth = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+        }
+        renderCalendar();
+      }
+    })
+    .catch(error => {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Error loading available slots. Please try again.';
+    });
+}
+
+function renderCalendar() {
+  const calendarEl = document.getElementById('calendar-container');
+  const monthEl = document.getElementById('current-month-display');
+  
+  const month = bookingModalState.currentMonth;
+  monthEl.textContent = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  
+  const slotsByDate = bookingModalState.slotsByDate;
+  const dates = Object.keys(slotsByDate).sort();
+  
+  if (dates.length === 0) {
+    calendarEl.innerHTML = '<p class="no-slots">No available dates</p>';
+    return;
+  }
+  
+  // Render calendar grid with only available dates
+  calendarEl.innerHTML = '';
+  
+  // Add weekday headers (optional, for better UX)
+  const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  weekdays.forEach(day => {
+    const header = document.createElement('div');
+    header.className = 'calendar-weekday';
+    header.textContent = day;
+    calendarEl.appendChild(header);
+  });
+  
+  // Get first and last date from available slots
+  const firstDate = new Date(dates[0] + 'T00:00:00');
+  const lastDate = new Date(dates[dates.length - 1] + 'T00:00:00');
+  
+  // Start from first day of month containing first available date
+  const startDate = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+  
+  // Calculate how many days to show (up to last available date + padding)
+  const endDate = new Date(lastDate.getFullYear(), lastDate.getMonth() + 1, 0);
+  
+  // Get first day of week for the month
+  let currentDate = new Date(startDate);
+  currentDate.setDate(1);
+  const firstDayOfWeek = currentDate.getDay();
+  
+  // Add empty cells for days before the month starts
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'calendar-date empty';
+    calendarEl.appendChild(empty);
+  }
+  
+  // Add all days in the month
+  const daysInMonth = endDate.getDate();
+  for (let day = 1; day <= daysInMonth; day++) {
+    currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), day);
+    const dateKey = currentDate.toISOString().split('T')[0];
+    const hasSlots = dates.includes(dateKey);
+    
+    const button = document.createElement('button');
+    button.className = 'calendar-date';
+    if (!hasSlots) {
+      button.classList.add('disabled');
+      button.disabled = true;
+    }
+    button.textContent = day;
+    button.setAttribute('data-date', dateKey);
+    if (hasSlots) {
+      button.onclick = () => selectDate(dateKey);
+    }
+    calendarEl.appendChild(button);
+  }
+  
+  // Auto-select first available date
+  if (dates.length > 0) {
+    selectDate(dates[0]);
+  }
+}
+
+function selectDate(dateStr) {
+  document.querySelectorAll('.calendar-date').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.getAttribute('data-date') === dateStr) {
+      btn.classList.add('active');
+    }
+  });
+  
+  const slotsContainer = document.getElementById('available-slots');
+  const slots = bookingModalState.slotsByDate[dateStr] || [];
+  
+  if (slots.length === 0) {
+    slotsContainer.innerHTML = '<p class="no-slots">No slots available for this date</p>';
+    return;
+  }
+  
+  slotsContainer.innerHTML = '';
+  slots.forEach(slot => {
+    const button = document.createElement('button');
+    button.className = 'time-slot-btn';
+    if (bookingModalState.selectedSlot && bookingModalState.selectedSlot.id === slot.id) {
+      button.classList.add('selected');
+    }
+    button.textContent = `${slot.start_time_display} - ${slot.end_time_display}`;
+    button.onclick = (e) => selectTimeSlot(slot, e);
+    slotsContainer.appendChild(button);
+  });
+}
+
+function selectTimeSlot(slot, event) {
+  bookingModalState.selectedSlot = slot;
+  
+  document.querySelectorAll('.time-slot-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  if (event && event.target) {
+    event.target.classList.add('selected');
+  }
+  
+  document.getElementById('confirm-slot-btn').disabled = false;
+}
+
+function confirmSlot() {
+  if (!bookingModalState.selectedSlot) return;
+  bookingModalState.step = 2;
+  updateModalStep();
+}
+
+function updateModalStep() {
+  const step1 = document.getElementById('booking-step-1');
+  const step2 = document.getElementById('booking-step-2');
+  
+  if (bookingModalState.step === 1) {
+    step1.style.display = 'grid';
+    step2.style.display = 'none';
+  } else {
+    step1.style.display = 'none';
+    step2.style.display = 'grid';
+    
+    if (bookingModalState.selectedSlot) {
+      const slot = bookingModalState.selectedSlot;
+      document.getElementById('selected-date').textContent = slot.date_display;
+      document.getElementById('selected-time').textContent = `${slot.start_time_display} - ${slot.end_time_display}`;
+      document.getElementById('time-slot-id').value = slot.id;
+    }
+    
+    {% if user.is_authenticated %}
+    const emailEl = document.getElementById('booking-email');
+    const firstNameEl = document.getElementById('booking-first-name');
+    const lastNameEl = document.getElementById('booking-last-name');
+    if (emailEl) emailEl.value = '{{ user.email|default:"" }}';
+    if (firstNameEl) firstNameEl.value = '{{ user.first_name|default:"" }}';
+    if (lastNameEl) lastNameEl.value = '{{ user.last_name|default:"" }}';
+    {% endif %}
+  }
+}
+
+function goBackToStep1() {
+  bookingModalState.step = 1;
+  updateModalStep();
+}
+
+function previousMonth() {
+  const slotsByDate = bookingModalState.slotsByDate;
+  const dates = Object.keys(slotsByDate).sort();
+  if (dates.length === 0) return;
+  
+  // Find the earliest date in current view
+  const firstDate = new Date(dates[0] + 'T00:00:00');
+  const currentMonthStart = new Date(bookingModalState.currentMonth.getFullYear(), bookingModalState.currentMonth.getMonth(), 1);
+  
+  // If we're already at the first month, don't change
+  if (firstDate >= currentMonthStart) return;
+  
+  bookingModalState.currentMonth = new Date(bookingModalState.currentMonth.getFullYear(), bookingModalState.currentMonth.getMonth() - 1, 1);
+  renderCalendar();
+}
+
+function nextMonth() {
+  const slotsByDate = bookingModalState.slotsByDate;
+  const dates = Object.keys(slotsByDate).sort();
+  if (dates.length === 0) return;
+  
+  // Find the latest date
+  const lastDate = new Date(dates[dates.length - 1] + 'T00:00:00');
+  const nextMonthStart = new Date(bookingModalState.currentMonth.getFullYear(), bookingModalState.currentMonth.getMonth() + 1, 1);
+  
+  // If we're already at the last month, don't change
+  if (lastDate < nextMonthStart) return;
+  
+  bookingModalState.currentMonth = new Date(bookingModalState.currentMonth.getFullYear(), bookingModalState.currentMonth.getMonth() + 1, 1);
+  renderCalendar();
+}
+
+document.addEventListener('click', function(event) {
+  const modal = document.getElementById('booking-modal');
+  if (event.target === modal) {
+    closeBookingModal();
+  }
+});
 </script>
+
+<!-- Booking Modal -->
+<div id="booking-modal" class="booking-modal" style="display: none;">
+  <div class="booking-modal-content">
+    <button class="booking-modal-close" onclick="closeBookingModal()">×</button>
+    
+    <!-- Step 1: Date/Time Selection -->
+    <div id="booking-step-1" class="booking-step">
+      <div class="booking-left">
+        <div class="booking-teacher-info">
+          {% if cls.teacher.profile.avatar %}
+            <img src="{{ cls.teacher.profile.avatar.url }}" alt="{{ cls.teacher.username }}" class="booking-teacher-avatar">
+          {% else %}
+            <div class="booking-teacher-avatar-placeholder">{{ cls.teacher.username|first|upper }}</div>
+          {% endif %}
+          <div>
+            <h3>{{ cls.teacher.username }}</h3>
+            <p>{% if cls.teacher.profile.bio %}{{ cls.teacher.profile.bio }}{% else %}Instructor{% endif %}</p>
+          </div>
+        </div>
+        <hr>
+        <div class="booking-session-info">
+          <label>Session</label>
+          <h4>{{ cls.title }} ({{ cls.duration_minutes }}min)</h4>
+          {% if cls.short_description %}
+            <p>{{ cls.short_description }}</p>
+          {% endif %}
+          <div class="booking-price">
+            <label>Price</label>
+            <strong>{{ cls.price_display }}</strong>
+          </div>
+        </div>
+      </div>
+      
+      <div class="booking-right">
+        <h3>Select a Date & Time</h3>
+        <div class="calendar-header">
+          <button onclick="previousMonth()">‹</button>
+          <span id="current-month-display"></span>
+          <button onclick="nextMonth()">›</button>
+        </div>
+        <div id="calendar-container" class="calendar-dates"></div>
+        <div id="slots-loading" style="display: none; text-align: center; padding: 20px;">Loading slots...</div>
+        <div id="slots-error" style="display: none; text-align: center; padding: 20px; color: #ef4444;"></div>
+        <div id="available-slots" class="time-slots"></div>
+        <button id="confirm-slot-btn" class="btn btn-primary" onclick="confirmSlot()" disabled>Confirm</button>
+      </div>
+    </div>
+    
+    <!-- Step 2: Booking Form -->
+    <div id="booking-step-2" class="booking-step" style="display: none;">
+      <div class="booking-left">
+        <div class="booking-teacher-info">
+          {% if cls.teacher.profile.avatar %}
+            <img src="{{ cls.teacher.profile.avatar.url }}" alt="{{ cls.teacher.username }}" class="booking-teacher-avatar">
+          {% else %}
+            <div class="booking-teacher-avatar-placeholder">{{ cls.teacher.username|first|upper }}</div>
+          {% endif %}
+          <div>
+            <h3>{{ cls.teacher.username }}</h3>
+            <p>{% if cls.teacher.profile.bio %}{{ cls.teacher.profile.bio }}{% else %}Instructor{% endif %}</p>
+          </div>
+        </div>
+        <hr>
+        <div class="booking-session-info">
+          <label>Session</label>
+          <h4>{{ cls.title }} ({{ cls.duration_minutes }}min)</h4>
+          {% if cls.short_description %}
+            <p>{{ cls.short_description }}</p>
+          {% endif %}
+          <div class="booking-price">
+            <label>Price</label>
+            <strong>{{ cls.price_display }}</strong>
+          </div>
+          <div class="booking-selected-slot">
+            <label>Date</label>
+            <strong id="selected-date"></strong>
+          </div>
+          <div class="booking-selected-slot">
+            <label>Time</label>
+            <strong id="selected-time"></strong>
+          </div>
+        </div>
+      </div>
+      
+      <div class="booking-right">
+        <h3>Provide booking details</h3>
+        <form method="post" action="{% url 'skills:class_checkout' cls.slug %}" id="booking-form">
+          {% csrf_token %}
+          <input type="hidden" id="time-slot-id" name="time_slot_id" value="">
+          
+          <div class="form-group">
+            <label for="booking-email">Email (make sure it's correct!)</label>
+            <input type="email" id="booking-email" name="email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-first-name">First Name</label>
+            <input type="text" id="booking-first-name" name="first_name" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-last-name">Last Name (Optional)</label>
+            <input type="text" id="booking-last-name" name="last_name">
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-notes">What would you like the call to be about?</label>
+            <textarea id="booking-notes" name="booking_notes" rows="4" placeholder="Optional: Share what you'd like to discuss or focus on during the session"></textarea>
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" required>
+              By clicking "Continue to payment" you agree to the terms and conditions.
+            </label>
+          </div>
+          
+          <div class="booking-form-actions">
+            <button type="button" class="btn btn-secondary" onclick="goBackToStep1()">Back</button>
+            <button type="submit" class="btn btn-primary">Continue to payment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.booking-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.booking-modal-content {
+  background: white;
+  border-radius: 20px;
+  max-width: 1000px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.booking-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 32px;
+  cursor: pointer;
+  color: #6b7280;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.booking-modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.booking-step {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  padding: 40px;
+}
+
+.booking-left {
+  border-right: 1px solid #e5e7eb;
+  padding-right: 40px;
+}
+
+.booking-teacher-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.booking-teacher-avatar, .booking-teacher-avatar-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.booking-teacher-avatar {
+  object-fit: cover;
+}
+
+.booking-teacher-avatar-placeholder {
+  background: linear-gradient(135deg, var(--brand) 0%, #5a77ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 24px;
+}
+
+.booking-teacher-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.booking-teacher-info p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.booking-left hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 24px 0;
+}
+
+.booking-session-info label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.booking-session-info h4 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.booking-session-info p {
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
+.booking-price, .booking-selected-slot {
+  margin-bottom: 16px;
+}
+
+.booking-price strong, .booking-selected-slot strong {
+  display: block;
+  font-size: 18px;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.booking-right h3 {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.calendar-header button {
+  background: #f3f4f6;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.calendar-header button:hover {
+  background: #e5e7eb;
+}
+
+.calendar-header span {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.calendar-dates {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  padding: 8px;
+  text-transform: uppercase;
+}
+
+.calendar-date.empty {
+  visibility: hidden;
+}
+
+.calendar-date.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: #f9fafb;
+  color: #d1d5db;
+}
+
+.calendar-date {
+  aspect-ratio: 1;
+  border: 2px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.calendar-date:hover {
+  border-color: var(--brand);
+  background: #f3f4f6;
+}
+
+.calendar-date.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: white;
+}
+
+.time-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  min-height: 150px;
+}
+
+.time-slot-btn {
+  padding: 14px 20px;
+  border: 2px solid #e5e7eb;
+  background: white;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.time-slot-btn:hover {
+  border-color: var(--brand);
+  background: #f3f4f6;
+}
+
+.time-slot-btn.selected {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: white;
+}
+
+.no-slots {
+  text-align: center;
+  color: #6b7280;
+  padding: 40px 20px;
+}
+
+.booking-right .form-group {
+  margin-bottom: 20px;
+}
+
+.booking-right .form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.booking-right .form-group input,
+.booking-right .form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.booking-right .form-group input:focus,
+.booking-right .form-group textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(74, 103, 255, 0.1);
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 400;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: auto;
+  margin-top: 2px;
+}
+
+.booking-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.booking-form-actions .btn {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .booking-step {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 24px;
+  }
+  
+  .booking-left {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    padding-right: 0;
+    padding-bottom: 24px;
+  }
+}
+</style>
 {% endblock %}

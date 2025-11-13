@@ -17,6 +17,7 @@ urlpatterns = [
     path("<slug:slug>/trade/propose/", views.ClassTradeProposeView.as_view(), name="class_trade_propose"),
     path("<slug:slug>/delete/", views.ClassDeleteView.as_view(), name="class_delete"),
     path("<slug:slug>/checkout/", views.ClassCheckoutView.as_view(), name="class_checkout"),
+    path("<slug:slug>/available-slots/", views.get_available_slots, name="get_available_slots"),
     # Scheduling URLs
     path("<slug:slug>/schedule/", views.view_class_schedule, name="view_schedule"),
     path("<slug:slug>/schedule/manage/", views.manage_class_schedule, name="manage_schedule"),

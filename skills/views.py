@@ -350,6 +350,24 @@ class ClassCheckoutView(LoginRequiredMixin, View):
             # Free enrollment disabled: require payment or trade
             return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]) + '?error=pricing_required')
 
+        # Get time_slot_id from form data
+        time_slot_id = request.POST.get('time_slot_id')
+        booking_notes = request.POST.get('booking_notes', '').strip()
+        
+        # Validate time slot if provided
+        if time_slot_id:
+            try:
+                time_slot = ClassTimeSlot.objects.get(id=time_slot_id, teaching_class=cls, is_active=True)
+                if time_slot.start_time <= timezone.now():
+                    messages.error(request, 'Selected time slot has passed. Please select another time.')
+                    return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]))
+                if time_slot.is_fully_booked():
+                    messages.error(request, 'Selected time slot is fully booked. Please select another time.')
+                    return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]))
+            except ClassTimeSlot.DoesNotExist:
+                messages.error(request, 'Invalid time slot selected.')
+                return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]))
+
         secret = getattr(settings, 'STRIPE_SECRET_KEY', None)
         if not secret:
             return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]) + '?error=stripe_not_configured')
@@ -357,6 +375,16 @@ class ClassCheckoutView(LoginRequiredMixin, View):
         stripe.api_key = secret
         success_url = request.build_absolute_uri(reverse('skills:class_detail', args=[slug])) + '?paid=1'
         cancel_url = request.build_absolute_uri(reverse('skills:class_detail', args=[slug])) + '?cancel=1'
+
+        # Build metadata with booking info
+        metadata = {
+            'class_id': str(cls.id),
+            'user_id': str(request.user.id),
+        }
+        if time_slot_id:
+            metadata['time_slot_id'] = str(time_slot_id)
+        if booking_notes:
+            metadata['booking_notes'] = booking_notes[:500]  # Limit length
 
         session = stripe.checkout.Session.create(
             mode='payment',
@@ -370,7 +398,8 @@ class ClassCheckoutView(LoginRequiredMixin, View):
             }],
             success_url=success_url,
             cancel_url=cancel_url,
-            metadata={'class_id': str(cls.id), 'user_id': str(request.user.id)},
+            metadata=metadata,
+            customer_email=request.user.email if request.user.email else None,
         )
         return HttpResponseRedirect(session.url)
 
@@ -396,13 +425,19 @@ class StripeWebhookView(View):
 
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
-            class_id = session.get('metadata', {}).get('class_id')
-            user_id = session.get('metadata', {}).get('user_id')
+            metadata = session.get('metadata', {})
+            class_id = metadata.get('class_id')
+            user_id = metadata.get('user_id')
+            time_slot_id = metadata.get('time_slot_id')
+            booking_notes = metadata.get('booking_notes', '')
+            
             if class_id and user_id:
                 try:
                     cls = TeachingClass.objects.get(id=class_id)
                     user_id_int = int(user_id)
-                    ClassEnrollment.objects.update_or_create(
+                    
+                    # Create enrollment
+                    enrollment, created = ClassEnrollment.objects.update_or_create(
                         user_id=user_id_int,
                         teaching_class=cls,
                         defaults={
@@ -411,6 +446,23 @@ class StripeWebhookView(View):
                             'purchase_id': session.get('payment_intent') or session.get('id')
                         },
                     )
+                    
+                    # Create booking if time_slot_id was provided
+                    if time_slot_id and enrollment:
+                        try:
+                            time_slot = ClassTimeSlot.objects.get(id=time_slot_id, teaching_class=cls)
+                            # Double-check slot is still available
+                            if not time_slot.is_fully_booked() and time_slot.start_time > timezone.now():
+                                ClassBooking.objects.create(
+                                    time_slot=time_slot,
+                                    student_id=user_id_int,
+                                    enrollment=enrollment,
+                                    status=ClassBooking.CONFIRMED,
+                                    notes=booking_notes,
+                                )
+                        except (ClassTimeSlot.DoesNotExist, Exception) as e:
+                            # Log error but don't fail the enrollment
+                            pass
                 except Exception:
                     pass
         return HttpResponse(status=200)
@@ -500,6 +552,48 @@ def delete_time_slot(request, slot_id):
     time_slot.delete()
     messages.success(request, 'Time slot deleted successfully!')
     return redirect('skills:manage_schedule', slug=teaching_class_slug)
+
+
+@login_required
+def get_available_slots(request, slug):
+    """API endpoint to get available time slots for booking modal"""
+    from django.http import JsonResponse
+    from datetime import datetime
+    
+    teaching_class = get_object_or_404(TeachingClass, slug=slug, is_published=True)
+    
+    # Get available time slots (upcoming, active, not fully booked)
+    now = timezone.now()
+    available_slots = ClassTimeSlot.objects.filter(
+        teaching_class=teaching_class,
+        is_active=True,
+        start_time__gte=now
+    ).prefetch_related('bookings').order_by('start_time')
+    
+    # Filter out fully booked slots
+    available_slots = [slot for slot in available_slots if not slot.is_fully_booked()]
+    
+    # Group slots by date
+    slots_by_date = {}
+    for slot in available_slots:
+        date_key = slot.start_time.date().isoformat()
+        if date_key not in slots_by_date:
+            slots_by_date[date_key] = []
+        slots_by_date[date_key].append({
+            'id': slot.id,
+            'start_time': slot.start_time.isoformat(),
+            'end_time': slot.end_time.isoformat(),
+            'start_time_display': slot.start_time.strftime('%I:%M %p'),
+            'end_time_display': slot.end_time.strftime('%I:%M %p'),
+            'date_display': slot.start_time.strftime('%a, %d %b'),
+            'available_spots': slot.get_available_spots(),
+            'max_students': slot.max_students,
+        })
+    
+    return JsonResponse({
+        'slots_by_date': slots_by_date,
+        'dates': sorted(slots_by_date.keys()),
+    })
 
 
 @login_required
