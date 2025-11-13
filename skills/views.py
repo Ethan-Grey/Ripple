@@ -1,17 +1,19 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, View
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from django.utils import timezone
 from django.contrib import messages
 
-from .models import TeachingClass, ClassTopic, ClassReview, ClassEnrollment, ClassTradeOffer, TeacherApplication
+from .models import TeachingClass, ClassTopic, ClassReview, ClassEnrollment, ClassTradeOffer, TeacherApplication, ClassTimeSlot, ClassBooking
 from chat.views import get_or_create_conversation
 from chat.models import Message
 from decimal import Decimal, InvalidOperation
@@ -412,5 +414,222 @@ class StripeWebhookView(View):
                 except Exception:
                     pass
         return HttpResponse(status=200)
+
+
+# ============ SCHEDULING VIEWS ============
+
+@login_required
+def manage_class_schedule(request, slug):
+    """Teacher view to manage time slots for their class"""
+    teaching_class = get_object_or_404(TeachingClass, slug=slug, teacher=request.user)
+    
+    # Get all time slots for this class
+    time_slots = ClassTimeSlot.objects.filter(
+        teaching_class=teaching_class
+    ).prefetch_related('bookings').order_by('start_time')
+    
+    # Get upcoming and past slots
+    now = timezone.now()
+    upcoming_slots = time_slots.filter(start_time__gte=now)
+    past_slots = time_slots.filter(start_time__lt=now)
+    
+    # Annotate slots with booking info
+    for slot in upcoming_slots:
+        slot.has_active_bookings = slot.bookings.filter(
+            status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING]
+        ).exists()
+    
+    context = {
+        'teaching_class': teaching_class,
+        'upcoming_slots': upcoming_slots,
+        'past_slots': past_slots,
+    }
+    return render(request, 'skills/manage_schedule.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_time_slot(request, slug):
+    """Create a new time slot for a class"""
+    teaching_class = get_object_or_404(TeachingClass, slug=slug, teacher=request.user)
+    
+    try:
+        start_time_str = request.POST.get('start_time')
+        end_time_str = request.POST.get('end_time')
+        max_students = int(request.POST.get('max_students', 1))
+        notes = request.POST.get('notes', '')
+        
+        from django.utils.dateparse import parse_datetime
+        start_time = parse_datetime(start_time_str)
+        end_time = parse_datetime(end_time_str)
+        
+        if not start_time or not end_time:
+            messages.error(request, 'Invalid date/time format.')
+            return redirect('skills:manage_schedule', slug=slug)
+        
+        if end_time <= start_time:
+            messages.error(request, 'End time must be after start time.')
+            return redirect('skills:manage_schedule', slug=slug)
+        
+        ClassTimeSlot.objects.create(
+            teaching_class=teaching_class,
+            start_time=start_time,
+            end_time=end_time,
+            max_students=max_students,
+            notes=notes,
+        )
+        messages.success(request, 'Time slot created successfully!')
+    except Exception as e:
+        messages.error(request, f'Error creating time slot: {str(e)}')
+    
+    return redirect('skills:manage_schedule', slug=slug)
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_time_slot(request, slot_id):
+    """Delete a time slot"""
+    time_slot = get_object_or_404(ClassTimeSlot, id=slot_id, teaching_class__teacher=request.user)
+    
+    # Check if there are any confirmed bookings
+    if time_slot.bookings.filter(status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING]).exists():
+        messages.error(request, 'Cannot delete time slot with existing bookings.')
+        return redirect('skills:manage_schedule', slug=time_slot.teaching_class.slug)
+    
+    teaching_class_slug = time_slot.teaching_class.slug
+    time_slot.delete()
+    messages.success(request, 'Time slot deleted successfully!')
+    return redirect('skills:manage_schedule', slug=teaching_class_slug)
+
+
+@login_required
+def view_class_schedule(request, slug):
+    """Student view to see available time slots and book them"""
+    teaching_class = get_object_or_404(TeachingClass, slug=slug, is_published=True)
+    
+    # Check if user is enrolled
+    enrollment = ClassEnrollment.objects.filter(
+        user=request.user,
+        teaching_class=teaching_class,
+        status=ClassEnrollment.ACTIVE
+    ).first()
+    
+    if not enrollment:
+        messages.error(request, 'You must be enrolled in this class to book sessions.')
+        return redirect('skills:class_detail', slug=slug)
+    
+    # Get available time slots (upcoming, active, not fully booked)
+    now = timezone.now()
+    available_slots = ClassTimeSlot.objects.filter(
+        teaching_class=teaching_class,
+        is_active=True,
+        start_time__gte=now
+    ).prefetch_related('bookings').order_by('start_time')
+    
+    # Filter out fully booked slots
+    available_slots = [slot for slot in available_slots if not slot.is_fully_booked()]
+    
+    # Get user's existing bookings for this class
+    user_bookings = ClassBooking.objects.filter(
+        student=request.user,
+        time_slot__teaching_class=teaching_class
+    ).select_related('time_slot').order_by('time_slot__start_time')
+    
+    context = {
+        'teaching_class': teaching_class,
+        'enrollment': enrollment,
+        'available_slots': available_slots,
+        'user_bookings': user_bookings,
+    }
+    return render(request, 'skills/view_schedule.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def book_time_slot(request, slot_id):
+    """Book a time slot"""
+    time_slot = get_object_or_404(ClassTimeSlot, id=slot_id, is_active=True)
+    
+    # Check if user is enrolled
+    enrollment = ClassEnrollment.objects.filter(
+        user=request.user,
+        teaching_class=time_slot.teaching_class,
+        status=ClassEnrollment.ACTIVE
+    ).first()
+    
+    if not enrollment:
+        messages.error(request, 'You must be enrolled in this class to book sessions.')
+        return redirect('skills:class_detail', slug=time_slot.teaching_class.slug)
+    
+    # Check if slot is available
+    if time_slot.is_fully_booked():
+        messages.error(request, 'This time slot is fully booked.')
+        return redirect('skills:view_schedule', slug=time_slot.teaching_class.slug)
+    
+    # Check if user already has a booking for this slot
+    if ClassBooking.objects.filter(time_slot=time_slot, student=request.user).exists():
+        messages.error(request, 'You already have a booking for this time slot.')
+        return redirect('skills:view_schedule', slug=time_slot.teaching_class.slug)
+    
+    # Check if slot is in the past
+    if time_slot.start_time <= timezone.now():
+        messages.error(request, 'Cannot book a time slot in the past.')
+        return redirect('skills:view_schedule', slug=time_slot.teaching_class.slug)
+    
+    # Create booking
+    notes = request.POST.get('notes', '')
+    ClassBooking.objects.create(
+        time_slot=time_slot,
+        student=request.user,
+        enrollment=enrollment,
+        notes=notes,
+        status=ClassBooking.CONFIRMED,  # Auto-confirm for now
+    )
+    
+    messages.success(request, f'Successfully booked session for {time_slot.start_time.strftime("%B %d, %Y at %I:%M %p")}!')
+    return redirect('skills:view_schedule', slug=time_slot.teaching_class.slug)
+
+
+@login_required
+@require_http_methods(["POST"])
+def cancel_booking(request, booking_id):
+    """Cancel a booking"""
+    booking = get_object_or_404(ClassBooking, id=booking_id, student=request.user)
+    
+    if not booking.can_be_cancelled():
+        messages.error(request, 'This booking cannot be cancelled.')
+        return redirect('skills:view_schedule', slug=booking.time_slot.teaching_class.slug)
+    
+    booking.status = ClassBooking.CANCELLED
+    booking.cancelled_at = timezone.now()
+    booking.save()
+    
+    messages.success(request, 'Booking cancelled successfully.')
+    return redirect('skills:view_schedule', slug=booking.time_slot.teaching_class.slug)
+
+
+@login_required
+def my_bookings(request):
+    """View all user's bookings across all classes"""
+    bookings = ClassBooking.objects.filter(
+        student=request.user
+    ).select_related('time_slot', 'time_slot__teaching_class', 'enrollment').order_by('time_slot__start_time')
+    
+    # Separate by status
+    upcoming = bookings.filter(
+        time_slot__start_time__gte=timezone.now(),
+        status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING]
+    )
+    past = bookings.filter(
+        time_slot__start_time__lt=timezone.now()
+    ) | bookings.filter(status=ClassBooking.COMPLETED)
+    cancelled = bookings.filter(status=ClassBooking.CANCELLED)
+    
+    context = {
+        'upcoming_bookings': upcoming,
+        'past_bookings': past,
+        'cancelled_bookings': cancelled,
+    }
+    return render(request, 'skills/my_bookings.html', context)
 
 

@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% block title %} · Schedule - {{ teaching_class.title }}{% endblock %}
+
+{% block content %}
+<div class="schedule-container">
+    <div class="page-header">
+        <h1>{{ teaching_class.title }} - Schedule</h1>
+        <p class="subtitle">Book available time slots for your class sessions</p>
+        <a href="{% url 'skills:class_detail' teaching_class.slug %}" class="btn btn-secondary">← Back to Class</a>
+    </div>
+
+    <!-- My Bookings Section -->
+    {% if user_bookings %}
+    <div class="card my-bookings-section">
+        <h2>My Bookings</h2>
+        <div class="bookings-list">
+            {% for booking in user_bookings %}
+            <div class="booking-card {% if booking.status == 'cancelled' %}cancelled{% endif %}">
+                <div class="booking-header">
+                    <div class="booking-time">
+                        <strong>{{ booking.time_slot.start_time|date:"M d, Y" }}</strong>
+                        <span>{{ booking.time_slot.start_time|time:"g:i A" }} - {{ booking.time_slot.end_time|time:"g:i A" }}</span>
+                    </div>
+                    <div class="booking-status status-{{ booking.status }}">
+                        {{ booking.get_status_display }}
+                    </div>
+                </div>
+                {% if booking.notes %}
+                <div class="booking-notes">
+                    <strong>Notes:</strong> {{ booking.notes }}
+                </div>
+                {% endif %}
+                {% if booking.can_be_cancelled %}
+                <div class="booking-actions">
+                    <form method="post" action="{% url 'skills:cancel_booking' booking.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Cancel this booking?');">Cancel Booking</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Available Time Slots -->
+    <div class="card available-slots-section">
+        <h2>Available Time Slots</h2>
+        {% if available_slots %}
+        <div class="slots-list">
+            {% for slot in available_slots %}
+            <div class="slot-card available">
+                <div class="slot-header">
+                    <div class="slot-time">
+                        <strong>{{ slot.start_time|date:"l, M d, Y" }}</strong>
+                        <span>{{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}</span>
+                    </div>
+                    <div class="slot-availability">
+                        <span class="availability-badge">
+                            {{ slot.get_available_spots }} spot{{ slot.get_available_spots|pluralize }} available
+                        </span>
+                    </div>
+                </div>
+                {% if slot.notes %}
+                <div class="slot-notes">
+                    <p>{{ slot.notes }}</p>
+                </div>
+                {% endif %}
+                <div class="slot-actions">
+                    <form method="post" action="{% url 'skills:book_time_slot' slot.id %}" class="booking-form">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="notes-{{ slot.id }}">Add a note (optional):</label>
+                            <textarea id="notes-{{ slot.id }}" name="notes" rows="2" placeholder="Any special requests or questions..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" {% if slot.get_available_spots == 0 %}disabled{% endif %}>
+                            {% if slot.get_available_spots == 0 %}Fully Booked{% else %}Book This Slot{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No available time slots at the moment. Check back later or contact the teacher!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.schedule-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: #6b7280;
+    margin-bottom: 1rem;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.btn-primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.bookings-list,
+.slots-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.booking-card,
+.slot-card {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border-left: 4px solid #3b82f6;
+}
+
+.booking-card.cancelled {
+    opacity: 0.6;
+    border-left-color: #9ca3af;
+}
+
+.booking-header,
+.slot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+
+.booking-time strong,
+.slot-time strong {
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.booking-time span,
+.slot-time span {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.booking-status,
+.availability-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.booking-status.status-confirmed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.booking-status.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.booking-status.status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.booking-status.status-completed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.availability-badge {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.booking-notes {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.slot-notes {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.booking-actions,
+.slot-actions {
+    margin-top: 1rem;
+}
+
+.booking-form {
+    margin-top: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .booking-header,
+    .slot-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+

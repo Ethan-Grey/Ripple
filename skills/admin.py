@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Skill, SwipeAction, UserSkill, Offer, Match
+from .models import Skill, SwipeAction, UserSkill, Offer, Match, ClassTimeSlot, ClassBooking
 
 
 @admin.register(Skill)
@@ -31,3 +31,23 @@ class SwipeActionAdmin(admin.ModelAdmin):
     list_display = ('user', 'teaching_class', 'action', 'created_at')
     list_filter = ('action', 'created_at')
     search_fields = ('user__username', 'teaching_class__title')
+
+
+@admin.register(ClassTimeSlot)
+class ClassTimeSlotAdmin(admin.ModelAdmin):
+    list_display = ('teaching_class', 'start_time', 'end_time', 'max_students', 'is_active', 'get_available_spots')
+    list_filter = ('is_active', 'is_recurring', 'start_time')
+    search_fields = ('teaching_class__title', 'teaching_class__teacher__username')
+    date_hierarchy = 'start_time'
+    
+    def get_available_spots(self, obj):
+        return obj.get_available_spots()
+    get_available_spots.short_description = 'Available Spots'
+
+
+@admin.register(ClassBooking)
+class ClassBookingAdmin(admin.ModelAdmin):
+    list_display = ('student', 'time_slot', 'status', 'created_at', 'time_slot__start_time')
+    list_filter = ('status', 'created_at')
+    search_fields = ('student__username', 'time_slot__teaching_class__title')
+    date_hierarchy = 'created_at'

@@ -51,10 +51,17 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', LOCAL_IP]
 
 # Print the IP for easy access
 if DEBUG:
-    print(f"\n{'='*60}")
-    print(f"🌐 Server accessible at: http://{LOCAL_IP}:8000")
-    print(f"📱 Use this IP on other devices (same WiFi)")
-    print(f"{'='*60}\n")
+    try:
+        print(f"\n{'='*60}")
+        print(f"Server accessible at: http://{LOCAL_IP}:8000")
+        print(f"Use this IP on other devices (same WiFi)")
+        print(f"{'='*60}\n")
+    except UnicodeEncodeError:
+        # Fallback for systems with encoding issues
+        print(f"\n{'='*60}")
+        print(f"Server accessible at: http://{LOCAL_IP}:8000")
+        print(f"Use this IP on other devices (same WiFi)")
+        print(f"{'='*60}\n")
 
 
 # Application definition

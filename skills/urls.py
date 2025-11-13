@@ -17,6 +17,14 @@ urlpatterns = [
     path("<slug:slug>/trade/propose/", views.ClassTradeProposeView.as_view(), name="class_trade_propose"),
     path("<slug:slug>/delete/", views.ClassDeleteView.as_view(), name="class_delete"),
     path("<slug:slug>/checkout/", views.ClassCheckoutView.as_view(), name="class_checkout"),
+    # Scheduling URLs
+    path("<slug:slug>/schedule/", views.view_class_schedule, name="view_schedule"),
+    path("<slug:slug>/schedule/manage/", views.manage_class_schedule, name="manage_schedule"),
+    path("<slug:slug>/schedule/create-slot/", views.create_time_slot, name="create_time_slot"),
+    path("schedule/slot/<int:slot_id>/delete/", views.delete_time_slot, name="delete_time_slot"),
+    path("schedule/slot/<int:slot_id>/book/", views.book_time_slot, name="book_time_slot"),
+    path("schedule/booking/<int:booking_id>/cancel/", views.cancel_booking, name="cancel_booking"),
+    path("my-bookings/", views.my_bookings, name="my_bookings"),
 ]
 
 

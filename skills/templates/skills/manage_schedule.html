@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+{% block title %} · Manage Schedule - {{ teaching_class.title }}{% endblock %}
+
+{% block content %}
+<div class="schedule-container">
+    <div class="page-header">
+        <h1>Manage Schedule: {{ teaching_class.title }}</h1>
+        <p class="subtitle">Create and manage available time slots for your class</p>
+    </div>
+
+    <!-- Create New Time Slot Form -->
+    <div class="card create-slot-card">
+        <h2>Create New Time Slot</h2>
+        <form method="post" action="{% url 'skills:create_time_slot' teaching_class.slug %}" class="slot-form">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="start_time">Start Time *</label>
+                    <input type="datetime-local" id="start_time" name="start_time" required>
+                </div>
+                <div class="form-group">
+                    <label for="end_time">End Time *</label>
+                    <input type="datetime-local" id="end_time" name="end_time" required>
+                </div>
+                <div class="form-group">
+                    <label for="max_students">Max Students</label>
+                    <input type="number" id="max_students" name="max_students" min="1" value="1" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="notes">Notes (Optional)</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Any special instructions or notes about this time slot..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Time Slot</button>
+        </form>
+    </div>
+
+    <!-- Upcoming Time Slots -->
+    <div class="slots-section">
+        <h2>Upcoming Time Slots</h2>
+        {% if upcoming_slots %}
+        <div class="slots-grid">
+            {% for slot in upcoming_slots %}
+            <div class="slot-card">
+                <div class="slot-header">
+                    <div class="slot-time">
+                        <strong>{{ slot.start_time|date:"M d, Y" }}</strong>
+                        <span>{{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}</span>
+                    </div>
+                    <div class="slot-status {% if slot.is_active %}active{% else %}inactive{% endif %}">
+                        {% if slot.is_active %}Active{% else %}Inactive{% endif %}
+                    </div>
+                </div>
+                <div class="slot-body">
+                    <div class="slot-info">
+                        <span>📊 Available: {{ slot.get_available_spots }}/{{ slot.max_students }}</span>
+                        {% if slot.notes %}
+                        <p class="slot-notes">{{ slot.notes }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="slot-bookings">
+                        <strong>Bookings:</strong>
+                        {% for booking in slot.bookings.all %}
+                        <div class="booking-item">
+                            {{ booking.student.username }} - {{ booking.get_status_display }}
+                        </div>
+                        {% empty %}
+                        <span class="no-bookings">No bookings yet</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="slot-actions">
+                    {% if slot.has_active_bookings %}
+                    <span class="btn btn-disabled">Cannot Delete (Has Bookings)</span>
+                    {% else %}
+                    <form method="post" action="{% url 'skills:delete_time_slot' slot.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this time slot?');">Delete</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No upcoming time slots. Create one above!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Past Time Slots -->
+    {% if past_slots %}
+    <div class="slots-section">
+        <h2>Past Time Slots</h2>
+        <div class="slots-grid">
+            {% for slot in past_slots|slice:":10" %}
+            <div class="slot-card past">
+                <div class="slot-header">
+                    <div class="slot-time">
+                        <strong>{{ slot.start_time|date:"M d, Y" }}</strong>
+                        <span>{{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}</span>
+                    </div>
+                </div>
+                <div class="slot-body">
+                    <div class="slot-bookings">
+                        <strong>Attendees:</strong>
+                        {% for booking in slot.bookings.all %}
+                        <div class="booking-item">{{ booking.student.username }}</div>
+                        {% empty %}
+                        <span class="no-bookings">No bookings</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.schedule-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: #6b7280;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.create-slot-card h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.slots-section {
+    margin-bottom: 3rem;
+}
+
+.slots-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.slot-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #3b82f6;
+}
+
+.slot-card.past {
+    opacity: 0.7;
+    border-left-color: #9ca3af;
+}
+
+.slot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.slot-time strong {
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.slot-time span {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.slot-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.slot-status.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.slot-status.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.slot-body {
+    margin-bottom: 1rem;
+}
+
+.slot-info {
+    margin-bottom: 1rem;
+    color: #6b7280;
+}
+
+.slot-notes {
+    margin-top: 0.5rem;
+    font-style: italic;
+    color: #9ca3af;
+}
+
+.slot-bookings {
+    font-size: 0.9rem;
+}
+
+.booking-item {
+    padding: 0.25rem 0;
+    color: #374151;
+}
+
+.no-bookings {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.slot-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .slots-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+

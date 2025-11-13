@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 
 class Skill(models.Model):
@@ -304,3 +305,86 @@ class ClassTradeOffer(models.Model):
     
     def __str__(self):
         return f"{self.proposer.username} → {self.receiver.username}: {self.offered_class.title} ↔ {self.requested_class.title} ({self.status})"
+
+
+class ClassTimeSlot(models.Model):
+    """Available time slots that teachers can create for their classes"""
+    teaching_class = models.ForeignKey(TeachingClass, on_delete=models.CASCADE, related_name='time_slots')
+    start_time = models.DateTimeField(help_text='When this time slot starts')
+    end_time = models.DateTimeField(help_text='When this time slot ends')
+    max_students = models.PositiveIntegerField(default=1, help_text='Maximum number of students for this slot')
+    is_recurring = models.BooleanField(default=False, help_text='Is this a recurring slot?')
+    recurrence_pattern = models.CharField(
+        max_length=50, 
+        blank=True, 
+        help_text='e.g., "weekly", "daily", "MWF" for recurring slots'
+    )
+    notes = models.TextField(blank=True, help_text='Additional notes about this time slot')
+    is_active = models.BooleanField(default=True, help_text='Is this slot currently available?')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['start_time']
+        indexes = [
+            models.Index(fields=['teaching_class', 'start_time']),
+            models.Index(fields=['start_time', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.teaching_class.title} - {self.start_time.strftime('%Y-%m-%d %H:%M')}"
+    
+    def get_available_spots(self):
+        """Get number of available spots remaining"""
+        booked_count = self.bookings.filter(status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING]).count()
+        return max(0, self.max_students - booked_count)
+    
+    def is_fully_booked(self):
+        """Check if this slot is fully booked"""
+        return self.get_available_spots() == 0
+
+
+class ClassBooking(models.Model):
+    """Bookings made by students for class time slots"""
+    CONFIRMED = 'confirmed'
+    PENDING = 'pending'
+    CANCELLED = 'cancelled'
+    COMPLETED = 'completed'
+    NO_SHOW = 'no_show'
+    STATUS_CHOICES = [
+        (CONFIRMED, 'Confirmed'),
+        (PENDING, 'Pending'),
+        (CANCELLED, 'Cancelled'),
+        (COMPLETED, 'Completed'),
+        (NO_SHOW, 'No Show'),
+    ]
+    
+    time_slot = models.ForeignKey(ClassTimeSlot, on_delete=models.CASCADE, related_name='bookings')
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='class_bookings')
+    enrollment = models.ForeignKey(
+        ClassEnrollment, 
+        on_delete=models.CASCADE, 
+        related_name='bookings',
+        help_text='The enrollment that grants access to this booking'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    notes = models.TextField(blank=True, help_text='Student notes or special requests')
+    teacher_notes = models.TextField(blank=True, help_text='Teacher notes (private)')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    cancelled_at = models.DateTimeField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['time_slot__start_time']
+        unique_together = ('time_slot', 'student')
+        indexes = [
+            models.Index(fields=['student', 'status']),
+            models.Index(fields=['time_slot', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.student.username} - {self.time_slot.teaching_class.title} - {self.time_slot.start_time.strftime('%Y-%m-%d %H:%M')}"
+    
+    def can_be_cancelled(self):
+        """Check if booking can be cancelled"""
+        return self.status in [ClassBooking.CONFIRMED, ClassBooking.PENDING] and self.time_slot.start_time > timezone.now()
