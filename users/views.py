@@ -13,7 +13,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
 from django.contrib import messages
 from .models import Profile, Evidence, IdentitySubmission
-from skills.models import UserSkill, Skill, SkillEvidence, TeachingClass, TeacherApplication
+from skills.models import UserSkill, Skill, SkillEvidence, TeachingClass, TeacherApplication, ClassEnrollment
 from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
 from .message_utils import clear_all_messages
@@ -192,6 +192,11 @@ def profile_view(request):
         # Classes authored by this user
         'my_classes_published': TeachingClass.objects.filter(teacher=request.user, is_published=True).order_by('-created_at'),
         'my_classes_drafts': TeachingClass.objects.filter(teacher=request.user, is_published=False).order_by('-created_at'),
+        # Classes user is enrolled in as a student
+        'enrolled_classes': ClassEnrollment.objects.filter(
+            user=request.user,
+            status=ClassEnrollment.ACTIVE
+        ).select_related('teaching_class', 'teaching_class__teacher').order_by('-created_at'),
         # Pending teacher applications
         'my_pending_applications': TeacherApplication.objects.filter(applicant=request.user, status='pending').order_by('-created_at'),
     }

@@ -117,17 +117,17 @@
                     </svg>
                     Learning Skills
                 </button>
-                <button class="nav-tab" data-tab="teach">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                    Teach on Ripple
-                </button>
                 <button class="nav-tab" data-tab="my-classes">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
                     My Classes
+                </button>
+                <button class="nav-tab" data-tab="enrolled-classes">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    Enrolled Classes
                 </button>
             </div>
 
@@ -294,54 +294,6 @@
                     </div>
                 </div>
                 
-                <!-- Teach on Ripple Tab -->
-                <div id="teach-tab" class="tab-panel">
-                    <div class="skills-section">
-                        <div class="section-header">
-                            <h2 class="section-title">Teach on Ripple</h2>
-                        </div>
-                        <div class="teach-cta-card">
-                            <div class="teach-icon">🎓</div>
-                            <div class="teach-content">
-                                <h3>Become a Teacher</h3>
-                                <p>Apply to become a teacher, upload an intro video and thumbnail, describe your expertise, and we'll review your application. Once approved, you can publish classes and reach learners.</p>
-                                <div class="teach-actions">
-                                    <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary">Apply to Teach</a>
-                                    <a href="{% url 'skills:class_list' %}" class="btn btn-browse">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                        Browse Classes
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if my_pending_applications %}
-                        <div class="pending-applications">
-                            <h3 class="subsection-title">Pending Applications</h3>
-                            <div class="skills-grid">
-                                {% for app in my_pending_applications %}
-                                <div class="skill-card pending-card">
-                                    <div class="skill-header">
-                                        <div class="skill-icon-large">🗂️</div>
-                                    </div>
-                                    <div class="skill-body">
-                                        <h3 class="skill-name">{{ app.title }}</h3>
-                                        <div class="app-meta">
-                                            <span class="status-pill pending">Pending Review</span>
-                                            <span class="app-date">{{ app.created_at|date:"M d, Y" }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
                 <!-- My Classes Tab -->
                 <div id="my-classes" class="tab-panel">
                     <div class="skills-section">
@@ -395,6 +347,52 @@
                             <h3>No classes yet</h3>
                             <p>Create your first class and start teaching on Ripple</p>
                             <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary">Create Your First Class</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Enrolled Classes Tab -->
+                <div id="enrolled-classes-tab" class="tab-panel">
+                    <div class="skills-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Enrolled Classes</h2>
+                        </div>
+                        {% if enrolled_classes %}
+                        <div class="classes-grid">
+                            {% for enrollment in enrolled_classes %}
+                            <div class="class-card enrolled-card">
+                                <div class="class-status enrolled-status">
+                                    <svg fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Enrolled
+                                </div>
+                                <div class="class-content">
+                                    <h3 class="class-title">{{ enrollment.teaching_class.title }}</h3>
+                                    <div class="class-meta">
+                                        <span class="meta-item">By {{ enrollment.teaching_class.teacher.username }}</span>
+                                        <span class="meta-dot">•</span>
+                                        <span class="meta-item">{{ enrollment.teaching_class.get_difficulty_display }}</span>
+                                        <span class="meta-dot">•</span>
+                                        <span class="meta-item">{{ enrollment.teaching_class.duration_minutes }}m</span>
+                                    </div>
+                                    <div class="class-actions">
+                                        <a href="{% url 'skills:class_detail' enrollment.teaching_class.slug %}" class="btn btn-primary btn-small">View Class</a>
+                                        <a href="{% url 'skills:view_schedule' enrollment.teaching_class.slug %}" class="btn btn-outline btn-small">Book Session</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                            <h3>No enrolled classes yet</h3>
+                            <p>Browse classes and enroll to start learning new skills</p>
+                            <a href="{% url 'skills:class_list' %}" class="btn btn-primary">Browse Classes</a>
                         </div>
                         {% endif %}
                     </div>
@@ -492,6 +490,24 @@
                     <h4>Get Verified</h4>
                     <p>Verify your identity to increase trust and unlock more features.</p>
                     <a href="{% url 'users:verify_identity' %}" class="btn btn-primary btn-small">Start Verification</a>
+                </div>
+            </div>
+            {% else %}
+            <!-- Teach on Ripple Card -->
+            <div class="sidebar-card teach-card">
+                <div class="teach-card-icon">🎓</div>
+                <div class="teach-card-content">
+                    <h4>Teach on Ripple</h4>
+                    <p>Apply to become a teacher, upload an intro video and thumbnail, describe your expertise, and we'll review your application. Once approved, you can publish classes and reach learners.</p>
+                    {% if my_pending_applications %}
+                        <div class="teach-card-pending">
+                            <span class="status-pill pending">Pending Applications: {{ my_pending_applications.count }}</span>
+                        </div>
+                    {% endif %}
+                    <div class="teach-card-actions">
+                        <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary btn-small">Apply to Teach</a>
+                        <a href="{% url 'skills:class_list' %}" class="btn btn-outline btn-small">Browse Classes</a>
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -902,42 +918,6 @@
     color: #5b21b6;
 }
 
-/* Teach CTA Card */
-.teach-cta-card {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    border: 2px solid rgba(102, 126, 234, 0.2);
-    border-radius: 16px;
-    padding: 32px;
-    display: flex;
-    gap: 24px;
-    align-items: start;
-    margin-bottom: 32px;
-}
-
-.teach-icon {
-    font-size: 64px;
-    flex-shrink: 0;
-}
-
-.teach-content h3 {
-    font-size: 24px;
-    font-weight: 800;
-    color: var(--text);
-    margin: 0 0 12px 0;
-}
-
-.teach-content p {
-    font-size: 15px;
-    color: #6b7280;
-    line-height: 1.6;
-    margin: 0 0 20px 0;
-}
-
-.teach-actions {
-    display: flex;
-    gap: 12px;
-}
-
 /* Classes Grid */
 .classes-grid {
     display: grid;
@@ -953,12 +933,22 @@
     text-decoration: none;
     transition: all 0.2s;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .class-card:hover {
     border-color: var(--brand);
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.class-card.enrolled-card {
+    text-decoration: none;
+}
+
+.class-card.enrolled-card a {
+    text-decoration: none;
 }
 
 .class-status {
@@ -989,6 +979,17 @@
     color: #92400e;
 }
 
+.class-status.enrolled-status {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.class-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
 .class-title {
     font-size: 20px;
     font-weight: 700;
@@ -1007,6 +1008,8 @@
     font-size: 14px;
     color: #6b7280;
     font-weight: 600;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
 }
 
 .meta-item.warning {
@@ -1015,6 +1018,23 @@
 
 .meta-dot {
     color: #d1d5db;
+}
+
+.class-actions {
+    margin-top: auto;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+}
+
+.class-actions .btn-small {
+    padding: 8px 16px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+    justify-content: center;
 }
 
 /* Empty State */
@@ -1303,6 +1323,41 @@
     margin: 0 0 20px 0;
 }
 
+.teach-card {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-color: var(--brand);
+}
+
+.teach-card-icon {
+    font-size: 48px;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.teach-card-content h4 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0 0 8px 0;
+}
+
+.teach-card-content p {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+}
+
+.teach-card-pending {
+    margin-bottom: 12px;
+}
+
+.teach-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 /* Buttons */
 .btn {
     display: inline-flex;
@@ -1445,14 +1500,6 @@
         grid-template-columns: 1fr;
     }
     
-    .teach-cta-card {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .teach-actions {
-        flex-direction: column;
-    }
 }
 </style>
 
