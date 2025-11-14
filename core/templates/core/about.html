@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us - Ripple</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -14,7 +14,9 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             color: #1a1a1a;
             overflow-x: hidden;
         }
@@ -41,8 +43,11 @@
 
         .logo {
             font-size: 28px;
-            font-weight: 700;
-            color: #233455;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             text-decoration: none;
         }
 
@@ -55,39 +60,38 @@
         .nav-links a {
             text-decoration: none;
             color: #5a5a5a;
-            font-weight: 500;
+            font-weight: 600;
             transition: color 0.3s;
         }
 
         .nav-links a:hover {
-            color: #233455;
+            color: #667eea;
         }
 
         .btn {
             padding: 12px 28px;
-            border-radius: 8px;
+            border-radius: 12px;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 700;
             transition: all 0.3s;
             display: inline-block;
         }
 
         .btn-primary {
-            background: #233455;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            box-shadow: 0 4px 15px rgba(35, 52, 85, 0.3);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(35, 52, 85, 0.4);
-            background: #2b3a57;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
 
         .hero {
-            padding: 140px 40px 80px;
-            background: #233455;
-            color: #e6ecf5;
+            padding: 140px 40px 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -104,6 +108,44 @@
             opacity: 0.3;
         }
 
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        .shape-1 {
+            width: 400px;
+            height: 400px;
+            background: white;
+            top: -150px;
+            left: -150px;
+        }
+
+        .shape-2 {
+            width: 300px;
+            height: 300px;
+            background: white;
+            bottom: -100px;
+            right: -100px;
+            animation-delay: 1s;
+        }
+
+        .shape-3 {
+            width: 200px;
+            height: 200px;
+            background: white;
+            top: 40%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.1; }
+            50% { transform: scale(1.1); opacity: 0.15; }
+        }
+
         .hero-content {
             max-width: 800px;
             margin: 0 auto;
@@ -112,16 +154,18 @@
         }
 
         .hero h1 {
-            font-size: 52px;
-            font-weight: 800;
+            font-size: 56px;
+            font-weight: 900;
             margin-bottom: 24px;
             line-height: 1.2;
+            letter-spacing: -1px;
         }
 
         .hero p {
             font-size: 20px;
             opacity: 0.95;
             line-height: 1.6;
+            font-weight: 500;
         }
 
         .mission {
@@ -137,21 +181,23 @@
 
         .mission h2 {
             font-size: 42px;
-            font-weight: 800;
+            font-weight: 900;
             margin-bottom: 24px;
-            color: #1a1a1a;
+            color: #111827;
+            letter-spacing: -0.5px;
         }
 
         .mission p {
             font-size: 20px;
-            color: #666;
+            color: #6b7280;
             line-height: 1.8;
             margin-bottom: 20px;
+            font-weight: 500;
         }
 
         .story {
             padding: 100px 40px;
-            background: #f6f7f9;
+            background: #f9fafb;
         }
 
         .story-container {
@@ -161,10 +207,11 @@
 
         .story h2 {
             font-size: 42px;
-            font-weight: 800;
+            font-weight: 900;
             margin-bottom: 32px;
-            color: #1a1a1a;
+            color: #111827;
             text-align: center;
+            letter-spacing: -0.5px;
         }
 
         .story-content {
@@ -172,13 +219,15 @@
             padding: 60px;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
         }
 
         .story-content p {
             font-size: 18px;
-            color: #666;
+            color: #6b7280;
             line-height: 1.8;
             margin-bottom: 24px;
+            font-weight: 500;
         }
 
         .values {
@@ -198,32 +247,37 @@
 
         .section-title h2 {
             font-size: 42px;
-            font-weight: 800;
+            font-weight: 900;
             margin-bottom: 16px;
-            color: #1a1a1a;
+            color: #111827;
+            letter-spacing: -0.5px;
         }
 
         .section-title p {
             font-size: 18px;
-            color: #666;
+            color: #6b7280;
+            font-weight: 500;
         }
 
         .values-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
         }
 
         .value-card {
-            background: #f6f7f9;
+            background: white;
             padding: 40px;
             border-radius: 16px;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .value-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
         }
 
         .value-icon {
@@ -233,26 +287,42 @@
 
         .value-card h3 {
             font-size: 24px;
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 12px;
-            color: #1a1a1a;
+            color: #111827;
         }
 
         .value-card p {
-            color: #666;
+            color: #6b7280;
             line-height: 1.6;
             font-size: 16px;
+            font-weight: 500;
         }
 
         .stats {
             padding: 100px 40px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+            opacity: 0.3;
         }
 
         .stats-container {
             max-width: 1200px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         .stats-grid {
@@ -264,13 +334,14 @@
 
         .stat-item h3 {
             font-size: 56px;
-            font-weight: 800;
+            font-weight: 900;
             margin-bottom: 12px;
         }
 
         .stat-item p {
             font-size: 18px;
             opacity: 0.95;
+            font-weight: 600;
         }
 
         .cta {
@@ -278,23 +349,42 @@
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+            opacity: 0.3;
         }
 
         .cta h2 {
             font-size: 42px;
-            font-weight: 800;
+            font-weight: 900;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .cta p {
             font-size: 20px;
             margin-bottom: 40px;
             opacity: 0.95;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
         }
 
         .btn-white {
             background: white;
-            color: #233455;
+            color: #667eea;
+            font-weight: 800;
         }
 
         .btn-white:hover {
@@ -308,7 +398,7 @@
         }
 
         footer {
-            background: #1a1a1a;
+            background: #111827;
             color: white;
             padding: 60px 40px 40px;
         }
@@ -324,16 +414,17 @@
 
         .footer-section h4 {
             font-size: 18px;
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 16px;
         }
 
         .footer-section p,
         .footer-section a {
-            color: #aaa;
+            color: #9ca3af;
             text-decoration: none;
             line-height: 2;
             display: block;
+            font-weight: 500;
         }
 
         .footer-section a:hover {
@@ -343,8 +434,9 @@
         .footer-bottom {
             text-align: center;
             padding-top: 40px;
-            border-top: 1px solid #333;
-            color: #888;
+            border-top: 1px solid #374151;
+            color: #6b7280;
+            font-weight: 500;
         }
 
         @media (max-width: 768px) {
@@ -377,6 +469,10 @@
             .stat-item h3 {
                 font-size: 42px;
             }
+
+            .values-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -398,6 +494,10 @@
     </nav>
 
     <section class="hero">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        
         <div class="hero-content">
             <h1>Building a World Where Everyone Can Learn</h1>
             <p>We believe that knowledge should be accessible to all. Ripple connects people to share skills, swap expertise, and grow together in a collaborative learning community.</p>
