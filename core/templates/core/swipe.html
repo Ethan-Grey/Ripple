@@ -405,6 +405,181 @@
     font-weight: 500;
 }
 
+.help-button {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.help-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+}
+
+.help-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.help-modal.active {
+    display: flex;
+}
+
+.help-content {
+    background: white;
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 3px solid transparent;
+    background-image: 
+        linear-gradient(white, white),
+        linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    position: relative;
+}
+
+.help-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.help-header h2 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.help-header p {
+    color: #6b7280;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.help-section {
+    margin-bottom: 2rem;
+}
+
+.help-section h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-section h3 span {
+    font-size: 1.5rem;
+}
+
+.help-action {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.help-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.help-text {
+    flex: 1;
+}
+
+.help-text strong {
+    color: #111827;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.help-text span {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.close-help {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+}
+
+.close-help:hover {
+    background: #e5e7eb;
+    transform: rotate(90deg);
+}
+
+@media (max-width: 640px) {
+    .help-button {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+        bottom: 1.5rem;
+        right: 1.5rem;
+    }
+
+    .help-content {
+        padding: 2rem 1.5rem;
+    }
+
+    .help-header h2 {
+        font-size: 2rem;
+    }
+}
+
 @media (max-width: 640px) {
     .swipe-container {
         padding: 1rem 0.5rem;
@@ -556,6 +731,88 @@
         <a href="{% url 'core:whitelist' %}" class="whitelist-link">
             View Interested Classes
         </a>
+    </div>
+</div>
+
+<!-- Help Button -->
+<button class="help-button" onclick="toggleHelp()" aria-label="Help">
+    ?
+</button>
+
+<!-- Help Modal -->
+<div class="help-modal" id="helpModal" onclick="closeHelpOnBackdrop(event)">
+    <div class="help-content">
+        <button class="close-help" onclick="toggleHelp()" aria-label="Close">✕</button>
+        
+        <div class="help-header">
+            <h2>How to Swipe Classes</h2>
+            <p>Discover classes that match your interests!</p>
+        </div>
+
+        <div class="help-section">
+            <h3><span>💜</span> Swiping Actions</h3>
+            <div class="help-action">
+                <div class="help-icon">❤</div>
+                <div class="help-text">
+                    <strong>Swipe Right / Click Heart</strong>
+                    <span>Add class to your "Interested" list</span>
+                </div>
+            </div>
+            <div class="help-action">
+                <div class="help-icon">✕</div>
+                <div class="help-text">
+                    <strong>Swipe Left / Click X</strong>
+                    <span>Add class to your "Not Interested" list</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h3><span>⌨️</span> Keyboard Shortcuts</h3>
+            <div class="help-action">
+                <div class="help-icon">→</div>
+                <div class="help-text">
+                    <strong>Right Arrow Key</strong>
+                    <span>Quick swipe right (interested)</span>
+                </div>
+            </div>
+            <div class="help-action">
+                <div class="help-icon">←</div>
+                <div class="help-text">
+                    <strong>Left Arrow Key</strong>
+                    <span>Quick swipe left (not interested)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h3><span>📱</span> Touch & Mouse</h3>
+            <div class="help-action">
+                <div class="help-icon">👆</div>
+                <div class="help-text">
+                    <strong>Drag the Card</strong>
+                    <span>Swipe with your finger or mouse to make your choice</span>
+                </div>
+            </div>
+            <div class="help-action">
+                <div class="help-icon">⟲</div>
+                <div class="help-text">
+                    <strong>Refresh Button</strong>
+                    <span>Reload the page to start over</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h3><span>📊</span> Track Your Progress</h3>
+            <div class="help-action">
+                <div class="help-icon">📈</div>
+                <div class="help-text">
+                    <strong>View Your Stats</strong>
+                    <span>See how many classes you've swiped and your lists at the top</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -762,5 +1019,34 @@ if (card) {
         }
     }, { passive: false });
 }
+
+// Help modal functions
+function toggleHelp() {
+    const modal = document.getElementById('helpModal');
+    modal.classList.toggle('active');
+    
+    // Prevent body scroll when modal is open
+    if (modal.classList.contains('active')) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+}
+
+function closeHelpOnBackdrop(event) {
+    if (event.target.id === 'helpModal') {
+        toggleHelp();
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('helpModal');
+        if (modal.classList.contains('active')) {
+            toggleHelp();
+        }
+    }
+});
 </script>
 {% endblock %}
