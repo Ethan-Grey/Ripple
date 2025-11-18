@@ -13,13 +13,33 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     
     <style>
         :root {
             --sidebar-width: 280px;
             --collision-breakpoint: 1200px;
+            --brand: #667eea;
+            --brand-hover: #5a77ff;
+            --brand-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --text: #111827;
+            --text-light: #6b7280;
+            --card: #ffffff;
+            --background: #f9fafb;
+            --border: #e5e7eb;
+            --sidebar-bg: #1f2937;
+            --sidebar-hover: #374151;
+        }
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background: var(--background);
         }
         
         .layout {
@@ -37,6 +57,26 @@
             overflow-y: auto;
             overflow-x: hidden;
             z-index: 1000;
+            background: var(--sidebar-bg);
+            box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Custom scrollbar for sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
         
         /* Desktop - sidebar visible and pushes content */
@@ -81,23 +121,32 @@
             top: 1rem;
             left: 1rem;
             z-index: 1002;
-            background: #2b3a57;
+            background: var(--brand-gradient);
             color: white;
             border: none;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.375rem;
+            padding: 10px 14px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: left 0.3s ease-in-out;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
         }
         
         .toggle-sidebar-btn:hover {
-            background: #3d4f6d;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .toggle-sidebar-btn:active {
+            transform: translateY(0);
         }
         
-        @media (min-width: 1201px) {
-            .toggle-sidebar-btn.shifted {
-                left: calc(var(--sidebar-width) - 2.5rem);
+        /* Only show toggle button on small screens */
+        @media (max-width: 1200px) {
+            .toggle-sidebar-btn {
+                display: flex;
             }
         }
         
@@ -110,35 +159,327 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
+            backdrop-filter: blur(4px);
         }
         
         .overlay.active {
             display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .brand {
+            padding: 24px 20px;
+            font-size: 32px;
+            font-weight: 900;
+            background: var(--brand-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        .nav {
+            padding: 16px 0;
         }
         
         .nav-item {
             display: flex;
             align-items: center;
+            padding: 12px 20px;
+            margin: 4px 12px;
+            border-radius: 10px;
             transition: all 0.2s ease;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+            font-size: 14px;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: var(--sidebar-hover);
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: var(--brand-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 60%;
+            background: white;
+            border-radius: 0 4px 4px 0;
         }
         
         .nav-icon {
             min-width: 1.5rem;
+            font-size: 18px;
             transition: margin 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .nav-text {
             white-space: nowrap;
             transition: opacity 0.2s ease;
+            margin-left: 12px;
         }
         
         .admin-section-label {
-            padding: 0.5rem 1rem;
-            font-size: 0.75rem;
-            color: #9ca3af;
+            padding: 16px 20px 8px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
             transition: opacity 0.2s ease;
+            font-weight: 700;
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 12px 20px;
+        }
+
+        .nav-badge {
+            background: #ef4444;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 7px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: auto;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Admin nav items with custom colors */
+        .nav-item.admin-review {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+
+        .nav-item.admin-review:hover {
+            background: rgba(245, 158, 11, 0.25);
+            color: #fcd34d;
+        }
+
+        .nav-item.admin-verifications {
+            background: rgba(253, 230, 138, 0.15);
+            color: #fde68a;
+        }
+
+        .nav-item.admin-verifications:hover {
+            background: rgba(253, 230, 138, 0.25);
+            color: #fef3c7;
+        }
+
+        .nav-item.admin-classes {
+            background: rgba(59, 130, 246, 0.15);
+            color: #93c5fd;
+        }
+
+        .nav-item.admin-classes:hover {
+            background: rgba(59, 130, 246, 0.25);
+            color: #bfdbfe;
+        }
+
+        .nav-item.admin-skills {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+
+        .nav-item.admin-skills:hover {
+            background: rgba(239, 68, 68, 0.25);
+            color: #fecaca;
+        }
+
+        .nav-item.admin-communities {
+            background: rgba(167, 139, 250, 0.15);
+            color: #c4b5fd;
+        }
+
+        .nav-item.admin-communities:hover {
+            background: rgba(167, 139, 250, 0.25);
+            color: #ddd6fe;
+        }
+
+        .nav-item.admin-django {
+            background: rgba(52, 211, 153, 0.15);
+            color: #6ee7b7;
+        }
+
+        .nav-item.admin-django:hover {
+            background: rgba(52, 211, 153, 0.25);
+            color: #a7f3d0;
+        }
+
+        .nav-spacer {
+            flex: 1;
+            min-height: 20px;
+        }
+
+        .nav-item.logout-btn {
+            background: rgba(239, 68, 68, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: auto;
+        }
+
+        .nav-item.logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: white;
+        }
+
+        /* Topbar styles */
+        .topbar {
+            background: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .search {
+            flex: 1;
+            max-width: 500px;
+        }
+
+        .search input {
+            width: 100%;
+            padding: 12px 20px 12px 44px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: var(--background);
+            font-weight: 500;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 16px center;
+        }
+
+        .search input:focus {
+            outline: none;
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background-color: white;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: var(--brand-gradient);
+            color: white;
+            border-radius: 24px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .user-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .user-pill i {
+            font-size: 18px;
+        }
+
+        /* Page body */
+        .page-body {
+            padding: 32px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Alert improvements */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .alert-success {
+            background: #d9ffe2;
+            color: #2d8a4d;
+        }
+
+        .alert-info {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--brand);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .topbar {
+                padding-left: 72px; /* Make room for toggle button */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 12px 16px 12px 72px; /* Maintain left padding for button */
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .search {
+                max-width: 100%;
+            }
+
+            .user-pill {
+                justify-content: center;
+            }
+
+            .page-body {
+                padding: 20px 16px;
+            }
+
+            .toggle-sidebar-btn {
+                top: 0.75rem;
+                left: 0.75rem;
+            }
         }
     </style>
     
@@ -147,7 +488,7 @@
 <body>
     <!-- Sidebar toggle button -->
     <button class="toggle-sidebar-btn" id="sidebarToggle" aria-label="Toggle navigation">
-        <i class="bi bi-list" style="font-size: 1.25rem;"></i>
+        <i class="bi bi-list" style="font-size: 1.5rem;"></i>
     </button>
     
     <!-- Overlay for when sidebar is open on small screens -->
@@ -184,7 +525,7 @@
                     {% if user.is_authenticated %}
                         {% pending_trade_offers_count as pending_count %}
                         {% if pending_count > 0 %}
-                            <span style="background:#ef4444;color:white;border-radius:10px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:auto;">{{ pending_count }}</span>
+                            <span class="nav-badge">{{ pending_count }}</span>
                         {% endif %}
                     {% endif %}
                 </a>
@@ -196,38 +537,39 @@
                     <i class="bi bi-clipboard2-plus nav-icon"></i>
                     <span class="nav-text">Applications</span>
                 </a>
+                
                 {% if user.is_staff %}
-                    <hr class="my-3 border-secondary">
+                    <div class="nav-divider"></div>
                     <div class="admin-section-label">Admin Section</div>
-                    <a class="nav-item" href="{% url 'skill_admin:skill_review' %}" style="background:#f59e0b;color:#92400e">
+                    <a class="nav-item admin-review" href="{% url 'skill_admin:skill_review' %}">
                         <i class="bi bi-clipboard-check nav-icon"></i>
                         <span class="nav-text">Admin Review</span>
                     </a>
-                    <a class="nav-item" href="{% url 'users:admin_user_verifications' %}" style="background:#fde68a;color:#92400e">
+                    <a class="nav-item admin-verifications" href="{% url 'users:admin_user_verifications' %}">
                         <i class="bi bi-shield-check nav-icon"></i>
                         <span class="nav-text">User Verifications</span>
                     </a>
-                    <a class="nav-item" href="{% url 'users:admin_user_classes' %}" style="background:#3b82f6;color:#eff6ff">
+                    <a class="nav-item admin-classes" href="{% url 'users:admin_user_classes' %}">
                         <i class="bi bi-easel3 nav-icon"></i>
                         <span class="nav-text">User Classes</span>
                     </a>
-                    <a class="nav-item" href="{% url 'users:admin_user_skills' %}" style="background:#ef4444;color:#ffffff">
+                    <a class="nav-item admin-skills" href="{% url 'users:admin_user_skills' %}">
                         <i class="bi bi-gear nav-icon"></i>
                         <span class="nav-text">User Skills</span>
                     </a>
-                    <a class="nav-item" href="{% url 'communities:admin_community_requests' %}" style="background:#a78bfa;color:#4c1d95">
+                    <a class="nav-item admin-communities" href="{% url 'communities:admin_community_requests' %}">
                         <i class="bi bi-inbox nav-icon"></i>
                         <span class="nav-text">Community Requests</span>
                     </a>
-                    <a class="nav-item" href="/admin/" style="background:#34d399;color:#065f46">
+                    <a class="nav-item admin-django" href="/admin/">
                         <i class="bi bi-speedometer2 nav-icon"></i>
                         <span class="nav-text">Django Admin</span>
                     </a>
                 {% endif %}
                 
-                <div style="flex:1"></div>
+                <div class="nav-spacer"></div>
                 
-                <a class="nav-item" href="{% url 'users:logout' %}" style="margin-top:auto;background:#2b3a57;color:#e6ecf5">
+                <a class="nav-item logout-btn" href="{% url 'users:logout' %}">
                     <i class="bi bi-box-arrow-right nav-icon"></i>
                     <span class="nav-text">Logout</span>
                 </a>
@@ -237,11 +579,11 @@
         <main class="content">
             <header class="topbar">
                 <form class="search" action="{% url 'core:search' %}" method="get" role="search">
-                    <input type="text" name="q" placeholder="Search" value="{{ request.GET.q }}" aria-label="Search"/>
+                    <input type="text" name="q" placeholder="Search for skills, classes, or users..." value="{{ request.GET.q }}" aria-label="Search"/>
                 </form>
                 <div class="user-pill">
-                    <i class="bi bi-person-circle me-1"></i>
-                    {{ user.username|default:"User" }}
+                    <i class="bi bi-person-circle"></i>
+                    <span>{{ user.username|default:"User" }}</span>
                 </div>
             </header>
 
@@ -274,8 +616,6 @@
             const small = isSmallWindow();
             
             if (small) {
-                // Small window: sidebar closed by default, can be opened manually
-                // Sidebar will overlay content when opened
                 const isOpen = sidebar.classList.contains('open');
                 if (isOpen) {
                     overlay.classList.add('active');
@@ -286,7 +626,6 @@
                 }
                 toggleBtn.classList.remove('shifted');
             } else {
-                // Large window: sidebar always visible, pushes content
                 sidebar.classList.remove('open');
                 overlay.classList.remove('active');
                 document.body.style.overflow = '';
@@ -298,7 +637,6 @@
             const small = isSmallWindow();
             
             if (small) {
-                // Toggle open/closed state
                 const isOpen = sidebar.classList.contains('open');
                 if (isOpen) {
                     sidebar.classList.remove('open');
@@ -310,7 +648,6 @@
                     document.body.style.overflow = 'hidden';
                 }
             }
-            // On large screens, toggle button doesn't do anything (sidebar always visible)
         }
         
         function closeSidebar() {
@@ -335,7 +672,7 @@
             });
         });
         
-        // Update on window resize - automatically close sidebar if window becomes small
+        // Update on window resize
         let resizeTimer;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
@@ -343,7 +680,6 @@
                 const wasSmall = sidebar.classList.contains('open');
                 const isNowSmall = isSmallWindow();
                 
-                // Auto-close if transitioning from large to small
                 if (!wasSmall && isNowSmall) {
                     sidebar.classList.remove('open');
                 }
@@ -352,11 +688,26 @@
             }, 100);
         });
         
-        // Highlight active nav item
+        // Highlight active nav item based on current path
         const currentPath = window.location.pathname;
         navLinks.forEach(link => {
-            if (link.getAttribute('href') === currentPath) {
+            const linkPath = link.getAttribute('href');
+            if (linkPath && currentPath === linkPath) {
                 link.classList.add('active');
+            } else if (linkPath && linkPath !== '/' && currentPath.startsWith(linkPath)) {
+                // Check if this is the longest matching path to avoid conflicts
+                const allLinks = Array.from(navLinks);
+                const longerMatch = allLinks.some(otherLink => {
+                    const otherPath = otherLink.getAttribute('href');
+                    return otherPath && 
+                           otherPath !== linkPath && 
+                           otherPath.startsWith(linkPath) && 
+                           currentPath.startsWith(otherPath);
+                });
+                
+                if (!longerMatch) {
+                    link.classList.add('active');
+                }
             }
         });
         
