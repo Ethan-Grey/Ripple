@@ -131,3 +131,31 @@ class MessageStatus(models.Model):
             self.is_read = True
             self.read_at = timezone.now()
             self.save()
+
+
+class ConversationUserStatus(models.Model):
+    """Tracks user-specific conversation states (archived, deleted)"""
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name='user_statuses'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='conversation_statuses'
+    )
+    is_archived = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ['conversation', 'user']
+        indexes = [
+            models.Index(fields=['user', 'is_archived']),
+            models.Index(fields=['user', 'is_deleted']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - Conversation {self.conversation.id} - Archived: {self.is_archived}, Deleted: {self.is_deleted}"

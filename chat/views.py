@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q, Max, Prefetch, Count, OuterRef, Subquery
 from django.core.paginator import Paginator
-from .models import Conversation, Message, MessageStatus
+from .models import Conversation, Message, MessageStatus, ConversationUserStatus
 from django.http import JsonResponse
 from django.utils import timezone
 
@@ -27,6 +27,9 @@ def messages_page(request):
         except User.DoesNotExist:
             pass
     
+    # Check if viewing archived conversations
+    view_archived = request.GET.get('archived', 'false').lower() == 'true'
+    
     # Get all conversations for the current user with optimized queries
     conversations = Conversation.objects.filter(
         participants=request.user
@@ -38,6 +41,29 @@ def messages_page(request):
             to_attr='latest_messages'
         )
     ).distinct()
+    
+    # Filter out deleted conversations
+    deleted_statuses = ConversationUserStatus.objects.filter(
+        user=request.user,
+        is_deleted=True
+    ).values_list('conversation_id', flat=True)
+    conversations = conversations.exclude(id__in=deleted_statuses)
+    
+    # Filter archived conversations based on view mode
+    if view_archived:
+        # Show only archived conversations
+        archived_statuses = ConversationUserStatus.objects.filter(
+            user=request.user,
+            is_archived=True
+        ).values_list('conversation_id', flat=True)
+        conversations = conversations.filter(id__in=archived_statuses)
+    else:
+        # Exclude archived conversations
+        archived_statuses = ConversationUserStatus.objects.filter(
+            user=request.user,
+            is_archived=True
+        ).values_list('conversation_id', flat=True)
+        conversations = conversations.exclude(id__in=archived_statuses)
     
     # Get selected conversation
     conversation_id = request.GET.get('conversation')
@@ -90,6 +116,7 @@ def messages_page(request):
         'page_obj': page_obj,
         'last_message_id': last_message_id,
         'other_user': selected_conversation.get_other_participant(request.user) if selected_conversation else None,
+        'view_archived': view_archived,
     }
     return render(request, 'chat/messages.html', context)
 
@@ -215,6 +242,28 @@ def get_conversations_update(request):
         participants=request.user
     ).prefetch_related('participants').distinct()
     
+    # Filter out deleted conversations
+    deleted_statuses = ConversationUserStatus.objects.filter(
+        user=request.user,
+        is_deleted=True
+    ).values_list('conversation_id', flat=True)
+    conversations = conversations.exclude(id__in=deleted_statuses)
+    
+    # Check if viewing archived
+    view_archived = request.GET.get('archived', 'false').lower() == 'true'
+    if view_archived:
+        archived_statuses = ConversationUserStatus.objects.filter(
+            user=request.user,
+            is_archived=True
+        ).values_list('conversation_id', flat=True)
+        conversations = conversations.filter(id__in=archived_statuses)
+    else:
+        archived_statuses = ConversationUserStatus.objects.filter(
+            user=request.user,
+            is_archived=True
+        ).values_list('conversation_id', flat=True)
+        conversations = conversations.exclude(id__in=archived_statuses)
+    
     conversations_data = []
     for conv in conversations:
         latest_msg = conv.get_latest_message()
@@ -246,3 +295,85 @@ def get_conversations_update(request):
         'success': True,
         'conversations': conversations_data
     })
+
+
+@login_required
+def archive_conversation(request, conversation_id):
+    """Archive a conversation for the current user"""
+    conversation = get_object_or_404(
+        Conversation,
+        id=conversation_id,
+        participants=request.user
+    )
+    
+    status, created = ConversationUserStatus.objects.get_or_create(
+        conversation=conversation,
+        user=request.user,
+        defaults={'is_archived': True, 'archived_at': timezone.now()}
+    )
+    
+    if not created:
+        status.is_archived = True
+        status.archived_at = timezone.now()
+        status.is_deleted = False  # Un-delete if it was deleted
+        status.deleted_at = None
+        status.save()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True})
+    
+    return redirect('chat:messages')
+
+
+@login_required
+def unarchive_conversation(request, conversation_id):
+    """Unarchive a conversation for the current user"""
+    conversation = get_object_or_404(
+        Conversation,
+        id=conversation_id,
+        participants=request.user
+    )
+    
+    try:
+        status = ConversationUserStatus.objects.get(
+            conversation=conversation,
+            user=request.user
+        )
+        status.is_archived = False
+        status.archived_at = None
+        status.save()
+    except ConversationUserStatus.DoesNotExist:
+        pass
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True})
+    
+    return redirect('chat:messages')
+
+
+@login_required
+def delete_conversation(request, conversation_id):
+    """Delete a conversation for the current user"""
+    conversation = get_object_or_404(
+        Conversation,
+        id=conversation_id,
+        participants=request.user
+    )
+    
+    status, created = ConversationUserStatus.objects.get_or_create(
+        conversation=conversation,
+        user=request.user,
+        defaults={'is_deleted': True, 'deleted_at': timezone.now()}
+    )
+    
+    if not created:
+        status.is_deleted = True
+        status.deleted_at = timezone.now()
+        status.is_archived = False  # Un-archive if it was archived
+        status.archived_at = None
+        status.save()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True})
+    
+    return redirect('chat:messages')
