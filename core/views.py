@@ -113,14 +113,35 @@ def search(request):
             teachers_count=Count('userskill', filter=Q(userskill__can_teach=True))
         )[:10]
     
+    # Search classes
+    class_results = []
+    if q:
+        classes = TeachingClass.objects.filter(
+            Q(title__icontains=q) |
+            Q(short_description__icontains=q) |
+            Q(full_description__icontains=q),
+            is_published=True  # Only show published classes
+        ).select_related('teacher').order_by('-created_at')[:10]
+        
+        # Add formatted price to each class
+        for cls in classes:
+            cls.price_formatted = f"${cls.price_cents / 100:.2f}" if cls.price_cents and cls.price_cents > 0 else "Free"
+        
+        class_results = classes
+    
     # Search communities
     community_results = Community.objects.filter(name__icontains=q)[:10] if q else []
+    
+    # Calculate total results count
+    total_results = len(user_results) + len(skill_results) + len(class_results) + len(community_results)
     
     return render(request, 'core/search.html', {
         'q': q,
         'user_results': user_results,
         'skill_results': skill_results,
+        'class_results': class_results,
         'community_results': community_results,
+        'total_results': total_results,
     })
 
 
