@@ -6,6 +6,12 @@ from communities.models import Community
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
+from django.contrib.contenttypes.models import ContentType
+from core.models import Report, UserWarning
+from django.utils import timezone
+from django.contrib.auth.models import User
+from django.contrib import messages
+
 
 def landing(request):
     # If user is already logged in, redirect to dashboard
@@ -327,3 +333,202 @@ def remove_swipe_action(request, class_id):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+@login_required
+def report_content(request):
+    """Main report page - allows reporting any content"""
+    if request.method == 'POST':
+        content_type_id = request.POST.get('content_type')
+        object_id = request.POST.get('object_id')
+        reason = request.POST.get('reason')
+        description = request.POST.get('description')
+        
+        if not all([content_type_id, object_id, reason, description]):
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('core:report_content')
+        
+        try:
+            content_type = ContentType.objects.get(id=content_type_id)
+            
+            # Create the report
+            Report.objects.create(
+                reporter=request.user,
+                content_type=content_type,
+                object_id=object_id,
+                reason=reason,
+                description=description
+            )
+            
+            messages.success(request, 'Thank you for your report. Our team will review it shortly.')
+            return redirect('core:home')
+            
+        except Exception as e:
+            messages.error(request, f'Error submitting report: {str(e)}')
+            return redirect('core:report_content')
+    
+    # Get available content types for reporting
+    reportable_models = ['user', 'community', 'teachingclass', 'message']
+    content_types = ContentType.objects.filter(model__in=reportable_models)
+    
+    # Get all users, communities, classes for selection
+    users = User.objects.exclude(id=request.user.id).order_by('username')[:100]
+    
+    from communities.models import Community
+    communities = Community.objects.all().order_by('name')[:100]
+    
+    from skills.models import TeachingClass
+    classes = TeachingClass.objects.filter(is_published=True).order_by('title')[:100]
+    
+    context = {
+        'content_types': content_types,
+        'users': users,
+        'communities': communities,
+        'classes': classes,
+    }
+    
+    return render(request, 'core/report_content.html', context)
+
+
+@login_required
+def quick_report(request, content_type, object_id):
+    """Quick report with pre-filled content type and object"""
+    if request.method == 'POST':
+        reason = request.POST.get('reason')
+        description = request.POST.get('description')
+        
+        if not all([reason, description]):
+            messages.error(request, 'Please fill in all fields.')
+            return redirect(request.META.get('HTTP_REFERER', 'core:home'))
+        
+        try:
+            ct = ContentType.objects.get(model=content_type)
+            
+            Report.objects.create(
+                reporter=request.user,
+                content_type=ct,
+                object_id=object_id,
+                reason=reason,
+                description=description
+            )
+            
+            messages.success(request, 'Report submitted successfully.')
+            return redirect(request.META.get('HTTP_REFERER', 'core:home'))
+            
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+            return redirect(request.META.get('HTTP_REFERER', 'core:home'))
+    
+    return redirect('core:report_content')
+
+
+@login_required
+def user_reports(request):
+    """View user's own reports"""
+    reports = Report.objects.filter(reporter=request.user).select_related(
+        'content_type', 'reviewed_by'
+    )
+    
+    return render(request, 'core/user_reports.html', {'reports': reports})
+
+
+# ADMIN VIEWS
+@login_required
+def admin_reports(request):
+    """Admin page to review all reports"""
+    if not request.user.is_staff:
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('core:home')
+    
+    status_filter = request.GET.get('status', 'pending')
+    
+    reports = Report.objects.select_related(
+        'reporter', 'content_type', 'reviewed_by'
+    ).order_by('-created_at')
+    
+    if status_filter != 'all':
+        reports = reports.filter(status=status_filter)
+    
+    # Get counts for each status
+    status_counts = {
+        'all': Report.objects.count(),
+        'pending': Report.objects.filter(status='pending').count(),
+        'investigating': Report.objects.filter(status='investigating').count(),
+        'resolved': Report.objects.filter(status='resolved').count(),
+        'dismissed': Report.objects.filter(status='dismissed').count(),
+    }
+    
+    context = {
+        'reports': reports,
+        'status_filter': status_filter,
+        'status_counts': status_counts,
+    }
+    
+    return render(request, 'core/admin_reports.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def admin_handle_report(request, report_id):
+    """Admin action to handle a specific report"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    try:
+        report = get_object_or_404(Report, id=report_id)
+        action = request.POST.get('action')
+        admin_notes = request.POST.get('admin_notes', '')
+        
+        if action == 'dismiss':
+            report.status = 'dismissed'
+            report.action_taken = 'none'
+            
+        elif action == 'warning':
+            report.status = 'resolved'
+            report.action_taken = 'warning'
+            
+            # Issue warning to the reported user
+            if report.content_type.model == 'user':
+                reported_user = report.reported_object
+                UserWarning.objects.create(
+                    user=reported_user,
+                    issued_by=request.user,
+                    related_report=report,
+                    reason=report.get_reason_display(),
+                    description=admin_notes or report.description
+                )
+                messages.success(request, f'Warning issued to {reported_user.username}')
+            
+        elif action == 'remove_content':
+            report.status = 'resolved'
+            report.action_taken = 'content_removed'
+            
+            # Delete the reported content
+            try:
+                reported_obj = report.reported_object
+                if reported_obj:
+                    reported_obj.delete()
+                    messages.success(request, 'Content removed successfully.')
+            except Exception as e:
+                messages.error(request, f'Could not remove content: {str(e)}')
+                
+        elif action == 'suspend_user':
+            report.status = 'resolved'
+            report.action_taken = 'user_suspended'
+            
+            if report.content_type.model == 'user':
+                reported_user = report.reported_object
+                reported_user.is_active = False
+                reported_user.save()
+                messages.success(request, f'User {reported_user.username} suspended.')
+        
+        report.admin_notes = admin_notes
+        report.reviewed_by = request.user
+        report.reviewed_at = timezone.now()
+        report.save()
+        
+        messages.success(request, 'Report handled successfully.')
+        return redirect('core:admin_reports')
+        
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+        return redirect('core:admin_reports')
