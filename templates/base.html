@@ -499,6 +499,15 @@
             <div class="brand">Ripple</div>
             
             <nav class="nav" role="navigation">
+
+                <a class="nav-item" href="{% url 'core:report_content' %}">
+                    <i class="bi bi-flag nav-icon"></i>
+                    <span class="nav-text">Report Content</span>
+                </a>
+                <a class="nav-item" href="{% url 'core:user_reports' %}">
+                    <i class="bi bi-eye nav-icon"></i>
+                    <span class="nav-text">My Reports</span>
+                </a>
                 <a class="nav-item" href="{% url 'core:home' %}">
                     <i class="bi bi-house-door nav-icon"></i>
                     <span class="nav-text">Dashboard</span>
@@ -537,11 +546,15 @@
                     <i class="bi bi-clipboard2-plus nav-icon"></i>
                     <span class="nav-text">Applications</span>
                 </a>
-                
+
                 {% if user.is_staff %}
-                    <div class="nav-divider"></div>
-                    <div class="admin-section-label">Admin Section</div>
-                    <a class="nav-item admin-review" href="{% url 'skill_admin:skill_review' %}">
+                    <hr class="my-3 border-secondary">
+                   <div class="admin-section-label">Admin Section</div>
+                   <a class="nav-item" href="{% url 'core:admin_reports' %}" style="background:#dc2626;color:#ffffff">
+                        <i class="bi bi-exclamation-triangle nav-icon"></i>
+                        <span class="nav-text">Reports Review</span>
+                    </a>
+                    <a class="nav-item" href="{% url 'skill_admin:skill_review' %}" style="background:#f59e0b;color:#92400e">
                         <i class="bi bi-clipboard-check nav-icon"></i>
                         <span class="nav-text">Admin Review</span>
                     </a>

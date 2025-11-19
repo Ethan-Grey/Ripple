@@ -14,5 +14,14 @@ urlpatterns = [
     path('skill/<int:skill_id>/', views.skill_detail, name='skill_detail'),
     path('', views.landing, name='landing'),
     path('about/', views.about, name='about'),     
-    path('contact/', views.contact, name='contact'),    
+    path('contact/', views.contact, name='contact'),  
+      
+     # Report system
+    path('report/', views.report_content, name='report_content'),
+    path('report/<str:content_type>/<int:object_id>/', views.quick_report, name='quick_report'),
+    path('my-reports/', views.user_reports, name='user_reports'),
+    
+    # Admin report management
+    path('admin-reports/', views.admin_reports, name='admin_reports'),
+    path('admin-handle-report/<int:report_id>/', views.admin_handle_report, name='admin_handle_report'),
 ]
