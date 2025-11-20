@@ -304,7 +304,13 @@ SOCIALACCOUNT_LOGIN_ERROR_URL = '/users/login/'
 # Production Security Settings
 if not DEBUG:
     # HTTPS/SSL Settings
-    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
+    # Railway handles SSL termination, so we don't redirect here
+    # Set SECURE_SSL_REDIRECT=False in Railway if you get redirect loops
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
+    
+    # Trust Railway's proxy for SSL
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
