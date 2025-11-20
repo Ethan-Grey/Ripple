@@ -66,7 +66,22 @@ if DEBUG:
 else:
     # Production: Parse ALLOWED_HOSTS from environment
     allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '')
-    ALLOWED_HOSTS = ["rippleskillshare.up.railway.app", "localhost", "127.0.0.1"]
+    ALLOWED_HOSTS = []
+    
+    # Add hosts from environment variable
+    if allowed_hosts_str:
+        ALLOWED_HOSTS.extend([host.strip() for host in allowed_hosts_str.split(',') if host.strip()])
+    
+    # Always include localhost for health checks
+    if 'localhost' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('localhost')
+    if '127.0.0.1' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('127.0.0.1')
+    
+    # Add Railway domain if not already included
+    railway_domain = os.getenv('RAILWAY_PUBLIC_DOMAIN', 'rippleskillshare.up.railway.app')
+    if railway_domain and railway_domain not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(railway_domain)
 
 
 # Application definition
