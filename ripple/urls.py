@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve
+from django.urls import re_path
 
 urlpatterns = [
     # Admin URLs
@@ -19,4 +21,14 @@ urlpatterns = [
     path('classes/', include('skills.urls')),
     path('payments/webhooks/stripe/', __import__('skills.views', fromlist=['']).StripeWebhookView.as_view(), name='stripe_webhook'),
     
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+# Serve media files in both development and production
+if settings.DEBUG:
+    # Development: use static() helper
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # Production: serve media files through Django
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+    ]

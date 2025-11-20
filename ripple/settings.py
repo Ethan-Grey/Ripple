@@ -214,7 +214,22 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Media (user uploads)
 MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+
+# Use Railway volume if available, otherwise use project directory
+# Railway volumes are mounted at /data by default
+RAILWAY_VOLUME_MOUNT_PATH = os.getenv('RAILWAY_VOLUME_MOUNT_PATH', '/data')
+if os.path.exists(RAILWAY_VOLUME_MOUNT_PATH):
+    # Use Railway volume for persistent storage
+    MEDIA_ROOT = Path(RAILWAY_VOLUME_MOUNT_PATH) / 'media'
+else:
+    # Fallback to project directory (ephemeral - files lost on redeploy)
+    MEDIA_ROOT = BASE_DIR / 'media'
+
+# Ensure media directory exists
+try:
+    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+except (OSError, PermissionError):
+    pass  # Directory might already exist or permissions issue
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
