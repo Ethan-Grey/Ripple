@@ -66,7 +66,7 @@ if DEBUG:
 else:
     # Production: Parse ALLOWED_HOSTS from environment
     allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '')
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip(), "rippleskillshare.up.railway.app", "localhost", "127.0.0.1"]
 
 
 # Application definition
