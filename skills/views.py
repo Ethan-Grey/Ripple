@@ -1,6 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Count, Q, Avg
+from django.db import models
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
@@ -13,7 +14,8 @@ from django.conf import settings
 from django.utils import timezone
 from django.contrib import messages
 
-from .models import TeachingClass, ClassTopic, ClassReview, ClassEnrollment, ClassTradeOffer, TeacherApplication, ClassTimeSlot, ClassBooking
+from .models import TeachingClass, ClassTopic, ClassReview, ClassEnrollment, ClassTradeOffer, TeacherApplication, ClassTimeSlot, ClassBooking, ClassFavorite
+from django.db.models import Avg
 from chat.views import get_or_create_conversation
 from chat.models import Message
 from decimal import Decimal, InvalidOperation
@@ -27,13 +29,82 @@ class ClassListView(ListView):
 
     def get_queryset(self):
         qs = TeachingClass.objects.filter(is_published=True).select_related('teacher').prefetch_related('topics')
-        difficulty = self.request.GET.get('difficulty')
-        if difficulty:
-            qs = qs.filter(difficulty=difficulty)
+        
+        # Search query
         q = self.request.GET.get('q')
         if q:
             qs = qs.filter(title__icontains=q)
+        
+        # Difficulty filter
+        difficulty = self.request.GET.get('difficulty')
+        if difficulty:
+            qs = qs.filter(difficulty=difficulty)
+        
+        # Price filter
+        max_price = self.request.GET.get('max_price')
+        if max_price:
+            try:
+                max_price_cents = int(float(max_price) * 100)
+                qs = qs.filter(price_cents__lte=max_price_cents)
+            except (ValueError, TypeError):
+                pass
+        
+        # Duration filter
+        max_duration = self.request.GET.get('max_duration')
+        if max_duration:
+            try:
+                qs = qs.filter(duration_minutes__lte=int(max_duration))
+            except (ValueError, TypeError):
+                pass
+        
+        # Tradeable filter
+        tradeable_only = self.request.GET.get('tradeable')
+        if tradeable_only == 'true':
+            qs = qs.filter(is_tradeable=True)
+        
+        # Topic filter
+        topic = self.request.GET.get('topic')
+        if topic:
+            qs = qs.filter(topics__name__icontains=topic).distinct()
+        
+        # Sort options
+        sort_by = self.request.GET.get('sort', 'newest')
+        if sort_by == 'rating':
+            qs = qs.order_by('-avg_rating', '-reviews_count')
+        elif sort_by == 'price_low':
+            qs = qs.order_by('price_cents')
+        elif sort_by == 'price_high':
+            qs = qs.order_by('-price_cents')
+        elif sort_by == 'trending':
+            # Trending: classes with most enrollments in last 30 days
+            from datetime import timedelta
+            thirty_days_ago = timezone.now() - timedelta(days=30)
+            qs = qs.annotate(
+                recent_enrollments=models.Count(
+                    'enrollments',
+                    filter=models.Q(enrollments__created_at__gte=thirty_days_ago)
+                )
+            ).order_by('-recent_enrollments', '-avg_rating')
+        else:  # newest (default)
+            qs = qs.order_by('-created_at')
+        
         return qs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get all unique topics for filter
+        context['all_topics'] = ClassTopic.objects.values_list('name', flat=True).distinct().order_by('name')
+        
+        # Check which classes are favorited by user
+        if self.request.user.is_authenticated:
+            favorited_ids = ClassFavorite.objects.filter(
+                user=self.request.user
+            ).values_list('teaching_class_id', flat=True)
+            context['favorited_class_ids'] = set(favorited_ids)
+        else:
+            context['favorited_class_ids'] = set()
+        
+        return context
 
 
 class ClassDetailView(DetailView):
@@ -48,9 +119,12 @@ class ClassDetailView(DetailView):
         user = self.request.user
         cls = self.object
         is_enrolled = False
+        is_favorited = False
         if user.is_authenticated:
             is_enrolled = ClassEnrollment.objects.filter(user=user, teaching_class=cls, status=ClassEnrollment.ACTIVE).exists()
+            is_favorited = ClassFavorite.objects.filter(user=user, teaching_class=cls).exists()
         context['is_enrolled'] = is_enrolled
+        context['is_favorited'] = is_favorited
         return context
 
 
@@ -725,5 +799,39 @@ def my_bookings(request):
         'cancelled_bookings': cancelled,
     }
     return render(request, 'skills/my_bookings.html', context)
+
+
+@login_required
+def toggle_favorite(request, slug):
+    """Toggle favorite status for a class"""
+    teaching_class = get_object_or_404(TeachingClass, slug=slug, is_published=True)
+    favorite, created = ClassFavorite.objects.get_or_create(
+        user=request.user,
+        teaching_class=teaching_class
+    )
+    if not created:
+        favorite.delete()
+        is_favorited = False
+    else:
+        is_favorited = True
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'is_favorited': is_favorited})
+    return redirect('skills:class_detail', slug=slug)
+
+
+@login_required
+def my_favorites(request):
+    """View user's favorite classes"""
+    favorites = ClassFavorite.objects.filter(
+        user=request.user
+    ).select_related('teaching_class', 'teaching_class__teacher').prefetch_related('teaching_class__topics')
+    
+    classes = [fav.teaching_class for fav in favorites]
+    
+    context = {
+        'classes': classes,
+    }
+    return render(request, 'skills/my_favorites.html', context)
 
 

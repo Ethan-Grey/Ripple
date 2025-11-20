@@ -212,6 +212,17 @@ def home(request):
             id__in=whitelisted_class_ids,
             is_published=True
         ).select_related('teacher').prefetch_related('topics')
+    
+    # Trending Classes (most enrollments in last 30 days)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    trending_classes = TeachingClass.objects.filter(
+        is_published=True,
+        enrollments__created_at__gte=thirty_days_ago
+    ).annotate(
+        recent_enrollments=Count('enrollments', filter=Q(enrollments__created_at__gte=thirty_days_ago))
+    ).select_related('teacher').prefetch_related('topics').order_by(
+        '-recent_enrollments', '-avg_rating'
+    ).distinct()[:6]
 
     context = {
         'featured_skills': featured_skills,
@@ -224,6 +235,7 @@ def home(request):
         'recent_conversations': recent_conversations,
         'teaching_stats': teaching_stats,
         'matched_classes': matched_classes,
+        'trending_classes': trending_classes,
     }
     return render(request, 'core/home.html', context)
 

@@ -117,6 +117,10 @@
                     </svg>
                     Learning Skills
                 </button>
+                <button class="nav-tab" data-tab="favorites">
+                    <i class="bi bi-heart-fill"></i>
+                    Favorites
+                </button>
                 <button class="nav-tab" data-tab="my-classes">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
@@ -294,6 +298,46 @@
                     </div>
                 </div>
                 
+                <!-- Favorites Tab -->
+                <div id="favorites-tab" class="tab-panel">
+                    <div class="skills-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Favorite Classes</h2>
+                        </div>
+                        {% if favorite_classes %}
+                        <div class="classes-grid">
+                            {% for cls in favorite_classes %}
+                            <div class="class-card">
+                                <div class="class-content">
+                                    <h3 class="class-title">{{ cls.title }}</h3>
+                                    <p class="class-teacher">By {{ cls.teacher.username }}</p>
+                                    <div class="class-meta">
+                                        <span class="meta-item">{{ cls.get_difficulty_display }}</span>
+                                        <span class="meta-dot">•</span>
+                                        <span class="meta-item">{{ cls.duration_minutes }}m</span>
+                                        {% if cls.avg_rating > 0 %}
+                                            <span class="meta-dot">•</span>
+                                            <span class="meta-item">⭐ {{ cls.avg_rating }} ({{ cls.reviews_count }})</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="class-actions">
+                                        <a href="{% url 'skills:class_detail' cls.slug %}" class="btn btn-primary btn-small">View Class</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <i class="bi bi-heart" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+                            <h3>No favorite classes yet</h3>
+                            <p>Start exploring classes and favorite the ones you're interested in</p>
+                            <a href="{% url 'skills:class_list' %}" class="btn btn-primary">Browse Classes</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
                 <!-- My Classes Tab -->
                 <div id="my-classes" class="tab-panel">
                     <div class="skills-section">

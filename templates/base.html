@@ -32,6 +32,359 @@
             --sidebar-hover: #374151;
         }
         
+        /* Dark mode variables */
+        [data-theme="dark"] {
+            --text: #f9fafb;
+            --text-light: #d1d5db;
+            --card: #1f2937;
+            --background: #111827;
+            --border: #374151;
+            --sidebar-bg: #0f172a;
+            --sidebar-hover: #1e293b;
+        }
+        
+        [data-theme="dark"] body {
+            background: var(--background);
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .topbar {
+            background: var(--card);
+            border-bottom-color: var(--border);
+        }
+        
+        [data-theme="dark"] .page-body {
+            background: var(--background);
+        }
+        
+        [data-theme="dark"] .card,
+        [data-theme="dark"] .info-card,
+        [data-theme="dark"] .stat-card-dash,
+        [data-theme="dark"] .dashboard-section,
+        [data-theme="dark"] .session-card,
+        [data-theme="dark"] .recommended-class-card,
+        [data-theme="dark"] .conversation-item-dash,
+        [data-theme="dark"] .teaching-stat-card,
+        [data-theme="dark"] .featured-card,
+        [data-theme="dark"] .class-card,
+        [data-theme="dark"] .profile-container,
+        [data-theme="dark"] .profile-main,
+        [data-theme="dark"] .profile-header,
+        [data-theme="dark"] .skills-section,
+        [data-theme="dark"] .about-section,
+        [data-theme="dark"] .tab-content,
+        [data-theme="dark"] .detail-page,
+        [data-theme="dark"] .hero-section,
+        [data-theme="dark"] .classes-page,
+        [data-theme="dark"] .classes-container,
+        [data-theme="dark"] .action-btn,
+        [data-theme="dark"] .btn,
+        [data-theme="dark"] .form-control,
+        [data-theme="dark"] .form-select,
+        [data-theme="dark"] .dropdown-menu,
+        [data-theme="dark"] .modal-content,
+        [data-theme="dark"] .alert,
+        [data-theme="dark"] .empty-state,
+        [data-theme="dark"] .pagination-wrapper {
+            background: var(--card) !important;
+            border-color: var(--border);
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .search input,
+        [data-theme="dark"] input[type="text"],
+        [data-theme="dark"] input[type="email"],
+        [data-theme="dark"] input[type="password"],
+        [data-theme="dark"] input[type="number"],
+        [data-theme="dark"] textarea,
+        [data-theme="dark"] select {
+            background: var(--background) !important;
+            border-color: var(--border) !important;
+            color: var(--text) !important;
+        }
+        
+        [data-theme="dark"] .search input:focus,
+        [data-theme="dark"] input:focus,
+        [data-theme="dark"] textarea:focus,
+        [data-theme="dark"] select:focus {
+            background: var(--card) !important;
+        }
+        
+        [data-theme="dark"] .btn-primary,
+        [data-theme="dark"] .btn-secondary,
+        [data-theme="dark"] .btn-outline {
+            background: var(--brand-gradient);
+            border-color: transparent;
+            color: white;
+        }
+        
+        [data-theme="dark"] .btn-outline-secondary {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .btn-outline-secondary:hover {
+            background: var(--card);
+            border-color: var(--brand);
+        }
+        
+        [data-theme="dark"] .dropdown-item {
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .dropdown-item:hover {
+            background: var(--background);
+            color: var(--brand);
+        }
+        
+        [data-theme="dark"] .dropdown-divider {
+            border-color: var(--border);
+        }
+        
+        [data-theme="dark"] .text-muted,
+        [data-theme="dark"] .meta-item,
+        [data-theme="dark"] .meta-dot,
+        [data-theme="dark"] .filter-label-small {
+            color: var(--text-light) !important;
+        }
+        
+        [data-theme="dark"] h1,
+        [data-theme="dark"] h2,
+        [data-theme="dark"] h3,
+        [data-theme="dark"] h4,
+        [data-theme="dark"] h5,
+        [data-theme="dark"] h6,
+        [data-theme="dark"] p,
+        [data-theme="dark"] span,
+        [data-theme="dark"] div,
+        [data-theme="dark"] label {
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .page-header,
+        [data-theme="dark"] .section-title,
+        [data-theme="dark"] .section-header {
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] hr,
+        [data-theme="dark"] .section-divider {
+            border-color: var(--border);
+        }
+        
+        [data-theme="dark"] .action-btn {
+            background: var(--card);
+            border-color: var(--border);
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .action-btn:hover {
+            background: var(--background);
+            border-color: var(--brand);
+            color: var(--brand);
+        }
+        
+        [data-theme="dark"] .classes-page {
+            background: var(--background) !important;
+        }
+        
+        [data-theme="dark"] .profile-page {
+            background: var(--background) !important;
+        }
+        
+        [data-theme="dark"] .detail-page {
+            background: var(--background) !important;
+        }
+        
+        [data-theme="dark"] .content {
+            background: var(--background);
+        }
+        
+        [data-theme="dark"] .modal-content {
+            background: var(--card);
+            border-color: var(--border);
+        }
+        
+        [data-theme="dark"] .modal-header,
+        [data-theme="dark"] .modal-body,
+        [data-theme="dark"] .modal-footer {
+            background: var(--card);
+            border-color: var(--border);
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .form-check-input {
+            background-color: var(--background);
+            border-color: var(--border);
+        }
+        
+        [data-theme="dark"] .form-check-input:checked {
+            background-color: var(--brand);
+            border-color: var(--brand);
+        }
+        
+        [data-theme="dark"] .form-check-label {
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .table {
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: var(--background);
+        }
+        
+        [data-theme="dark"] .table-hover > tbody > tr:hover {
+            background-color: var(--background);
+        }
+        
+        [data-theme="dark"] .badge {
+            background: var(--background);
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .list-group-item {
+            background: var(--card);
+            border-color: var(--border);
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link {
+            color: var(--text-light);
+            border-color: var(--border);
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link.active {
+            background: var(--card);
+            border-color: var(--border) var(--border) var(--card);
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .breadcrumb {
+            background: transparent;
+        }
+        
+        [data-theme="dark"] .breadcrumb-item a {
+            color: var(--text-light);
+        }
+        
+        [data-theme="dark"] .breadcrumb-item.active {
+            color: var(--text);
+        }
+        
+        /* Fix any remaining white backgrounds */
+        [data-theme="dark"] * {
+            background-color: inherit;
+        }
+        
+        [data-theme="dark"] [style*="background: white"],
+        [data-theme="dark"] [style*="background-color: white"],
+        [data-theme="dark"] [style*="background:#fff"],
+        [data-theme="dark"] [style*="background-color:#fff"],
+        [data-theme="dark"] [style*="background:#ffffff"],
+        [data-theme="dark"] [style*="background-color:#ffffff"] {
+            background: var(--card) !important;
+            background-color: var(--card) !important;
+        }
+        
+        /* Specific component fixes */
+        [data-theme="dark"] .hero-content,
+        [data-theme="dark"] .hero-media,
+        [data-theme="dark"] .teacher-card,
+        [data-theme="dark"] .hero-actions,
+        [data-theme="dark"] .class-content,
+        [data-theme="dark"] .card-content,
+        [data-theme="dark"] .card-footer,
+        [data-theme="dark"] .profile-info,
+        [data-theme="dark"] .profile-meta-badges,
+        [data-theme="dark"] .about-actions,
+        [data-theme="dark"] .skills-grid,
+        [data-theme="dark"] .classes-grid,
+        [data-theme="dark"] .about-details-grid,
+        [data-theme="dark"] .stats-cards-grid,
+        [data-theme="dark"] .dashboard-grid,
+        [data-theme="dark"] .sessions-list,
+        [data-theme="dark"] .recommended-classes-grid,
+        [data-theme="dark"] .conversations-list-dash,
+        [data-theme="dark"] .teaching-stats-grid,
+        [data-theme="dark"] .match-grid,
+        [data-theme="dark"] .community-list {
+            background: transparent;
+        }
+        
+        [data-theme="dark"] .empty-state {
+            background: var(--card) !important;
+        }
+        
+        [data-theme="dark"] .empty-state h3,
+        [data-theme="dark"] .empty-state p {
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .pagination-btn {
+            background: var(--card);
+            border-color: var(--border);
+            color: var(--text);
+        }
+        
+        [data-theme="dark"] .pagination-btn:hover {
+            background: var(--background);
+            border-color: var(--brand);
+            color: var(--brand);
+        }
+        
+        [data-theme="dark"] .pagination-info {
+            color: var(--text);
+        }
+        
+        /* Fix gradients that might look off in dark mode */
+        [data-theme="dark"] .classes-page {
+            background: var(--background) !important;
+            background-image: none !important;
+        }
+        
+        [data-theme="dark"] .profile-page {
+            background: var(--background) !important;
+        }
+        
+        [data-theme="dark"] .detail-page {
+            background: var(--background) !important;
+        }
+        
+        /* Fix any white text that becomes invisible */
+        [data-theme="dark"] .text-white {
+            color: var(--text) !important;
+        }
+        
+        /* Ensure links are visible */
+        [data-theme="dark"] a {
+            color: var(--brand);
+        }
+        
+        [data-theme="dark"] a:hover {
+            color: var(--brand-hover);
+        }
+        
+        /* Fix borders */
+        [data-theme="dark"] * {
+            border-color: var(--border);
+        }
+        
+        /* Override any inline white backgrounds in templates */
+        [data-theme="dark"] .bg-white {
+            background-color: var(--card) !important;
+        }
+        
+        [data-theme="dark"] .text-dark {
+            color: var(--text) !important;
+        }
+        
+        [data-theme="dark"] .text-muted {
+            color: var(--text-light) !important;
+        }
+        
         * {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -539,7 +892,7 @@
     
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body data-theme="light">
     <!-- Sidebar toggle button -->
     <button class="toggle-sidebar-btn" id="sidebarToggle" aria-label="Toggle navigation">
         <i class="bi bi-list" style="font-size: 1.5rem;"></i>
@@ -642,6 +995,8 @@
                         <li><a class="dropdown-item" href="{% url 'users:applications' %}"><i class="bi bi-clipboard2-plus me-2"></i> Applications</a></li>
                         <li><a class="dropdown-item" href="{% url 'core:report_content' %}"><i class="bi bi-flag me-2"></i> Report Content</a></li>
                         <li><a class="dropdown-item" href="{% url 'core:user_reports' %}"><i class="bi bi-eye me-2"></i> My Reports</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="themeToggleDropdown"><i class="bi bi-moon me-2" id="themeIcon"></i> <span id="themeText">Dark Mode</span></a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="{% url 'users:logout' %}"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
                     </ul>
@@ -779,6 +1134,45 @@
         
         // Initialize state
         updateSidebarState();
+        
+        // Dark mode toggle
+        const html = document.documentElement;
+        
+        // Load saved theme or default to light
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        
+        // Update theme toggle in dropdown
+        function updateThemeToggle() {
+            const currentTheme = html.getAttribute('data-theme');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            if (themeIcon && themeText) {
+                if (currentTheme === 'dark') {
+                    themeIcon.className = 'bi bi-sun me-2';
+                    themeText.textContent = 'Light Mode';
+                } else {
+                    themeIcon.className = 'bi bi-moon me-2';
+                    themeText.textContent = 'Dark Mode';
+                }
+            }
+        }
+        
+        // Initialize theme toggle display
+        updateThemeToggle();
+        
+        // Theme toggle in dropdown
+        const themeToggleDropdown = document.getElementById('themeToggleDropdown');
+        if (themeToggleDropdown) {
+            themeToggleDropdown.addEventListener('click', function(e) {
+                e.preventDefault();
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeToggle();
+            });
+        }
     </script>
     <script src="{% static 'js/main.js' %}"></script>
     {% block extra_js %}{% endblock %}

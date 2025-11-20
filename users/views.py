@@ -183,6 +183,14 @@ def profile_view(request):
         wants_to_learn=True
     ).select_related('skill')
     
+    # Get favorite classes
+    from skills.models import ClassFavorite
+    favorite_class_ids = ClassFavorite.objects.filter(user=request.user).values_list('teaching_class_id', flat=True)
+    favorite_classes = TeachingClass.objects.filter(
+        id__in=favorite_class_ids,
+        is_published=True
+    ).select_related('teacher').prefetch_related('topics').order_by('-created_at')
+    
     context = {
         'profile': profile,
         'evidence': evidence,
@@ -199,6 +207,8 @@ def profile_view(request):
         ).select_related('teaching_class', 'teaching_class__teacher').order_by('-created_at'),
         # Pending teacher applications
         'my_pending_applications': TeacherApplication.objects.filter(applicant=request.user, status='pending').order_by('-created_at'),
+        # Favorite classes
+        'favorite_classes': favorite_classes,
     }
     return render(request, 'users/profile/profile.html', context)
 

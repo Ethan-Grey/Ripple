@@ -5,7 +5,7 @@
 /* Page Layout */
 .classes-page {
   min-height: calc(100vh - 80px);
-  background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+  background: var(--background, #f9fafb);
   padding: 40px 24px;
 }
 
@@ -153,6 +153,59 @@
 .view-toggle.active:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Filter Dropdown */
+.filter-dropdown-menu {
+    min-width: 280px;
+    padding: 0;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.filter-dropdown-menu form {
+    padding: 12px;
+}
+
+.filter-item {
+    margin-bottom: 12px;
+}
+
+.filter-item:last-child {
+    margin-bottom: 0;
+}
+
+.filter-label-small {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-badge {
+    color: #ef4444;
+    font-size: 8px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.form-select-sm, .form-control-sm {
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 8px;
+}
+
+.form-check {
+    margin-top: 8px;
+}
+
+.form-check-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
 }
 
 /* Filters Inline */
@@ -694,21 +747,77 @@
       </div>
       
       <div class="buttons-right">
-        <form method="get" class="filters-inline">
-          <label for="difficulty" class="filter-label">Difficulty:</label>
-          <select class="filter-select" name="difficulty" id="difficulty">
-            <option value="">All Levels</option>
-            <option value="beginner" {% if request.GET.difficulty == 'beginner' %}selected{% endif %}>Beginner</option>
-            <option value="intermediate" {% if request.GET.difficulty == 'intermediate' %}selected{% endif %}>Intermediate</option>
-            <option value="advanced" {% if request.GET.difficulty == 'advanced' %}selected{% endif %}>Advanced</option>
-          </select>
-          <button class="apply-btn" type="submit">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-            </svg>
-            Apply Filters
+        <div class="dropdown">
+          <button class="action-btn dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border: 2px solid #e5e7eb;">
+            <i class="bi bi-funnel"></i>
+            Filters
+            {% if request.GET.difficulty or request.GET.max_price or request.GET.max_duration or request.GET.tradeable or request.GET.topic or request.GET.sort %}
+              <span class="filter-badge">●</span>
+            {% endif %}
           </button>
-        </form>
+          <ul class="dropdown-menu dropdown-menu-end filter-dropdown-menu" aria-labelledby="filterDropdown">
+            <li>
+              <form method="get" id="filterForm" style="padding: 12px;">
+                <input type="hidden" name="q" value="{{ request.GET.q }}">
+                <input type="hidden" name="page" value="1">
+                
+                <div class="filter-item">
+                  <label class="filter-label-small">Difficulty</label>
+                  <select class="form-select form-select-sm" name="difficulty" onchange="document.getElementById('filterForm').submit();">
+                    <option value="">All Levels</option>
+                    <option value="beginner" {% if request.GET.difficulty == 'beginner' %}selected{% endif %}>Beginner</option>
+                    <option value="intermediate" {% if request.GET.difficulty == 'intermediate' %}selected{% endif %}>Intermediate</option>
+                    <option value="advanced" {% if request.GET.difficulty == 'advanced' %}selected{% endif %}>Advanced</option>
+                  </select>
+                </div>
+                
+                <div class="filter-item">
+                  <label class="filter-label-small">Max Price ($)</label>
+                  <input type="number" class="form-control form-control-sm" name="max_price" value="{{ request.GET.max_price }}" placeholder="Any" onchange="document.getElementById('filterForm').submit();">
+                </div>
+                
+                <div class="filter-item">
+                  <label class="filter-label-small">Max Duration (min)</label>
+                  <input type="number" class="form-control form-control-sm" name="max_duration" value="{{ request.GET.max_duration }}" placeholder="Any" onchange="document.getElementById('filterForm').submit();">
+                </div>
+                
+                <div class="filter-item">
+                  <label class="filter-label-small">Topic</label>
+                  <select class="form-select form-select-sm" name="topic" onchange="document.getElementById('filterForm').submit();">
+                    <option value="">All Topics</option>
+                    {% for topic in all_topics %}
+                      <option value="{{ topic }}" {% if request.GET.topic == topic %}selected{% endif %}>{{ topic }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <div class="filter-item">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="tradeable" value="true" id="tradeableCheck" {% if request.GET.tradeable == 'true' %}checked{% endif %} onchange="document.getElementById('filterForm').submit();">
+                    <label class="form-check-label" for="tradeableCheck">Tradeable Only</label>
+                  </div>
+                </div>
+                
+                <hr class="dropdown-divider">
+                
+                <div class="filter-item">
+                  <label class="filter-label-small">Sort By</label>
+                  <select class="form-select form-select-sm" name="sort" onchange="document.getElementById('filterForm').submit();">
+                    <option value="newest" {% if request.GET.sort == 'newest' or not request.GET.sort %}selected{% endif %}>Newest</option>
+                    <option value="rating" {% if request.GET.sort == 'rating' %}selected{% endif %}>Highest Rated</option>
+                    <option value="price_low" {% if request.GET.sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_high" {% if request.GET.sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                    <option value="trending" {% if request.GET.sort == 'trending' %}selected{% endif %}>Trending</option>
+                  </select>
+                </div>
+                
+                <div class="filter-item" style="margin-top: 12px;">
+                  <a href="{% url 'skills:class_list' %}" class="btn btn-sm btn-outline-secondary w-100">Clear Filters</a>
+                </div>
+              </form>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
 

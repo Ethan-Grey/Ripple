@@ -85,6 +85,12 @@
         </div>
         
         <div class="hero-actions">
+          {% if user.is_authenticated %}
+            <button type="button" class="btn btn-secondary favorite-btn" id="favoriteBtn" data-slug="{{ cls.slug }}" onclick="toggleFavorite('{{ cls.slug }}')">
+              <i class="bi {% if is_favorited %}bi-heart-fill{% else %}bi-heart{% endif %}" id="favoriteIcon"></i>
+              <span id="favoriteText">{% if is_favorited %}Favorited{% else %}Favorite{% endif %}</span>
+            </button>
+          {% endif %}
           {% if is_enrolled %}
             <a href="{% url 'skills:view_schedule' cls.slug %}" class="btn btn-primary">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1828,4 +1834,52 @@ document.addEventListener('click', function(event) {
   }
 }
 </style>
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function toggleFavorite(slug) {
+    const csrftoken = getCookie('csrftoken');
+    fetch(`/classes/${slug}/favorite/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        const icon = document.getElementById('favoriteIcon');
+        const text = document.getElementById('favoriteText');
+        if (data.is_favorited) {
+            icon.className = 'bi bi-heart-fill';
+            text.textContent = 'Favorited';
+            icon.style.color = '#ef4444';
+        } else {
+            icon.className = 'bi bi-heart';
+            text.textContent = 'Favorite';
+            icon.style.color = '';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Fallback to page reload
+        window.location.href = `/classes/${slug}/favorite/`;
+    });
+}
+</script>
 {% endblock %}

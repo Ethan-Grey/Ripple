@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Skill, SwipeAction, UserSkill, Offer, Match, ClassTimeSlot, ClassBooking
+from .models import Skill, SwipeAction, UserSkill, Offer, Match, ClassTimeSlot, ClassBooking, ClassFavorite, ClassReview
 
 
 @admin.register(Skill)
@@ -51,3 +51,15 @@ class ClassBookingAdmin(admin.ModelAdmin):
     list_filter = ('status', 'created_at')
     search_fields = ('student__username', 'time_slot__teaching_class__title')
     date_hierarchy = 'created_at'
+
+@admin.register(ClassFavorite)
+class ClassFavoriteAdmin(admin.ModelAdmin):
+    list_display = ('user', 'teaching_class', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__username', 'teaching_class__title')
+
+@admin.register(ClassReview)
+class ClassReviewAdmin(admin.ModelAdmin):
+    list_display = ('reviewer', 'teaching_class', 'rating', 'created_at')
+    list_filter = ('rating', 'created_at')
+    search_fields = ('reviewer__username', 'teaching_class__title')

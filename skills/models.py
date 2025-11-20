@@ -246,6 +246,88 @@ class ClassReview(models.Model):
     
     def __str__(self):
         return f"{self.reviewer.username} - {self.teaching_class.title} ({self.rating})"
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update class average rating and review count
+        reviews = ClassReview.objects.filter(teaching_class=self.teaching_class)
+        self.teaching_class.reviews_count = reviews.count()
+        if reviews.exists():
+            self.teaching_class.avg_rating = reviews.aggregate(
+                avg=models.Avg('rating')
+            )['avg'] or 0
+        else:
+            self.teaching_class.avg_rating = 0
+        self.teaching_class.save(update_fields=['avg_rating', 'reviews_count'])
+    
+    def delete(self, *args, **kwargs):
+        teaching_class = self.teaching_class
+        super().delete(*args, **kwargs)
+        # Update class average rating and review count after deletion
+        reviews = ClassReview.objects.filter(teaching_class=teaching_class)
+        teaching_class.reviews_count = reviews.count()
+        if reviews.exists():
+            teaching_class.avg_rating = reviews.aggregate(
+                avg=models.Avg('rating')
+            )['avg'] or 0
+        else:
+            teaching_class.avg_rating = 0
+        teaching_class.save(update_fields=['avg_rating', 'reviews_count'])
+
+
+class ClassFavorite(models.Model):
+    """Allow users to favorite/bookmark classes"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorite_classes')
+    teaching_class = models.ForeignKey(TeachingClass, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'teaching_class')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} favorited {self.teaching_class.title}"
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update class average rating and review count
+        reviews = ClassReview.objects.filter(teaching_class=self.teaching_class)
+        self.teaching_class.reviews_count = reviews.count()
+        if reviews.exists():
+            self.teaching_class.avg_rating = reviews.aggregate(
+                avg=models.Avg('rating')
+            )['avg'] or 0
+        else:
+            self.teaching_class.avg_rating = 0
+        self.teaching_class.save(update_fields=['avg_rating', 'reviews_count'])
+    
+    def delete(self, *args, **kwargs):
+        teaching_class = self.teaching_class
+        super().delete(*args, **kwargs)
+        # Update class average rating and review count after deletion
+        reviews = ClassReview.objects.filter(teaching_class=teaching_class)
+        teaching_class.reviews_count = reviews.count()
+        if reviews.exists():
+            teaching_class.avg_rating = reviews.aggregate(
+                avg=models.Avg('rating')
+            )['avg'] or 0
+        else:
+            teaching_class.avg_rating = 0
+        teaching_class.save(update_fields=['avg_rating', 'reviews_count'])
+
+
+class ClassFavorite(models.Model):
+    """Allow users to favorite/bookmark classes"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorite_classes')
+    teaching_class = models.ForeignKey(TeachingClass, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'teaching_class')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} favorited {self.teaching_class.title}"
 
 
 class ClassEnrollment(models.Model):

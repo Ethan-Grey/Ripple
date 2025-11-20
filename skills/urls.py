@@ -26,6 +26,9 @@ urlpatterns = [
     path("schedule/slot/<int:slot_id>/book/", views.book_time_slot, name="book_time_slot"),
     path("schedule/booking/<int:booking_id>/cancel/", views.cancel_booking, name="cancel_booking"),
     path("my-bookings/", views.my_bookings, name="my_bookings"),
+    # Favorites
+    path("<slug:slug>/favorite/", views.toggle_favorite, name="toggle_favorite"),
+    path("favorites/", views.my_favorites, name="my_favorites"),
 ]
 
 

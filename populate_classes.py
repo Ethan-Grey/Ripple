@@ -15,9 +15,12 @@ import sys
 import django
 import random
 import argparse
+import urllib.request
+import tempfile
 from datetime import timedelta
 from django.utils import timezone
 from django.utils.text import slugify
+from django.core.files import File
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ripple.settings')
 django.setup()
@@ -231,6 +234,121 @@ CLASS_TEMPLATES = [
     },
 ]
 
+# Image keywords mapping - maps class topics to search terms for relevant images
+IMAGE_KEYWORDS = {
+    # Programming languages
+    'python': 'python,programming,code',
+    'javascript': 'javascript,code,programming',
+    'django': 'web,development,programming',
+    'react': 'react,javascript,web,development',
+    'vue.js': 'vue,javascript,web,development',
+    'node.js': 'nodejs,server,backend',
+    
+    # Data & AI
+    'data science': 'data,analysis,charts,graph',
+    'machine learning': 'artificial,intelligence,neural,network',
+    'pandas': 'data,analysis,spreadsheet',
+    'tensorflow': 'machine,learning,neural,network',
+    
+    # Design
+    'ui/ux': 'ui,design,interface,user,experience',
+    'graphic design': 'graphic,design,creative,art',
+    'photoshop': 'graphic,design,photo,editing',
+    'illustrator': 'vector,graphic,design',
+    'figma': 'ui,design,prototype',
+    
+    # Marketing & Business
+    'digital marketing': 'marketing,social,media,business',
+    'seo': 'search,engine,optimization,web',
+    'content writing': 'writing,laptop,blog,content',
+    'project management': 'planning,organization,team,work',
+    
+    # Media & Creative
+    'photography': 'camera,photography,photo',
+    'video editing': 'video,editing,film,production',
+    'premiere pro': 'video,editing,film',
+    'lightroom': 'photo,editing,photography',
+    
+    # Development
+    'web development': 'web,development,programming,code',
+    'backend development': 'server,backend,api,development',
+    'mobile development': 'mobile,app,phone,development',
+    'flutter': 'mobile,app,development',
+    
+    # Other
+    'sql': 'database,server,data,storage',
+    'database': 'database,server,data',
+    'cybersecurity': 'security,lock,cyber,protection',
+    'blender': '3d,modeling,animation,render',
+    '3d modeling': '3d,modeling,animation',
+    'public speaking': 'presentation,speaking,public,stage',
+    'oop': 'programming,code,object,oriented',
+    'rest apis': 'api,server,backend,development',
+    'deployment': 'server,cloud,deployment,hosting',
+}
+
+
+def get_search_term(class_title, topics):
+    """Get the best search term for finding a relevant image"""
+    title_lower = class_title.lower()
+    
+    # First, try to match the title
+    for keyword, search_terms in IMAGE_KEYWORDS.items():
+        if keyword in title_lower:
+            return search_terms
+    
+    # Then try topics
+    if topics:
+        for topic in topics:
+            topic_lower = topic.lower()
+            for keyword, search_terms in IMAGE_KEYWORDS.items():
+                if keyword in topic_lower:
+                    return search_terms
+    
+    # Extract key words from title as fallback
+    words = title_lower.split()
+    # Remove common words
+    common_words = {'introduction', 'to', 'the', 'with', 'and', 'for', 'a', 'an', 'of', 'in', 'on', 'at', 'by'}
+    relevant_words = [w for w in words if w not in common_words and len(w) > 3]
+    if relevant_words:
+        return ','.join(relevant_words[:3])
+    
+    return 'education,learning,class'
+
+
+def get_class_image_url(class_title, topics, seed=None):
+    """Generate an image URL based on class title and topics"""
+    # Get search terms
+    search_terms = get_search_term(class_title, topics)
+    
+    # Use a seed-based approach with Picsum Photos
+    # Generate a consistent seed from the search terms so same topic = same image
+    if seed is None:
+        # Create a hash from search terms for consistency
+        seed = abs(hash(search_terms)) % 1000
+    
+    # Use Picsum Photos with seed for consistent, topic-based images
+    # The seed ensures the same topic always gets the same image
+    return f"https://picsum.photos/seed/{seed}/800/600"
+
+
+def download_image(url, timeout=10):
+    """Download an image from URL and return a file-like object"""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            img_data = response.read()
+            # Create a temporary file
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+            temp_file.write(img_data)
+            temp_file.seek(0)
+            return temp_file
+    except Exception as e:
+        try:
+            print(f"  Warning: Could not download image: {e}")
+        except UnicodeEncodeError:
+            print(f"  Warning: Could not download image")
+        return None
+
 
 def main():
     parser = argparse.ArgumentParser(description='Populate the database with sample teaching classes')
@@ -313,6 +431,30 @@ def main():
             teacher=teacher,
             created_at=timezone.now() - timedelta(days=random.randint(0, 90)),
         )
+        
+        # Get image URL for this class (use class ID as seed for consistency)
+        image_url = get_class_image_url(title, template['topics'], seed=teaching_class.id)
+        
+        # Download and add thumbnail image
+        try:
+            img_file = download_image(image_url)
+            if img_file:
+                teaching_class.thumbnail.save(
+                    f"{slug}_thumb.jpg",
+                    File(img_file),
+                    save=True
+                )
+                img_file.close()
+                # Clean up temp file
+                try:
+                    os.unlink(img_file.name)
+                except:
+                    pass
+        except Exception as e:
+            try:
+                print(f"  Warning: Could not add image for {title}: {e}")
+            except UnicodeEncodeError:
+                print(f"  Warning: Could not add image for class")
 
         # Add topics
         for topic_name in template['topics']:
