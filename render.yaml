@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: ripple
+    env: python
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn ripple.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: False
+      - key: SECRET_KEY
+        generateValue: true
+    healthCheckPath: /
+
+databases:
+  - name: ripple-db
+    plan: free
+    databaseName: ripple
+    user: ripple
+

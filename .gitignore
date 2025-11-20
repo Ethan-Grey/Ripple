@@ -20,7 +20,6 @@ db.sqlite3-journal
 /media
 /staticfiles
 *.pot
-db.sqlite3
 
 # Environment variables
 .env

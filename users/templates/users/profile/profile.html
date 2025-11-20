@@ -307,7 +307,7 @@
                         {% if favorite_classes %}
                         <div class="classes-grid">
                             {% for cls in favorite_classes %}
-                            <div class="class-card">
+                            <a href="{% url 'skills:class_detail' cls.slug %}" class="class-card">
                                 <div class="class-content">
                                     <h3 class="class-title">{{ cls.title }}</h3>
                                     <p class="class-teacher">By {{ cls.teacher.username }}</p>
@@ -321,10 +321,10 @@
                                         {% endif %}
                                     </div>
                                     <div class="class-actions">
-                                        <a href="{% url 'skills:class_detail' cls.slug %}" class="btn btn-primary btn-small">View Class</a>
+                                        <span class="btn btn-primary btn-small">View Class</span>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                             {% endfor %}
                         </div>
                         {% else %}
@@ -347,7 +347,7 @@
                         {% if my_classes_published or my_classes_drafts %}
                         <div class="classes-grid">
                             {% for cls in my_classes_published %}
-                            <div class="class-card">
+                            <a href="{% url 'skills:class_detail' cls.slug %}" class="class-card">
                                 <div class="class-status published">
                                     <svg fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -362,8 +362,8 @@
                                         <span class="meta-item">{{ cls.duration_minutes }}m</span>
                                     </div>
                                     <div class="class-actions">
-                                        <a href="{% url 'skills:class_detail' cls.slug %}" class="btn btn-primary btn-small">View Class</a>
-                                        <a href="{% url 'skills:manage_schedule' cls.slug %}" class="btn btn-outline btn-small">
+                                        <span class="btn btn-primary btn-small">View Class</span>
+                                        <a href="{% url 'skills:manage_schedule' cls.slug %}" class="btn btn-outline btn-small" onclick="event.stopPropagation();">
                                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                             </svg>
@@ -371,10 +371,10 @@
                                         </a>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                             {% endfor %}
                             {% for cls in my_classes_drafts %}
-                            <div class="class-card draft">
+                            <a href="{% url 'skills:class_detail' cls.slug %}" class="class-card draft">
                                 <div class="class-status draft-status">
                                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -389,10 +389,10 @@
                                         {% endif %}
                                     </div>
                                     <div class="class-actions">
-                                        <a href="{% url 'skills:class_detail' cls.slug %}" class="btn btn-primary btn-small">View Class</a>
+                                        <span class="btn btn-primary btn-small">View Class</span>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                             {% endfor %}
                         </div>
                         {% else %}
@@ -417,7 +417,7 @@
                         {% if enrolled_classes %}
                         <div class="classes-grid">
                             {% for enrollment in enrolled_classes %}
-                            <div class="class-card enrolled-card">
+                            <a href="{% url 'skills:class_detail' enrollment.teaching_class.slug %}" class="class-card enrolled-card">
                                 <div class="class-status enrolled-status">
                                     <svg fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -434,11 +434,11 @@
                                         <span class="meta-item">{{ enrollment.teaching_class.duration_minutes }}m</span>
                                     </div>
                                     <div class="class-actions">
-                                        <a href="{% url 'skills:class_detail' enrollment.teaching_class.slug %}" class="btn btn-primary btn-small">View Class</a>
-                                        <a href="{% url 'skills:view_schedule' enrollment.teaching_class.slug %}" class="btn btn-outline btn-small">Book Session</a>
+                                        <span class="btn btn-primary btn-small">View Class</span>
+                                        <a href="{% url 'skills:view_schedule' enrollment.teaching_class.slug %}" class="btn btn-outline btn-small" onclick="event.stopPropagation();">Book Session</a>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                             {% endfor %}
                         </div>
                         {% else %}
@@ -724,6 +724,28 @@
     padding: 0 40px;
     border-bottom: 2px solid #e5e7eb;
     background: white;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+    -webkit-overflow-scrolling: touch;
+}
+
+.profile-nav::-webkit-scrollbar {
+    height: 6px;
+}
+
+.profile-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.profile-nav::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.profile-nav::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .nav-tab {
@@ -739,6 +761,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nav-tab svg {
@@ -991,6 +1015,8 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    color: inherit;
+    cursor: pointer;
 }
 
 .class-card:hover {
@@ -1005,6 +1031,11 @@
 
 .class-card.enrolled-card a {
     text-decoration: none;
+}
+
+.class-card a {
+    text-decoration: none;
+    pointer-events: auto;
 }
 
 .class-status {
@@ -1082,6 +1113,12 @@
     gap: 8px;
     flex-wrap: wrap;
     padding-top: 12px;
+    pointer-events: none;
+}
+
+.class-actions a,
+.class-actions button {
+    pointer-events: auto;
 }
 
 .class-actions .btn-small {
@@ -1090,6 +1127,12 @@
     flex: 1;
     min-width: 120px;
     text-align: center;
+    justify-content: center;
+}
+
+.class-actions .btn-small span {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
 }
 
@@ -1547,12 +1590,14 @@
     .profile-nav {
         overflow-x: auto;
         padding: 0 20px;
+        scrollbar-width: thin;
     }
     
     .nav-tab {
         white-space: nowrap;
         padding: 16px 20px;
         font-size: 14px;
+        flex-shrink: 0;
     }
     
     .about-details-grid,
