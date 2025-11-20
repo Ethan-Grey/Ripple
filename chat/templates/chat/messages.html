@@ -63,28 +63,127 @@
     padding: 8px;
 }
 
+/* Swipeable conversation container */
+.conversation-swipe-wrapper {
+    position: relative;
+    margin-bottom: 4px;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
 .conversation-item {
     padding: 16px;
     border-radius: 12px;
-    margin-bottom: 4px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
     text-decoration: none;
     color: inherit;
     display: block;
     border: 2px solid transparent;
+    background: white;
+    position: relative;
+    z-index: 2;
+    touch-action: pan-y;
+    user-select: none;
 }
 
-.conversation-item:hover {
-    background: white;
+.conversation-item.swiping {
+    transition: none;
+}
+
+.conversation-item:hover:not(.swiping):not([style*="translateX"]) {
     border-color: #e5e7eb;
-    transform: translateX(4px);
 }
 
 .conversation-item.active {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    background: white;
     border-color: #667eea;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    position: relative;
+}
+
+.conversation-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    pointer-events: none;
+    border-radius: 12px;
+}
+
+/* Action buttons revealed on swipe */
+.conversation-actions {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    z-index: 1;
+    padding-right: 8px;
+}
+
+.conversation-action-btn {
+    height: 100%;
+    min-width: 85px;
+    width: 85px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: all 0.2s ease;
+    padding: 8px 4px;
+    flex-direction: column;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.conversation-action-btn > span:first-child {
+    display: block;
+    font-size: 20px;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+.conversation-action-btn > span:last-child {
+    display: block;
+    font-size: 10px;
+    line-height: 1.1;
+}
+
+.conversation-action-btn.archive-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.conversation-action-btn.archive-btn:hover {
+    background: linear-gradient(135deg, #5a77ff 0%, #6a3f9f 100%);
+}
+
+.conversation-action-btn.unarchive-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.conversation-action-btn.unarchive-btn:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.conversation-action-btn.delete-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.conversation-action-btn.delete-btn:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
 }
 
 .conversation-user {
@@ -161,6 +260,10 @@
     font-size: 56px;
     margin-bottom: 20px;
     opacity: 0.3;
+}
+
+.empty-state-icon i {
+    font-size: 56px;
 }
 
 .empty-state p {
@@ -296,6 +399,10 @@
     opacity: 0.3;
 }
 
+.no-messages-icon i {
+    font-size: 64px;
+}
+
 .no-messages p {
     font-size: 16px;
     font-weight: 600;
@@ -389,6 +496,10 @@
     font-size: 80px;
     margin-bottom: 24px;
     opacity: 0.2;
+}
+
+.empty-chat-icon i {
+    font-size: 80px;
 }
 
 .empty-chat h3 {
@@ -487,45 +598,71 @@
                     <a href="?archived={% if view_archived %}false{% else %}true{% endif %}{% if selected_conversation %}&conversation={{ selected_conversation.id }}{% endif %}" 
                        class="archive-toggle-btn" 
                        style="padding: 8px 16px; background: {% if view_archived %}linear-gradient(135deg, #667eea 0%, #764ba2 100%){% else %}#f3f4f6{% endif %}; color: {% if view_archived %}white{% else %}#667eea{% endif %}; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; transition: all 0.2s;">
-                        {% if view_archived %}📥 Active{% else %}📦 Archived{% endif %}
+                        {% if view_archived %}<i class="bi bi-inbox"></i> Active{% else %}<i class="bi bi-archive"></i> Archived{% endif %}
                     </a>
                 </div>
             </div>
             <div class="conversations-list">
                 {% if conversations %}
                     {% for conversation in conversations %}
-                    <a href="?conversation={{ conversation.id }}{% if view_archived %}&archived=true{% endif %}" 
-                       class="conversation-item {% if selected_conversation.id == conversation.id %}active{% endif %}">
-                        <div class="conversation-user">
-                            <div class="conversation-avatar">
-                                {{ conversation.other_user.first_name|first|upper }}{{ conversation.other_user.last_name|first|upper }}
-                            </div>
-                            <div class="conversation-info">
-                                <div class="conversation-name">
-                                    {{ conversation.other_user.first_name }} {{ conversation.other_user.last_name }}
+                    <div class="conversation-swipe-wrapper" data-conversation-id="{{ conversation.id }}">
+                        <a href="?conversation={{ conversation.id }}{% if view_archived %}&archived=true{% endif %}" 
+                           class="conversation-item {% if selected_conversation.id == conversation.id %}active{% endif %}"
+                           data-conversation-id="{{ conversation.id }}">
+                            <div class="conversation-user">
+                                <div class="conversation-avatar">
+                                    {{ conversation.other_user.first_name|first|upper }}{{ conversation.other_user.last_name|first|upper }}
                                 </div>
-                                {% if conversation.latest_message %}
-                                <div class="conversation-preview">
-                                    {{ conversation.latest_message.content|truncatewords:5 }}
+                                <div class="conversation-info">
+                                    <div class="conversation-name">
+                                        {{ conversation.other_user.first_name }} {{ conversation.other_user.last_name }}
+                                    </div>
+                                    {% if conversation.latest_message %}
+                                    <div class="conversation-preview">
+                                        {{ conversation.latest_message.content|truncatewords:5 }}
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
-                            </div>
-                            <div class="conversation-meta">
-                                {% if conversation.latest_message %}
-                                <div class="conversation-time">
-                                    {{ conversation.latest_message.timestamp|date:"H:i" }}
+                                <div class="conversation-meta">
+                                    {% if conversation.latest_message %}
+                                    <div class="conversation-time">
+                                        {{ conversation.latest_message.timestamp|date:"H:i" }}
+                                    </div>
+                                    {% endif %}
+                                    {% if conversation.unread_count > 0 %}
+                                    <span class="unread-badge">{{ conversation.unread_count }}</span>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
-                                {% if conversation.unread_count > 0 %}
-                                <span class="unread-badge">{{ conversation.unread_count }}</span>
-                                {% endif %}
                             </div>
+                        </a>
+                        <div class="conversation-actions">
+                            {% if view_archived %}
+                            <button class="conversation-action-btn unarchive-btn" 
+                                    onclick="event.stopPropagation(); showUnarchiveModal({{ conversation.id }})"
+                                    title="Unarchive">
+                                <span><i class="bi bi-inbox"></i></span>
+                                <span>Unarchive</span>
+                            </button>
+                            {% else %}
+                            <button class="conversation-action-btn archive-btn" 
+                                    onclick="event.stopPropagation(); showArchiveModal({{ conversation.id }})"
+                                    title="Archive">
+                                <span><i class="bi bi-archive"></i></span>
+                                <span>Archive</span>
+                            </button>
+                            {% endif %}
+                            <button class="conversation-action-btn delete-btn" 
+                                    onclick="event.stopPropagation(); showDeleteModal({{ conversation.id }})"
+                                    title="Delete">
+                                <span><i class="bi bi-trash"></i></span>
+                                <span>Delete</span>
+                            </button>
                         </div>
-                    </a>
+                    </div>
                     {% endfor %}
                 {% else %}
                     <div class="empty-state">
-                        <div class="empty-state-icon">{% if view_archived %}📦{% else %}💬{% endif %}</div>
+                        <div class="empty-state-icon"><i class="bi {% if view_archived %}bi-archive{% else %}bi-chat-dots{% endif %}"></i></div>
                         <p>{% if view_archived %}No archived conversations{% else %}No conversations yet{% endif %}</p>
                         <p style="font-size: 13px; margin-top: 8px; opacity: 0.7;">
                             {% if view_archived %}You haven't archived any conversations yet{% else %}Start messaging other users!{% endif %}
@@ -556,25 +693,25 @@
                         </div>
                         <div class="chat-actions" style="display: flex; gap: 8px;">
                             {% if view_archived %}
-                            <button onclick="unarchiveConversation({{ selected_conversation.id }})" 
+                            <button onclick="showUnarchiveModal({{ selected_conversation.id }})" 
                                     class="action-btn unarchive-btn" 
                                     title="Unarchive conversation"
                                     style="padding: 10px 16px; background: #f3f4f6; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 700; color: #667eea; transition: all 0.2s;">
-                                📥 Unarchive
+                                <i class="bi bi-inbox"></i> Unarchive
                             </button>
                             {% else %}
-                            <button onclick="archiveConversation({{ selected_conversation.id }})" 
+                            <button onclick="showArchiveModal({{ selected_conversation.id }})" 
                                     class="action-btn archive-btn" 
                                     title="Archive conversation"
                                     style="padding: 10px 16px; background: #f3f4f6; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 700; color: #667eea; transition: all 0.2s;">
-                                📦 Archive
+                                <i class="bi bi-archive"></i> Archive
                             </button>
                             {% endif %}
-                            <button onclick="deleteConversation({{ selected_conversation.id }})" 
+                            <button onclick="showDeleteModal({{ selected_conversation.id }})" 
                                     class="action-btn delete-btn" 
                                     title="Delete conversation"
                                     style="padding: 10px 16px; background: #fee2e2; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 700; color: #dc2626; transition: all 0.2s;">
-                                🗑️ Delete
+                                <i class="bi bi-trash"></i> Delete
                             </button>
                         </div>
                     </div>
@@ -591,7 +728,7 @@
                     </div>
                     {% empty %}
                     <div class="no-messages">
-                        <div class="no-messages-icon">💭</div>
+                        <div class="no-messages-icon"><i class="bi bi-chat-left-text"></i></div>
                         <p>No messages yet. Start the conversation!</p>
                     </div>
                     {% endfor %}
@@ -619,11 +756,37 @@
             {% else %}
                 <!-- Empty State -->
                 <div class="empty-chat">
-                    <div class="empty-chat-icon">💬</div>
+                    <div class="empty-chat-icon"><i class="bi bi-chat-dots"></i></div>
                     <h3>Select a Conversation</h3>
                     <p>Choose a conversation from the sidebar to start messaging</p>
                 </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+            <div class="modal-header" style="border-bottom: 2px solid #f3f4f6; padding: 24px 28px;">
+                <h5 class="modal-title" id="confirmationModalLabel" style="font-weight: 800; font-size: 20px; color: #111827;">
+                    <span id="modalIcon" style="font-size: 28px; margin-right: 12px;"></span>
+                    <span id="modalTitle"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 28px;">
+                <p id="modalMessage" style="font-size: 15px; color: #6b7280; font-weight: 500; line-height: 1.6; margin: 0;"></p>
+            </div>
+            <div class="modal-footer" style="border-top: 2px solid #f3f4f6; padding: 20px 28px; gap: 12px;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="padding: 10px 24px; border-radius: 10px; font-weight: 700; border: none; background: #f3f4f6; color: #6b7280;">
+                    Cancel
+                </button>
+                <button type="button" class="btn" id="confirmActionBtn" style="padding: 10px 24px; border-radius: 10px; font-weight: 700; border: none; color: white;">
+                    Confirm
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -807,14 +970,93 @@ window.addEventListener('beforeunload', function() {
     }
 });
 
-// Archive conversation
-function archiveConversation(conversationId) {
-    if (!confirm('Are you sure you want to archive this conversation? You can view it later in the archived section.')) {
-        return;
+// Modal functions
+let pendingConversationId = null;
+let pendingAction = null;
+
+function showArchiveModal(conversationId) {
+    pendingConversationId = conversationId;
+    pendingAction = 'archive';
+    
+    document.getElementById('modalIcon').innerHTML = '<i class="bi bi-archive" style="color: #667eea;"></i>';
+    document.getElementById('modalTitle').textContent = 'Archive Conversation';
+    document.getElementById('modalMessage').textContent = 'Are you sure you want to archive this conversation? You can view it later in the archived section.';
+    document.getElementById('confirmActionBtn').textContent = 'Archive';
+    document.getElementById('confirmActionBtn').style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    modal.show();
+}
+
+function showUnarchiveModal(conversationId) {
+    pendingConversationId = conversationId;
+    pendingAction = 'unarchive';
+    
+    document.getElementById('modalIcon').innerHTML = '<i class="bi bi-inbox" style="color: #10b981;"></i>';
+    document.getElementById('modalTitle').textContent = 'Unarchive Conversation';
+    document.getElementById('modalMessage').textContent = 'Are you sure you want to unarchive this conversation? It will be moved back to your active conversations.';
+    document.getElementById('confirmActionBtn').textContent = 'Unarchive';
+    document.getElementById('confirmActionBtn').style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    modal.show();
+}
+
+function showDeleteModal(conversationId) {
+    pendingConversationId = conversationId;
+    pendingAction = 'delete';
+    
+    document.getElementById('modalIcon').innerHTML = '<i class="bi bi-trash" style="color: #ef4444;"></i>';
+    document.getElementById('modalTitle').textContent = 'Delete Conversation';
+    document.getElementById('modalMessage').textContent = 'Are you sure you want to delete this conversation? This action cannot be undone and all messages will be permanently removed.';
+    document.getElementById('confirmActionBtn').textContent = 'Delete';
+    document.getElementById('confirmActionBtn').style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    modal.show();
+}
+
+// Handle modal confirmation
+const confirmBtn = document.getElementById('confirmActionBtn');
+let confirmHandler = null;
+
+function setupConfirmHandler() {
+    if (confirmHandler) {
+        confirmBtn.removeEventListener('click', confirmHandler);
     }
     
-    const isArchivedView = new URLSearchParams(window.location.search).get('archived') === 'true';
+    confirmHandler = function() {
+        if (!pendingConversationId || !pendingAction) return;
+        
+        const conversationId = pendingConversationId;
+        const action = pendingAction;
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+        modal.hide();
+        
+        // Execute action
+        if (action === 'archive') {
+            archiveConversation(conversationId);
+        } else if (action === 'unarchive') {
+            unarchiveConversation(conversationId);
+        } else if (action === 'delete') {
+            deleteConversation(conversationId);
+        }
+        
+        // Reset
+        pendingConversationId = null;
+        pendingAction = null;
+    };
     
+    confirmBtn.addEventListener('click', confirmHandler);
+}
+
+// Initialize on page load
+setupConfirmHandler();
+
+// Archive conversation
+function archiveConversation(conversationId) {
     fetch(`{% url 'chat:archive_conversation' 0 %}`.replace('0', conversationId), {
         method: 'POST',
         headers: {
@@ -827,12 +1069,12 @@ function archiveConversation(conversationId) {
         if (data.success) {
             window.location.href = '{% url "chat:messages" %}';
         } else {
-            alert('Failed to archive conversation. Please try again.');
+            showErrorModal('Failed to archive conversation. Please try again.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Failed to archive conversation. Please try again.');
+        showErrorModal('Failed to archive conversation. Please try again.');
     });
 }
 
@@ -848,24 +1090,19 @@ function unarchiveConversation(conversationId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Redirect to active conversations after unarchiving
             window.location.href = '{% url "chat:messages" %}';
         } else {
-            alert('Failed to unarchive conversation. Please try again.');
+            showErrorModal('Failed to unarchive conversation. Please try again.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Failed to unarchive conversation. Please try again.');
+        showErrorModal('Failed to unarchive conversation. Please try again.');
     });
 }
 
 // Delete conversation
 function deleteConversation(conversationId) {
-    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
-        return;
-    }
-    
     fetch(`{% url 'chat:delete_conversation' 0 %}`.replace('0', conversationId), {
         method: 'POST',
         headers: {
@@ -878,13 +1115,257 @@ function deleteConversation(conversationId) {
         if (data.success) {
             window.location.href = '{% url "chat:messages" %}';
         } else {
-            alert('Failed to delete conversation. Please try again.');
+            showErrorModal('Failed to delete conversation. Please try again.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Failed to delete conversation. Please try again.');
+        showErrorModal('Failed to delete conversation. Please try again.');
     });
 }
+
+// Show error modal (reuse confirmation modal)
+function showErrorModal(message) {
+    // Remove existing handler temporarily
+    if (confirmHandler) {
+        confirmBtn.removeEventListener('click', confirmHandler);
+    }
+    
+    document.getElementById('modalIcon').innerHTML = '<i class="bi bi-exclamation-triangle" style="color: #ef4444;"></i>';
+    document.getElementById('modalTitle').textContent = 'Error';
+    document.getElementById('modalMessage').textContent = message;
+    confirmBtn.textContent = 'OK';
+    confirmBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    
+    const errorHandler = function() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+        modal.hide();
+        confirmBtn.removeEventListener('click', errorHandler);
+        // Restore normal handler
+        setupConfirmHandler();
+    };
+    
+    confirmBtn.addEventListener('click', errorHandler);
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    modal.show();
+}
+
+// Swipe functionality for conversation items
+(function() {
+    const SWIPE_THRESHOLD = 30; // Minimum swipe distance to keep swiped
+    const MAX_SWIPE = 170; // Maximum swipe distance (85px * 2 buttons)
+    
+    function initSwipe() {
+        const conversationItems = document.querySelectorAll('.conversation-item');
+        
+        conversationItems.forEach(item => {
+            let swipeStartX = 0;
+            let swipeCurrentX = 0;
+            let isSwipeActive = false;
+            let hasSwiped = false;
+            let startTime = 0;
+            let justSwiped = false; // Flag to prevent click handler from interfering
+
+            // Mouse events
+            item.addEventListener('mousedown', (e) => {
+                // Don't start swipe if clicking on action buttons
+                if (e.target.closest('.conversation-actions')) {
+                    return;
+                }
+                swipeStartX = e.clientX;
+                startTime = Date.now();
+                isSwipeActive = true;
+                justSwiped = false;
+                item.classList.add('swiping');
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isSwipeActive || !item.classList.contains('swiping')) return;
+                
+                swipeCurrentX = e.clientX - swipeStartX;
+                
+                // Only allow swiping left (negative values)
+                if (swipeCurrentX > 0) {
+                    swipeCurrentX = 0;
+                } else if (Math.abs(swipeCurrentX) > MAX_SWIPE) {
+                    swipeCurrentX = -MAX_SWIPE;
+                }
+                
+                item.style.transform = `translateX(${swipeCurrentX}px)`;
+                hasSwiped = Math.abs(swipeCurrentX) > 10;
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                if (!isSwipeActive) return;
+                
+                const swipeTime = Date.now() - startTime;
+                const currentSwipeX = swipeCurrentX; // Save current value before resetting
+                const wasDragging = hasSwiped || Math.abs(swipeCurrentX) > 10;
+                
+                isSwipeActive = false;
+                item.classList.remove('swiping');
+                
+                // If user dragged left (swiped), keep it at the current position
+                if (wasDragging && currentSwipeX < 0) {
+                    // Keep it swiped at current position (or max if beyond)
+                    const finalX = Math.abs(currentSwipeX) > MAX_SWIPE ? -MAX_SWIPE : currentSwipeX;
+                    // Re-enable transition for smooth snap
+                    item.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    item.style.transform = `translateX(${finalX}px)`;
+                    justSwiped = true;
+                    
+                    // Close other swiped items
+                    conversationItems.forEach(otherItem => {
+                        if (otherItem !== item && otherItem.style.transform && otherItem.style.transform.includes('translateX')) {
+                            otherItem.style.transform = '';
+                        }
+                    });
+                    
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Reset flag after a short delay to allow click handler to work later
+                    setTimeout(() => {
+                        justSwiped = false;
+                    }, 100);
+                } else if (!wasDragging && swipeTime < 200 && Math.abs(currentSwipeX) < 10) {
+                    // Quick click (no drag), allow navigation
+                    justSwiped = false;
+                    const href = item.getAttribute('href');
+                    if (href) {
+                        window.location.href = href;
+                    }
+                } else {
+                    // Snap back if no meaningful drag
+                    justSwiped = false;
+                    item.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    item.style.transform = '';
+                }
+                
+                swipeCurrentX = 0;
+                hasSwiped = false;
+            });
+
+            // Touch events
+            item.addEventListener('touchstart', (e) => {
+                // Don't start swipe if clicking on action buttons
+                if (e.target.closest('.conversation-actions')) {
+                    return;
+                }
+                swipeStartX = e.touches[0].clientX;
+                startTime = Date.now();
+                isSwipeActive = true;
+                item.classList.add('swiping');
+            }, { passive: true });
+
+            item.addEventListener('touchmove', (e) => {
+                if (!isSwipeActive) return;
+                
+                swipeCurrentX = e.touches[0].clientX - swipeStartX;
+                
+                // Only allow swiping left
+                if (swipeCurrentX > 0) {
+                    swipeCurrentX = 0;
+                } else if (Math.abs(swipeCurrentX) > MAX_SWIPE) {
+                    swipeCurrentX = -MAX_SWIPE;
+                }
+                
+                item.style.transform = `translateX(${swipeCurrentX}px)`;
+                hasSwiped = Math.abs(swipeCurrentX) > 10;
+                
+                // Prevent scrolling if swiping
+                if (hasSwiped) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            item.addEventListener('touchend', (e) => {
+                if (!isSwipeActive) return;
+                
+                const swipeTime = Date.now() - startTime;
+                const currentSwipeX = swipeCurrentX; // Save current value before resetting
+                const wasDragging = hasSwiped || Math.abs(swipeCurrentX) > 10;
+                
+                isSwipeActive = false;
+                item.classList.remove('swiping');
+                
+                // If user dragged left (swiped), keep it at the current position
+                if (wasDragging && currentSwipeX < 0) {
+                    // Keep it swiped at current position (or max if beyond)
+                    const finalX = Math.abs(currentSwipeX) > MAX_SWIPE ? -MAX_SWIPE : currentSwipeX;
+                    // Re-enable transition for smooth snap
+                    item.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    item.style.transform = `translateX(${finalX}px)`;
+                    // Close other swiped items
+                    conversationItems.forEach(otherItem => {
+                        if (otherItem !== item && otherItem.style.transform && otherItem.style.transform.includes('translateX')) {
+                            otherItem.style.transform = '';
+                        }
+                    });
+                    e.preventDefault();
+                } else if (!wasDragging && swipeTime < 200 && Math.abs(currentSwipeX) < 10) {
+                    // Quick tap (no drag), allow navigation
+                    const href = item.getAttribute('href');
+                    if (href) {
+                        window.location.href = href;
+                    }
+                } else {
+                    // Snap back if no meaningful drag
+                    item.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    item.style.transform = '';
+                }
+                
+                swipeCurrentX = 0;
+                hasSwiped = false;
+            }, { passive: false });
+
+            // Click handler - close swipe if clicked on item (not buttons)
+            item.addEventListener('click', (e) => {
+                // Don't interfere if we just swiped
+                if (justSwiped) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+                
+                // If buttons are visible (swiped), close on click (unless clicking buttons)
+                const transform = item.style.transform;
+                if (transform && transform.includes('translateX')) {
+                    const match = transform.match(/-?\d+/);
+                    if (match && Math.abs(parseInt(match[0])) >= SWIPE_THRESHOLD) {
+                        // Don't close if clicking on action buttons
+                        if (!e.target.closest('.conversation-actions')) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            item.style.transform = '';
+                            return false;
+                        }
+                    }
+                }
+            }, true);
+        });
+
+        // Close swiped items when clicking elsewhere
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.conversation-swipe-wrapper')) {
+                conversationItems.forEach(item => {
+                    if (item.style.transform && item.style.transform.includes('translateX')) {
+                        item.style.transform = '';
+                    }
+                });
+            }
+        });
+    }
+    
+    // Initialize on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSwipe);
+    } else {
+        initSwipe();
+    }
+})();
 </script>
 {% endblock %}

@@ -12,7 +12,7 @@
     <!-- Statistics Cards -->
     <div class="stats-grid">
         <div class="stat-card total">
-            <div class="stat-icon">📋</div>
+            <div class="stat-icon"><i class="bi bi-file-text"></i></div>
             <div class="stat-content">
                 <div class="stat-number">{{ stats.total_applications }}</div>
                 <div class="stat-label">Total Applications</div>
@@ -20,7 +20,7 @@
         </div>
         
         <div class="stat-card pending">
-            <div class="stat-icon">⏳</div>
+            <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
             <div class="stat-content">
                 <div class="stat-number">{{ stats.pending_count }}</div>
                 <div class="stat-label">Pending Review</div>
@@ -28,7 +28,7 @@
         </div>
         
         <div class="stat-card approved">
-            <div class="stat-icon">✅</div>
+            <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
             <div class="stat-content">
                 <div class="stat-number">{{ stats.approved_count }}</div>
                 <div class="stat-label">Approved</div>
@@ -36,7 +36,7 @@
         </div>
         
         <div class="stat-card rejected">
-            <div class="stat-icon">❌</div>
+            <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
             <div class="stat-content">
                 <div class="stat-number">{{ stats.rejected_count }}</div>
                 <div class="stat-label">Rejected</div>
@@ -440,7 +440,7 @@
         <!-- Empty State -->
         {% if not latest_identity and not skill_verifications and not community_requests and not class_applications %}
         <div class="empty-state">
-            <div class="empty-icon">📋</div>
+            <div class="empty-icon"><i class="bi bi-file-text"></i></div>
             <h3>No Applications Yet</h3>
             <p>You haven't submitted any applications or verification requests.</p>
             <div class="empty-actions">
@@ -510,6 +510,13 @@
 .stat-card.rejected { border-left-color: #ef4444; }
 
 .stat-icon {
+    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon i {
     font-size: 2.5rem;
 }
 
@@ -817,6 +824,13 @@
 .empty-icon {
     font-size: 4rem;
     margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-icon i {
+    font-size: 4rem;
 }
 
 .empty-state h3 {
@@ -921,7 +935,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const tempEmpty = document.createElement('div');
                 tempEmpty.className = 'empty-state temp-empty';
                 tempEmpty.innerHTML = `
-                    <div class="empty-icon">🔍</div>
+                    <div class="empty-icon"><i class="bi bi-search"></i></div>
                     <h3>No ${filter} Applications</h3>
                     <p>You don't have any ${filter} applications at the moment.</p>
                 `;

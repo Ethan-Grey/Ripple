@@ -183,6 +183,12 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             text-align: center;
             letter-spacing: -0.5px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .brand:hover {
+            opacity: 0.8;
         }
 
         .nav {
@@ -356,16 +362,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 16px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             border-bottom: 1px solid var(--border);
             position: sticky;
             top: 0;
             z-index: 100;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         .search {
             flex: 1;
-            max-width: 500px;
+            max-width: 600px;
+            min-width: 200px;
         }
 
         .search input {
@@ -392,16 +403,19 @@
         .user-pill {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            padding: 0;
             background: var(--brand-gradient);
             color: white;
-            border-radius: 24px;
+            border-radius: 50%;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 18px;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
             cursor: pointer;
             transition: all 0.2s ease;
+            flex-shrink: 0;
         }
 
         .user-pill:hover {
@@ -409,8 +423,46 @@
             box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
         }
 
+        .user-pill::after {
+            display: none;
+        }
+
+        .dropdown-menu {
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            padding: 8px;
+            margin-top: 8px;
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .dropdown-item:hover {
+            background: var(--background);
+            color: var(--brand);
+        }
+
+        .dropdown-item i {
+            font-size: 16px;
+        }
+
         .user-pill i {
             font-size: 18px;
+        }
+
+        .user-avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
         /* Page body */
@@ -459,17 +511,19 @@
         @media (max-width: 768px) {
             .topbar {
                 padding: 12px 16px 12px 72px; /* Maintain left padding for button */
-                flex-direction: column;
+                flex-direction: row;
                 gap: 12px;
-                align-items: stretch;
+                align-items: center;
             }
 
             .search {
                 max-width: 100%;
+                flex: 1;
+                min-width: 0;
             }
 
             .user-pill {
-                justify-content: center;
+                flex-shrink: 0;
             }
 
             .page-body {
@@ -496,7 +550,7 @@
     
     <div class="layout">
         <aside class="sidebar" id="sidebar">
-            <div class="brand">Ripple</div>
+            <a href="{% url 'core:home' %}" class="brand" style="text-decoration: none; display: block;">Ripple</a>
             
             <nav class="nav" role="navigation">
 
@@ -531,23 +585,6 @@
                         {% endif %}
                     {% endif %}
                 </a>
-                <a class="nav-item" href="{% url 'users:profile' %}">
-                    <i class="bi bi-person nav-icon"></i>
-                    <span class="nav-text">Profile</span>
-                </a>
-                <a class="nav-item" href="{% url 'users:applications' %}">
-                    <i class="bi bi-clipboard2-plus nav-icon"></i>
-                    <span class="nav-text">Applications</span>
-                </a>
-                 <a class="nav-item" href="{% url 'core:report_content' %}">
-                    <i class="bi bi-flag nav-icon"></i>
-                    <span class="nav-text">Report Content</span>
-                </a>
-                <a class="nav-item" href="{% url 'core:user_reports' %}">
-                    <i class="bi bi-eye nav-icon"></i>
-                    <span class="nav-text">My Reports</span>
-                </a>
-                
 
                 {% if user.is_staff %}
                     <hr class="my-3 border-secondary">
@@ -583,11 +620,6 @@
                 {% endif %}
                 
                 <div class="nav-spacer"></div>
-                
-                <a class="nav-item logout-btn" href="{% url 'users:logout' %}">
-                    <i class="bi bi-box-arrow-right nav-icon"></i>
-                    <span class="nav-text">Logout</span>
-                </a>
             </nav>
         </aside>
 
@@ -596,10 +628,29 @@
                 <form class="search" action="{% url 'core:search' %}" method="get" role="search">
                     <input type="text" name="q" placeholder="Search for skills, classes, or users..." value="{{ request.GET.q }}" aria-label="Search"/>
                 </form>
-                <div class="user-pill">
-                    <i class="bi bi-person-circle"></i>
-                    <span>{{ user.username|default:"User" }}</span>
+                {% if user.is_authenticated %}
+                <div class="dropdown">
+                    <button class="user-pill dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border: none; background: var(--brand-gradient);">
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="user-avatar-img">
+                        {% else %}
+                            <i class="bi bi-person-circle"></i>
+                        {% endif %}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="bi bi-person me-2"></i> Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'users:applications' %}"><i class="bi bi-clipboard2-plus me-2"></i> Applications</a></li>
+                        <li><a class="dropdown-item" href="{% url 'core:report_content' %}"><i class="bi bi-flag me-2"></i> Report Content</a></li>
+                        <li><a class="dropdown-item" href="{% url 'core:user_reports' %}"><i class="bi bi-eye me-2"></i> My Reports</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'users:logout' %}"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                    </ul>
                 </div>
+                {% else %}
+                <a href="{% url 'users:login' %}" class="user-pill" style="text-decoration: none;">
+                    <i class="bi bi-person-circle"></i>
+                </a>
+                {% endif %}
             </header>
 
             <section class="page-body">

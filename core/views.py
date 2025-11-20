@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
-from skills.models import Skill, UserSkill, Match, TeachingClass, SwipeAction
-from communities.models import Community
+from skills.models import Skill, UserSkill, Match, TeachingClass, SwipeAction, ClassEnrollment, ClassBooking, ClassTimeSlot, TeacherApplication
+from communities.models import Community, CommunityRequest
+from chat.models import Conversation, MessageStatus
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
@@ -11,6 +12,7 @@ from core.models import Report, UserWarning
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.contrib import messages
+from datetime import timedelta
 
 
 def landing(request):
@@ -79,11 +81,149 @@ def home(request):
                     })
                     seen_users.add(us.user.id)
 
+    # Dashboard stats and data (only for logged-in users)
+    dashboard_stats = {}
+    upcoming_sessions = []
+    recommended_classes = []
+    recent_conversations = []
+    teaching_stats = {}
+    pending_applications_count = 0
+    
+    if user:
+        # Quick Stats
+        dashboard_stats = {
+            'classes_enrolled': ClassEnrollment.objects.filter(
+                user=user, 
+                status=ClassEnrollment.ACTIVE
+            ).count(),
+            'upcoming_sessions_count': ClassBooking.objects.filter(
+                student=user,
+                status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING],
+                time_slot__start_time__gte=timezone.now()
+            ).count(),
+            'unread_messages': MessageStatus.objects.filter(
+                user=user,
+                is_read=False
+            ).exclude(
+                message__sender=user
+            ).count(),
+        }
+        
+        # Pending applications count
+        from users.models import Profile
+        try:
+            profile = user.profile
+            identity_pending = 1 if profile.verification_status == 'pending' else 0
+        except:
+            identity_pending = 0
+        
+        skill_pending = UserSkill.objects.filter(
+            user=user,
+            verification_status='pending'
+        ).count()
+        
+        community_pending = CommunityRequest.objects.filter(
+            requester=user,
+            status='pending'
+        ).count()
+        
+        class_pending = TeacherApplication.objects.filter(
+            applicant=user,
+            status='pending'
+        ).count()
+        
+        pending_applications_count = identity_pending + skill_pending + community_pending + class_pending
+        dashboard_stats['pending_applications'] = pending_applications_count
+        
+        # Upcoming Class Sessions (next 7 days)
+        seven_days_from_now = timezone.now() + timedelta(days=7)
+        upcoming_sessions = ClassBooking.objects.filter(
+            student=user,
+            status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING],
+            time_slot__start_time__gte=timezone.now(),
+            time_slot__start_time__lte=seven_days_from_now
+        ).select_related(
+            'time_slot', 
+            'time_slot__teaching_class',
+            'time_slot__teaching_class__teacher'
+        ).order_by('time_slot__start_time')[:5]
+        
+        # Recommended Classes (from whitelist that user hasn't enrolled in)
+        whitelisted_class_ids = SwipeAction.objects.filter(
+            user=user,
+            action=SwipeAction.SWIPE_RIGHT
+        ).values_list('teaching_class_id', flat=True)
+        
+        enrolled_class_ids = ClassEnrollment.objects.filter(
+            user=user,
+            status=ClassEnrollment.ACTIVE
+        ).values_list('teaching_class_id', flat=True)
+        
+        recommended_class_ids = set(whitelisted_class_ids) - set(enrolled_class_ids)
+        recommended_classes = TeachingClass.objects.filter(
+            id__in=recommended_class_ids,
+            is_published=True
+        ).select_related('teacher').prefetch_related('topics')[:6]
+        
+        # Recent Conversations (last 5)
+        recent_conversations_raw = Conversation.objects.filter(
+            participants=user
+        ).prefetch_related('participants').order_by('-updated_at')[:5]
+        
+        # Add other participant info to each conversation
+        recent_conversations = []
+        for conv in recent_conversations_raw:
+            other_user = conv.get_other_participant(user)
+            recent_conversations.append({
+                'conversation': conv,
+                'other_user': other_user,
+                'latest_message': conv.get_latest_message(),
+            })
+        
+        # Teaching Stats (if user is a teacher)
+        teaching_classes = TeachingClass.objects.filter(teacher=user, is_published=True)
+        if teaching_classes.exists():
+            teaching_stats = {
+                'total_classes': teaching_classes.count(),
+                'total_students': ClassEnrollment.objects.filter(
+                    teaching_class__teacher=user,
+                    status=ClassEnrollment.ACTIVE
+                ).values('user').distinct().count(),
+                'upcoming_teaching_sessions': ClassBooking.objects.filter(
+                    time_slot__teaching_class__teacher=user,
+                    status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING],
+                    time_slot__start_time__gte=timezone.now()
+                ).select_related(
+                    'time_slot',
+                    'time_slot__teaching_class',
+                    'student'
+                ).order_by('time_slot__start_time')[:5],
+            }
+
+    # Matched Classes (whitelisted classes - classes user swiped right on)
+    matched_classes = []
+    if user:
+        whitelisted_class_ids = SwipeAction.objects.filter(
+            user=user,
+            action=SwipeAction.SWIPE_RIGHT
+        ).values_list('teaching_class_id', flat=True)[:5]
+        
+        matched_classes = TeachingClass.objects.filter(
+            id__in=whitelisted_class_ids,
+            is_published=True
+        ).select_related('teacher').prefetch_related('topics')
+
     context = {
         'featured_skills': featured_skills,
         'user_communities': user_communities,
         'recent_matches': recent_matches,
         'matched_users': matched_users,
+        'dashboard_stats': dashboard_stats,
+        'upcoming_sessions': upcoming_sessions,
+        'recommended_classes': recommended_classes,
+        'recent_conversations': recent_conversations,
+        'teaching_stats': teaching_stats,
+        'matched_classes': matched_classes,
     }
     return render(request, 'core/home.html', context)
 
