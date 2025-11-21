@@ -1,5 +1,6 @@
 {% load static %}
 {% load skills_tags %}
+{% load user_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -984,11 +985,7 @@
                 {% if user.is_authenticated %}
                 <div class="dropdown">
                     <button class="user-pill dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border: none; background: var(--brand-gradient);">
-                        {% if user.profile.avatar %}
-                            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="user-avatar-img">
-                        {% else %}
-                            <i class="bi bi-person-circle"></i>
-                        {% endif %}
+                        {% user_avatar user size='small' css_class='user-avatar-img' %}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="bi bi-person me-2"></i> Profile</a></li>

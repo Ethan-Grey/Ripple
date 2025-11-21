@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load user_tags %}
 
 {% block title %} · {{ viewed_user.first_name }} {{ viewed_user.last_name }}{% endblock %}
 
@@ -610,11 +611,7 @@
     <div class="profile-hero">
         <div class="profile-hero-content">
             <div class="profile-avatar-large">
-                {% if profile.avatar %}
-                    <img src="{{ profile.avatar.url }}" alt="{{ viewed_user.username }}">
-                {% else %}
-                    {{ viewed_user.first_name|first|upper }}{{ viewed_user.last_name|first|upper }}
-                {% endif %}
+                {% user_avatar viewed_user size='large' %}
                 {% if profile.verification_status == 'verified' %}
                 <div class="verified-badge-large">
                     <i class="bi bi-patch-check-fill" style="font-size: 24px;"></i>
@@ -807,7 +804,7 @@
                         <div class="review-item">
                             <div class="review-header">
                                 <div class="reviewer-avatar">
-                                    {{ review.reviewer.first_name|first|upper }}{{ review.reviewer.last_name|first|upper }}
+                                    {% user_avatar review.reviewer size='small' %}
                                 </div>
                                 <div class="reviewer-info">
                                     <div class="reviewer-name">{{ review.reviewer.first_name }} {{ review.reviewer.last_name }}</div>

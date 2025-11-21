@@ -1,0 +1,7 @@
+{% if has_avatar %}
+    <img src="{{ avatar_url }}" alt="{{ user.username }}" class="user-avatar-img {{ css_class }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
+{% else %}
+    <div class="user-avatar-initials {{ css_class }}" style="width: 100%; height: 100%; background: {{ avatar_color }}; border-radius: inherit; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: {% if size == 'small' %}0.75em{% elif size == 'large' %}1.5em{% else %}1em{% endif %};">
+        {{ initials }}
+    </div>
+{% endif %}
