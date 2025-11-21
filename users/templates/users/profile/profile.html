@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load user_tags %}
 {% block title %} · Profile{% endblock %}
 
 {% block content %}
@@ -10,13 +11,7 @@
             <div class="profile-header">
                 <div class="profile-avatar-wrapper">
                     <div class="profile-avatar">
-                        {% if profile.avatar %}
-                            <img src="{{ profile.avatar.url }}" alt="{{ profile.user.username }}" class="avatar-image">
-                        {% else %}
-                            <div class="avatar-placeholder">
-                                <span>{{ profile.user.username|first|upper }}</span>
-                            </div>
-                        {% endif %}
+                        {% user_avatar profile.user size='large' %}
                     </div>
                     {% if profile.verification_status == 'verified' %}
                         <div class="verified-badge-overlay">

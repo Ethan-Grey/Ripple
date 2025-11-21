@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load user_tags %}
 {% block title %} · {{ skill.name }}{% endblock %}
 
 {% block content %}
@@ -295,7 +296,7 @@
             <a href="{% url 'users:view_profile' user_skill.user.username %}" class="teacher-card">
                 <div class="teacher-header">
                     <div class="teacher-avatar">
-                        {{ user_skill.user.first_name|first|upper }}{{ user_skill.user.last_name|first|upper }}
+                        {% user_avatar user_skill.user size='medium' %}
                     </div>
                     <div class="teacher-info">
                         <div class="teacher-name">
@@ -351,7 +352,7 @@
             {% for user_skill in learners %}
             <a href="{% url 'users:view_profile' user_skill.user.username %}" class="learner-chip">
                 <div class="learner-avatar-small">
-                    {{ user_skill.user.first_name|first|upper }}{{ user_skill.user.last_name|first|upper }}
+                    {% user_avatar user_skill.user size='small' %}
                 </div>
                 <div class="learner-name">
                     {{ user_skill.user.first_name }} {{ user_skill.user.last_name }}

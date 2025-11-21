@@ -1,307 +1,895 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load user_tags %}
 
 {% block title %} · {{ viewed_user.first_name }} {{ viewed_user.last_name }}{% endblock %}
 
 {% block content %}
 <style>
-.profile-container {
-    max-width: 1000px;
-    margin: 0 auto;
+:root {
+    --profile-primary: #667eea;
+    --profile-secondary: #764ba2;
+    --profile-success: #10b981;
+    --profile-text: #1f2937;
+    --profile-muted: #6b7280;
+    --profile-light: #f9fafb;
+    --profile-border: #e5e7eb;
 }
 
-.profile-header {
+.profile-view-page {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+    padding: 0;
+}
+
+/* Hero Header */
+.profile-hero {
+    background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-secondary) 100%);
+    padding: 60px 24px 80px;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.3;
+}
+
+.profile-hero-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+.profile-avatar-large {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    border: 6px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    font-weight: 800;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.profile-avatar-large img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.verified-badge-large {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 48px;
+    height: 48px;
+    background: var(--profile-success);
+    border-radius: 50%;
+    border: 4px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.profile-hero-info {
+    flex: 1;
+    color: white;
+}
+
+.profile-hero-name {
+    font-size: 48px;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    letter-spacing: -1px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.profile-hero-username {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.profile-hero-bio {
+    font-size: 18px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 24px;
+    max-width: 600px;
+}
+
+.profile-hero-meta {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.hero-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+}
+
+.hero-meta-item i {
+    font-size: 18px;
+}
+
+.profile-hero-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Stats Section */
+.profile-stats {
+    max-width: 1200px;
+    margin: -40px auto 0;
+    padding: 0 24px;
+    position: relative;
+    z-index: 2;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
     background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--profile-border);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-secondary) 100%);
     border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--profile-text);
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--profile-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Main Content */
+.profile-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+}
+
+/* Teaching Skills Section */
+.section-card {
+    background: white;
+    border-radius: 20px;
     padding: 32px;
     margin-bottom: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--profile-border);
 }
 
-.profile-top {
+.section-header {
     display: flex;
-    align-items: flex-start;
-    gap: 24px;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--profile-light);
 }
 
-.profile-avatar {
-    width: 120px;
-    height: 120px;
+.section-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--profile-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-title i {
+    color: var(--profile-primary);
+    font-size: 28px;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.skill-card-enhanced {
+    background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+    border: 2px solid var(--profile-border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.skill-card-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--profile-primary) 0%, var(--profile-secondary) 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.skill-card-enhanced:hover {
+    border-color: var(--profile-primary);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+}
+
+.skill-card-enhanced:hover::before {
+    transform: scaleX(1);
+}
+
+.skill-header-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.skill-icon-enhanced {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.skill-name-enhanced {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--profile-text);
+    margin: 0;
+}
+
+.skill-badge-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #d1fae5;
+    color: #065f46;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+}
+
+/* Classes Grid */
+.classes-grid-enhanced {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.class-card-enhanced {
+    background: white;
+    border: 2px solid var(--profile-border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.class-card-enhanced:hover {
+    border-color: var(--profile-primary);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+    text-decoration: none;
+    color: inherit;
+}
+
+.class-image-wrapper {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-secondary) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.class-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.class-card-content {
+    padding: 20px;
+}
+
+.class-title-enhanced {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--profile-text);
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+}
+
+.class-meta-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--profile-muted);
+    font-weight: 600;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.class-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #f59e0b;
+}
+
+.class-actions-enhanced {
+    display: flex;
+    gap: 8px;
+}
+
+/* Reviews Section */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.review-item {
+    background: var(--profile-light);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--profile-border);
+}
+
+.review-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.reviewer-avatar {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-secondary) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-weight: 700;
-    font-size: 48px;
+    font-size: 16px;
     flex-shrink: 0;
 }
 
-.profile-info {
+.reviewer-info {
     flex: 1;
 }
 
-.profile-name {
-    font-size: 32px;
+.reviewer-name {
     font-weight: 700;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.verified-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: #10b981;
-    color: white;
-    font-size: 14px;
-    padding: 4px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-.profile-username {
-    font-size: 18px;
-    color: #6b7280;
-    margin-bottom: 16px;
-}
-
-.profile-meta {
-    display: flex;
-    gap: 24px;
-    font-size: 14px;
-    color: #6b7280;
-}
-
-.meta-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.profile-bio {
-    line-height: 1.6;
-    color: #374151;
-    font-size: 16px;
-}
-
-.profile-actions {
-    display: flex;
-    gap: 12px;
-}
-
-.btn {
-    padding: 10px 24px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-decoration: none;
-    display: inline-block;
-}
-
-.btn-primary {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #2563eb;
-}
-
-.btn-secondary {
-    background: white;
-    color: #374151;
-    border: 1px solid #d1d5db;
-}
-
-.btn-secondary:hover {
-    background: #f9fafb;
-}
-
-.section {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.section-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.skills-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
-}
-
-.skill-card {
-    padding: 12px 16px;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.skill-icon {
-    font-size: 20px;
-}
-
-.skill-info {
-    flex: 1;
-}
-
-.skill-name {
-    font-weight: 600;
+    color: var(--profile-text);
     margin-bottom: 2px;
 }
 
-.skill-level {
-    font-size: 12px;
-    color: #6b7280;
+.review-class {
+    font-size: 13px;
+    color: var(--profile-muted);
+}
+
+.review-rating {
+    display: flex;
+    gap: 2px;
+    color: #f59e0b;
+    font-size: 14px;
+}
+
+.review-comment {
+    color: var(--profile-text);
+    line-height: 1.6;
+    margin-top: 8px;
+}
+
+/* Sidebar */
+.profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sidebar-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--profile-border);
+}
+
+.sidebar-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--profile-text);
+    margin: 0 0 16px 0;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: white;
+    color: var(--profile-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    color: var(--profile-primary);
+    text-decoration: none;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-view-all {
+    background: var(--profile-primary);
+    color: white;
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+.btn-view-all:hover {
+    background: var(--profile-secondary);
+    color: white;
+    text-decoration: none;
 }
 
 .empty-state {
     text-align: center;
-    padding: 40px 20px;
-    color: #9ca3af;
+    padding: 60px 20px;
+    color: var(--profile-muted);
 }
 
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: #3b82f6;
-    text-decoration: none;
+.empty-state-icon {
+    font-size: 64px;
     margin-bottom: 16px;
-    font-weight: 500;
+    opacity: 0.5;
 }
 
-.back-link:hover {
-    color: #2563eb;
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--profile-text);
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    font-size: 15px;
+    color: var(--profile-muted);
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-hero-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-hero-name {
+        font-size: 36px;
+        justify-content: center;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .skills-grid,
+    .classes-grid-enhanced {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 
-<div class="profile-container">
-    <a href="javascript:history.back()" class="back-link">
-        ← Back to search
-    </a>
-
-    <div class="profile-header">
-        <div class="profile-top">
-            <div class="profile-avatar">
-                {{ viewed_user.first_name|first|upper }}{{ viewed_user.last_name|first|upper }}
+<div class="profile-view-page">
+    <!-- Hero Header -->
+    <div class="profile-hero">
+        <div class="profile-hero-content">
+            <div class="profile-avatar-large">
+                {% user_avatar viewed_user size='large' %}
+                {% if profile.verification_status == 'verified' %}
+                <div class="verified-badge-large">
+                    <i class="bi bi-patch-check-fill" style="font-size: 24px;"></i>
+                </div>
+                {% endif %}
             </div>
-            <div class="profile-info">
-                <h1 class="profile-name">
+            
+            <div class="profile-hero-info">
+                <h1 class="profile-hero-name">
                     {{ viewed_user.first_name }} {{ viewed_user.last_name }}
                     {% if profile.verification_status == 'verified' %}
-                    <span class="verified-badge"><i class="bi bi-patch-check-fill"></i> Verified</span>
+                    <span class="verified-badge" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.2); color: white; font-size: 14px; padding: 6px 14px; border-radius: 8px; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.3);">
+                        <i class="bi bi-patch-check-fill"></i> Verified
+                    </span>
                     {% endif %}
                 </h1>
-                <div class="profile-username">@{{ viewed_user.username }}</div>
-                <div class="profile-meta">
+                <div class="profile-hero-username">@{{ viewed_user.username }}</div>
+                
+                {% if profile.bio %}
+                <div class="profile-hero-bio">{{ profile.bio }}</div>
+                {% endif %}
+                
+                <div class="profile-hero-meta">
                     {% if profile.location %}
-                    <div class="meta-item">
-                        <i class="bi bi-geo-alt-fill"></i> {{ profile.location }}
+                    <div class="hero-meta-item">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>{{ profile.location }}</span>
                     </div>
                     {% endif %}
-                    {% if viewed_user.date_joined %}
-                    <div class="meta-item">
-                        <i class="bi bi-calendar-fill"></i> Joined {{ viewed_user.date_joined|date:"F Y" }}
+                    <div class="hero-meta-item">
+                        <i class="bi bi-calendar-fill"></i>
+                        <span>Joined {{ viewed_user.date_joined|date:"F Y" }}</span>
+                    </div>
+                </div>
+                
+                {% if not is_own_profile and request.user.is_authenticated %}
+                <div class="profile-hero-actions">
+                    <a href="{% url 'chat:messages' %}?user={{ viewed_user.username }}" class="btn btn-primary">
+                        <i class="bi bi-chat-dots-fill"></i> Send Message
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="profile-stats">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-collection-play-fill"></i>
+                </div>
+                <div class="stat-value">{{ total_classes }}</div>
+                <div class="stat-label">Classes Taught</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="stat-value">{{ total_students }}</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div class="stat-value">{{ avg_rating }}</div>
+                <div class="stat-label">Average Rating</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-chat-left-text-fill"></i>
+                </div>
+                <div class="stat-value">{{ total_reviews }}</div>
+                <div class="stat-label">Total Reviews</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="profile-content">
+        <div class="content-grid">
+            <!-- Left Column -->
+            <div>
+                <!-- Teaching Skills -->
+                {% if teaching_skills %}
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="bi bi-mortarboard-fill"></i>
+                            Teaching Skills
+                        </h2>
+                    </div>
+                    <div class="skills-grid">
+                        {% for user_skill in teaching_skills %}
+                        <div class="skill-card-enhanced">
+                            <div class="skill-header-enhanced">
+                                <div class="skill-icon-enhanced">
+                                    {% if 'guitar' in user_skill.skill.name|lower %}
+                                        🎸
+                                    {% elif 'piano' in user_skill.skill.name|lower %}
+                                        🎹
+                                    {% elif 'web' in user_skill.skill.name|lower or 'react' in user_skill.skill.name|lower %}
+                                        💻
+                                    {% elif 'design' in user_skill.skill.name|lower %}
+                                        🎨
+                                    {% elif 'data' in user_skill.skill.name|lower or 'python' in user_skill.skill.name|lower %}
+                                        📊
+                                    {% else %}
+                                        🔧
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h3 class="skill-name-enhanced">{{ user_skill.skill.name }}</h3>
+                                    <span class="skill-badge-verified">
+                                        <i class="bi bi-patch-check-fill"></i> Verified
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Classes Taught -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="bi bi-collection-play-fill"></i>
+                            Classes by {{ viewed_user.first_name }}
+                        </h2>
+                        {% if total_classes > 6 %}
+                        <a href="{% url 'skills:class_list' %}?teacher={{ viewed_user.username }}" class="btn btn-view-all">
+                            View All
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% if public_classes %}
+                    <div class="classes-grid-enhanced">
+                        {% for class in public_classes %}
+                        <a href="{% url 'skills:class_detail' class.slug %}" class="class-card-enhanced">
+                            <div class="class-image-wrapper">
+                                {% if class.thumbnail %}
+                                    <img src="{{ class.thumbnail.url }}" alt="{{ class.title }}">
+                                {% endif %}
+                            </div>
+                            <div class="class-card-content">
+                                <h3 class="class-title-enhanced">{{ class.title }}</h3>
+                                <div class="class-meta-enhanced">
+                                    <span>{{ class.get_difficulty_display }}</span>
+                                    <span>•</span>
+                                    <span>{{ class.duration_minutes }}m</span>
+                                    {% if class.avg_rating > 0 %}
+                                    <span>•</span>
+                                    <div class="class-rating">
+                                        <i class="bi bi-star-fill"></i>
+                                        <span>{{ class.avg_rating|floatformat:1 }} ({{ class.reviews_count }})</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎓</div>
+                        <h3>No classes published yet</h3>
+                        <p>This teacher hasn't published any classes yet.</p>
                     </div>
                     {% endif %}
                 </div>
+
+                <!-- Recent Reviews -->
+                {% if recent_reviews %}
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="bi bi-star-fill"></i>
+                            Recent Reviews
+                        </h2>
+                    </div>
+                    <div class="reviews-list">
+                        {% for review in recent_reviews %}
+                        <div class="review-item">
+                            <div class="review-header">
+                                <div class="reviewer-avatar">
+                                    {% user_avatar review.reviewer size='small' %}
+                                </div>
+                                <div class="reviewer-info">
+                                    <div class="reviewer-name">{{ review.reviewer.first_name }} {{ review.reviewer.last_name }}</div>
+                                    <div class="review-class">{{ review.teaching_class.title }}</div>
+                                </div>
+                                <div class="review-rating">
+                                    {% for i in "12345"|make_list %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                            <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% if review.comment %}
+                            <div class="review-comment">{{ review.comment }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Learning Goals -->
+                {% if learning_skills %}
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="bi bi-book-fill"></i>
+                            Learning Goals
+                        </h2>
+                    </div>
+                    <div class="skills-grid">
+                        {% for user_skill in learning_skills %}
+                        <div class="skill-card-enhanced">
+                            <div class="skill-header-enhanced">
+                                <div class="skill-icon-enhanced">
+                                    <i class="bi bi-bookmark-fill"></i>
+                                </div>
+                                <div>
+                                    <h3 class="skill-name-enhanced">{{ user_skill.skill.name }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="profile-sidebar">
+                {% if not is_own_profile and request.user.is_authenticated %}
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Connect</h3>
+                    <a href="{% url 'chat:messages' %}?user={{ viewed_user.username }}" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                        <i class="bi bi-chat-dots-fill"></i> Send Message
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if total_classes > 0 %}
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">Teacher Stats</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--profile-muted); font-weight: 600;">Classes</span>
+                            <span style="font-weight: 700; color: var(--profile-text);">{{ total_classes }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--profile-muted); font-weight: 600;">Students</span>
+                            <span style="font-weight: 700; color: var(--profile-text);">{{ total_students }}</span>
+                        </div>
+                        {% if avg_rating > 0 %}
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--profile-muted); font-weight: 600;">Rating</span>
+                            <span style="font-weight: 700; color: var(--profile-text);">{{ avg_rating }} ⭐</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
-
-        {% if profile.bio %}
-        <div class="profile-bio">
-            {{ profile.bio }}
-        </div>
-        {% endif %}
-
-        {% if not is_own_profile and request.user.is_authenticated %}
-        <div class="profile-actions" style="margin-top: 24px;">
-            <a href="{% url 'chat:messages' %}?user={{ viewed_user.username }}" class="btn btn-primary">
-                <i class="bi bi-chat-dots-fill"></i> Send Message
-            </a>
-            <a href="#" class="btn btn-secondary">
-                <i class="bi bi-person-plus-fill"></i> Connect
-            </a>
-        </div>
-        {% endif %}
-
-        {% if is_own_profile %}
-        <div class="profile-actions" style="margin-top: 24px;">
-            <a href="{% url 'users:profile' %}" class="btn btn-primary">
-                View My Full Profile
-            </a>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Classes Taught -->
-    <div class="section">
-        <h2 class="section-title">
-            <i class="bi bi-collection-play-fill"></i> Classes by {{ viewed_user.username }}
-        </h2>
-        {% if public_classes %}
-        <div class="skills-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
-            {% for c in public_classes %}
-            <a href="{% url 'skills:class_detail' c.slug %}" class="skill-card" style="text-decoration:none;">
-                <div class="skill-icon">🎓</div>
-                <div class="skill-info">
-                    <div class="skill-name">{{ c.title }}</div>
-                    <div class="skill-level">{{ c.get_difficulty_display }} • {{ c.duration_minutes }}m</div>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>No classes published yet</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Learning Skills -->
-    <div class="section">
-        <h2 class="section-title">
-            <i class="bi bi-book-fill"></i> Learning Goals
-        </h2>
-        {% if learning_skills %}
-        <div class="skills-grid">
-            {% for user_skill in learning_skills %}
-            <div class="skill-card">
-                <div class="skill-icon"><i class="bi bi-bookmark-fill"></i></div>
-                <div class="skill-info">
-                    <div class="skill-name">{{ user_skill.skill.name }}</div>
-                    <div class="skill-level">Wants to learn</div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>No learning goals listed yet</p>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}
-

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load user_tags %}
 
 {% block content %}
 <div class="detail-page">
@@ -72,11 +73,7 @@
         
         <div class="teacher-card">
           <div class="teacher-avatar">
-            {% if cls.teacher.profile.avatar %}
-              <img src="{{ cls.teacher.profile.avatar.url }}" alt="{{ cls.teacher.username }}" />
-            {% else %}
-              <div class="avatar-placeholder">{{ cls.teacher.username|first|upper }}</div>
-            {% endif %}
+            {% user_avatar cls.teacher size='medium' %}
           </div>
           <div class="teacher-info">
             <a href="{% url 'users:view_profile' cls.teacher.username %}" class="teacher-name">{{ cls.teacher.username }}</a>
@@ -209,11 +206,7 @@
       <h2 class="section-title">Meet Your Teacher</h2>
       <div class="teacher-profile">
         <div class="teacher-avatar-lg">
-          {% if cls.teacher.profile.avatar %}
-            <img src="{{ cls.teacher.profile.avatar.url }}" alt="{{ cls.teacher.username }}" />
-          {% else %}
-            <div class="avatar-placeholder-lg">{{ cls.teacher.username|first|upper }}</div>
-          {% endif %}
+          {% user_avatar cls.teacher size='large' %}
         </div>
         <div class="teacher-bio">
           <h3 class="teacher-name-lg">
@@ -252,7 +245,7 @@
           <div class="review-card">
             <div class="review-header">
               <div class="reviewer-info">
-                <div class="reviewer-avatar">{{ r.reviewer.username|first|upper }}</div>
+                <div class="reviewer-avatar">{% user_avatar r.reviewer size='small' %}</div>
                 <strong class="reviewer-name">{{ r.reviewer.username }}</strong>
               </div>
               <span class="review-rating">⭐ {{ r.rating }}/5</span>
@@ -1383,11 +1376,7 @@ document.addEventListener('click', function(event) {
     <div id="booking-step-1" class="booking-step">
       <div class="booking-left">
         <div class="booking-teacher-info">
-          {% if cls.teacher.profile.avatar %}
-            <img src="{{ cls.teacher.profile.avatar.url }}" alt="{{ cls.teacher.username }}" class="booking-teacher-avatar">
-          {% else %}
-            <div class="booking-teacher-avatar-placeholder">{{ cls.teacher.username|first|upper }}</div>
-          {% endif %}
+          {% user_avatar cls.teacher size='medium' css_class='booking-teacher-avatar' %}
           <div>
             <h3>{{ cls.teacher.username }}</h3>
             <p>{% if cls.teacher.profile.bio %}{{ cls.teacher.profile.bio }}{% else %}Instructor{% endif %}</p>
@@ -1426,11 +1415,7 @@ document.addEventListener('click', function(event) {
     <div id="booking-step-2" class="booking-step" style="display: none;">
       <div class="booking-left">
         <div class="booking-teacher-info">
-          {% if cls.teacher.profile.avatar %}
-            <img src="{{ cls.teacher.profile.avatar.url }}" alt="{{ cls.teacher.username }}" class="booking-teacher-avatar">
-          {% else %}
-            <div class="booking-teacher-avatar-placeholder">{{ cls.teacher.username|first|upper }}</div>
-          {% endif %}
+          {% user_avatar cls.teacher size='medium' css_class='booking-teacher-avatar' %}
           <div>
             <h3>{{ cls.teacher.username }}</h3>
             <p>{% if cls.teacher.profile.bio %}{{ cls.teacher.profile.bio }}{% else %}Instructor{% endif %}</p>

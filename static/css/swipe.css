@@ -1,0 +1,621 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+.swipe-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    user-select: none;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.swipe-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 2.5rem;
+    gap: 1rem;
+}
+
+.stat-card {
+    flex: 1;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+    text-decoration: none;
+    display: block;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+    border-color: #667eea;
+}
+
+.stat-number {
+    font-size: 2.25rem;
+    font-weight: 800;
+    display: block;
+    letter-spacing: -0.5px;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+.stat-card.whitelist .stat-number {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-card.blacklist .stat-number {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-card:not(.whitelist):not(.blacklist) .stat-number {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.card-container {
+    perspective: 1000px;
+    margin-bottom: 2.5rem;
+    position: relative;
+    height: 550px;
+}
+
+.skill-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(102, 126, 234, 0.15);
+    max-height: 550px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, opacity 0.3s ease, border 0.3s ease;
+    cursor: grab;
+    touch-action: none;
+    border: 3px solid transparent;
+    background-image: 
+        linear-gradient(white, white),
+        linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    scrollbar-width: thin;
+    scrollbar-color: #667eea #f3f4f6;
+}
+
+.skill-card::-webkit-scrollbar {
+    width: 6px;
+}
+
+.skill-card::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 10px;
+    margin: 8px 0;
+}
+
+.skill-card::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+}
+
+.skill-card::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.skill-card:active {
+    cursor: grabbing;
+}
+
+.skill-card.swiping {
+    transition: none;
+}
+
+.skill-card.swipe-left {
+    animation: swipeLeft 0.5s ease-out forwards;
+}
+
+.skill-card.swipe-right {
+    animation: swipeRight 0.5s ease-out forwards;
+}
+
+@keyframes swipeLeft {
+    to {
+        transform: translateX(-150%) rotate(-30deg);
+        opacity: 0;
+    }
+}
+
+@keyframes swipeRight {
+    to {
+        transform: translateX(150%) rotate(30deg);
+        opacity: 0;
+    }
+}
+
+.swipe-indicator {
+    position: absolute;
+    top: 30px;
+    font-size: 5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 10;
+    font-weight: 900;
+}
+
+.swipe-indicator.left {
+    left: 30px;
+    color: #ef4444;
+}
+
+.swipe-indicator.right {
+    right: 30px;
+    color: #10b981;
+}
+
+.swipe-indicator.active {
+    opacity: 0.9;
+}
+
+.skill-card h2 {
+    font-size: 2.25rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+    line-height: 1.2;
+}
+
+.skill-card > p {
+    font-size: 1rem;
+    color: #6b7280;
+    line-height: 1.6;
+    font-weight: 500;
+    max-height: 4.8em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.card-divider {
+    width: 100px;
+    margin: 1rem auto;
+    border: none;
+    height: 3px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+}
+
+.class-details {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.detail-item {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin: 0.5rem 0;
+    font-weight: 500;
+}
+
+.detail-item strong {
+    color: #111827;
+    font-weight: 700;
+}
+
+.price-free {
+    font-size: 0.95rem;
+    color: #10b981;
+    margin: 0.5rem 0;
+    font-weight: 700;
+}
+
+.topics-container {
+    margin-top: 1rem;
+}
+
+.topics-label {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.topics-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.topic-tag {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    padding: 0.375rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: #374151;
+    font-weight: 600;
+    border: 1px solid #d1d5db;
+}
+
+.swipe-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    align-items: center;
+}
+
+.swipe-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
+.swipe-btn:hover {
+    transform: scale(1.1);
+}
+
+.swipe-btn:active {
+    transform: scale(0.95);
+}
+
+.swipe-btn.dislike {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626;
+    border: 2px solid #fca5a5;
+}
+
+.swipe-btn.dislike:hover {
+    box-shadow: 0 12px 30px rgba(239, 68, 68, 0.3);
+}
+
+.swipe-btn.like {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #059669;
+    border: 2px solid #6ee7b7;
+}
+
+.swipe-btn.like:hover {
+    box-shadow: 0 12px 30px rgba(16, 185, 129, 0.3);
+}
+
+.swipe-btn.undo {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #6b7280;
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+    border: 2px solid #d1d5db;
+}
+
+.swipe-btn.undo:hover {
+    background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+}
+
+.no-more-skills {
+    background: white;
+    border-radius: 24px;
+    padding: 4rem 2.5rem;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(102, 126, 234, 0.15);
+    border: 1px solid #e5e7eb;
+}
+
+.no-more-skills h3 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.no-more-skills p {
+    font-size: 1.125rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.view-lists {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2.5rem;
+}
+
+.view-lists a {
+    flex: 1;
+    padding: 1.25rem;
+    border-radius: 16px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 2px solid transparent;
+}
+
+.view-lists a.whitelist-link {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+.view-lists a.whitelist-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+    border-color: #10b981;
+}
+
+.view-lists a.blacklist-link {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+}
+
+.view-lists a.blacklist-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.25);
+    border-color: #ef4444;
+}
+
+.keyboard-hint {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.9rem;
+    margin-top: 1.5rem;
+    font-weight: 500;
+}
+
+.help-button {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.help-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+}
+
+.help-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.help-modal.active {
+    display: flex;
+}
+
+.help-content {
+    background: white;
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 3px solid transparent;
+    background-image: 
+        linear-gradient(white, white),
+        linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    position: relative;
+}
+
+.help-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.help-header h2 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.help-header p {
+    color: #6b7280;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.help-section {
+    margin-bottom: 2rem;
+}
+
+.help-section h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-section h3 span {
+    font-size: 1.5rem;
+}
+
+.help-action {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.help-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.help-text {
+    flex: 1;
+}
+
+.help-text strong {
+    color: #111827;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.help-text span {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.close-help {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+}
+
+.close-help:hover {
+    background: #e5e7eb;
+    transform: rotate(90deg);
+}
+
+@media (max-width: 640px) {
+    .help-button {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+        bottom: 1.5rem;
+        right: 1.5rem;
+    }
+
+    .help-content {
+        padding: 2rem 1.5rem;
+    }
+
+    .help-header h2 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .swipe-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .card-container {
+        height: 450px;
+    }
+
+    .skill-card {
+        padding: 2rem 1.5rem;
+        min-height: 400px;
+        border-radius: 20px;
+    }
+
+    .skill-card h2 {
+        font-size: 2rem;
+    }
+
+    .swipe-indicator {
+        font-size: 3.5rem;
+        top: 20px;
+    }
+
+    .swipe-indicator.left {
+        left: 20px;
+    }
+
+    .swipe-indicator.right {
+        right: 20px;
+    }
+
+    .swipe-btn {
+        width: 70px;
+        height: 70px;
+        font-size: 1.75rem;
+    }
+
+    .swipe-btn.undo {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+}
