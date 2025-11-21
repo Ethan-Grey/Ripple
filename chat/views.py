@@ -187,7 +187,26 @@ def get_or_create_conversation(user1, user2):
         participants=user2
     ).prefetch_related('participants').first()
     
-    if not conversation:
+    if conversation:
+        # Check if conversation is deleted for either user and restore it
+        for user in [user1, user2]:
+            try:
+                status = ConversationUserStatus.objects.get(
+                    conversation=conversation,
+                    user=user
+                )
+                if status.is_deleted:
+                    # Restore the conversation by un-deleting it
+                    status.is_deleted = False
+                    status.deleted_at = None
+                    status.is_archived = False  # Also un-archive if it was archived
+                    status.archived_at = None
+                    status.save()
+            except ConversationUserStatus.DoesNotExist:
+                # No status record, conversation is not deleted
+                pass
+    else:
+        # Create new conversation
         conversation = Conversation.objects.create()
         conversation.participants.add(user1, user2)
     

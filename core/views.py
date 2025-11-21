@@ -262,7 +262,9 @@ def search(request):
             Q(first_name__icontains=q) |
             Q(last_name__icontains=q) |
             Q(email__icontains=q)
-        ).exclude(is_superuser=True).select_related('profile')[:10]
+        ).filter(
+            is_active=True  # Only show active users
+        ).select_related('profile').distinct().order_by('username')[:10]
     
     # Search skills with teacher counts
     skill_results = []

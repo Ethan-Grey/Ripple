@@ -216,6 +216,8 @@ def profile_view(request):
 def view_user_profile(request, username):
     """View another user's public profile"""
     from django.contrib.auth.models import User
+    from django.db.models import Avg, Count, Q
+    from skills.models import ClassReview, ClassEnrollment
     
     user = get_object_or_404(User, username=username)
     profile = get_object_or_404(Profile, user=user)
@@ -232,13 +234,37 @@ def view_user_profile(request, username):
         wants_to_learn=True
     ).select_related('skill')
     
+    # Get public classes
+    public_classes = TeachingClass.objects.filter(teacher=user, is_published=True).order_by('-created_at')
+    
+    # Calculate statistics
+    total_classes = public_classes.count()
+    total_students = ClassEnrollment.objects.filter(
+        teaching_class__teacher=user,
+        teaching_class__is_published=True,
+        status=ClassEnrollment.ACTIVE
+    ).count()
+    
+    # Get reviews for all classes
+    reviews = ClassReview.objects.filter(teaching_class__teacher=user, teaching_class__is_published=True)
+    total_reviews = reviews.count()
+    avg_rating = reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+    
+    # Get recent reviews (last 3)
+    recent_reviews = reviews.select_related('reviewer', 'teaching_class').order_by('-created_at')[:3]
+    
     context = {
         'viewed_user': user,
         'profile': profile,
         'teaching_skills': teaching_skills,
         'learning_skills': learning_skills,
         'is_own_profile': request.user == user if request.user.is_authenticated else False,
-        'public_classes': TeachingClass.objects.filter(teacher=user, is_published=True).order_by('-created_at'),
+        'public_classes': public_classes[:6],  # Show first 6 classes
+        'total_classes': total_classes,
+        'total_students': total_students,
+        'total_reviews': total_reviews,
+        'avg_rating': round(avg_rating, 1) if avg_rating else 0,
+        'recent_reviews': recent_reviews,
     }
     return render(request, 'users/profile/view_profile.html', context)
 
