@@ -7,6 +7,21 @@
     .page-body > .alert {
         display: none !important;
     }
+    
+    /* Ensure hamburger menu button is always accessible */
+    .toggle-sidebar-btn,
+    #sidebarToggle {
+        z-index: 1002 !important;
+        pointer-events: auto !important;
+        position: fixed !important;
+    }
+    
+    /* Ensure messages page doesn't block the hamburger button */
+    .messages-page,
+    .messages-container {
+        position: relative;
+        z-index: 0;
+    }
 </style>
 {% endblock %}
 
@@ -17,6 +32,8 @@
     min-height: calc(100vh - 80px);
     background: var(--background, #f9fafb);
     padding: 24px;
+    position: relative;
+    z-index: 0;
 }
 
 .messages-container {
@@ -30,6 +47,8 @@
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
     border: 1px solid var(--border, #e5e7eb);
+    position: relative;
+    z-index: 0;
 }
 
 /* Conversations Sidebar */
@@ -550,18 +569,101 @@
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
+/* Mobile Back Button */
+.mobile-back-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--background, #f9fafb);
+    border: 2px solid var(--border, #e5e7eb);
+    color: var(--text, #111827);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.mobile-back-btn:hover {
+    background: var(--border, #e5e7eb);
+    transform: translateX(-2px);
+}
+
+.mobile-back-btn i {
+    font-size: 20px;
+}
+
 /* Responsive Design */
 @media (max-width: 968px) {
     .messages-container {
         grid-template-columns: 1fr;
+        position: relative;
+        overflow: hidden;
     }
     
     .conversations-sidebar {
-        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+        background: var(--card, white);
+        display: block;
+        transform: translateX(-100%);
+        transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        will-change: transform;
+    }
+    
+    .conversations-sidebar:not(.hidden) {
+        transform: translateX(0);
+        pointer-events: auto;
+    }
+    
+    .conversations-sidebar.hidden {
+        transform: translateX(-100%);
+        pointer-events: none;
+    }
+    
+    .chat-area {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2;
+        display: block;
+        transform: translateX(100%);
+        transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        will-change: transform;
+    }
+    
+    .chat-area.hidden {
+        transform: translateX(100%);
+        pointer-events: none;
+    }
+    
+    .chat-area:not(.hidden) {
+        transform: translateX(0);
+        pointer-events: auto;
+    }
+    
+    .mobile-back-btn {
+        display: flex;
+    }
+    
+    .empty-chat {
+        display: none !important;
     }
     
     .messages-page {
         padding: 16px;
+    }
+    
+    .messages-container {
+        height: calc(100vh - 120px);
     }
 }
 
@@ -747,7 +849,8 @@
                     <div class="conversation-swipe-wrapper" data-conversation-id="{{ conversation.id }}">
                         <a href="?conversation={{ conversation.id }}{% if view_archived %}&archived=true{% endif %}" 
                            class="conversation-item {% if selected_conversation.id == conversation.id %}active{% endif %}"
-                           data-conversation-id="{{ conversation.id }}">
+                           data-conversation-id="{{ conversation.id }}"
+                           onclick="if (window.innerWidth <= 968) { event.preventDefault(); showChatView({{ conversation.id }}); return false; }">
                             <div class="conversation-user">
                                 <div class="conversation-avatar">
                                     {{ conversation.other_user.first_name|first|upper }}{{ conversation.other_user.last_name|first|upper }}
@@ -817,7 +920,10 @@
                 <!-- Chat Header -->
                 <div class="chat-header">
                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <div class="chat-user-info">
+                        <div class="chat-user-info" style="display: flex; align-items: center;">
+                            <button class="mobile-back-btn" onclick="showConversationsList()" aria-label="Back to conversations">
+                                <i class="bi bi-arrow-left"></i>
+                            </button>
                             <div class="chat-avatar">
                                 {{ other_user.first_name|first|upper }}{{ other_user.last_name|first|upper }}
                             </div>
@@ -1194,6 +1300,156 @@ function setupConfirmHandler() {
 // Initialize on page load
 setupConfirmHandler();
 
+// Mobile view management
+function isMobileView() {
+    return window.innerWidth <= 968;
+}
+
+function showConversationsList() {
+    if (!isMobileView()) return;
+    
+    const sidebar = document.querySelector('.conversations-sidebar');
+    const chatArea = document.querySelector('.chat-area');
+    
+    // First, slide chat out to the right
+    if (chatArea) {
+        chatArea.classList.add('hidden');
+        // Force reflow to ensure transition starts immediately
+        void chatArea.offsetHeight;
+    }
+    
+    // Wait for chat to partially slide out, then slide sidebar in from the left
+    // This creates a smooth sequential animation where chat exits first
+    setTimeout(() => {
+        if (sidebar) {
+            sidebar.classList.remove('hidden');
+            // Force reflow to ensure transition starts
+            void sidebar.offsetHeight;
+        }
+    }, 120); // Delay to let chat start sliding out first (about 30% of animation)
+    
+    // Update URL without conversation parameter
+    const url = new URL(window.location);
+    url.searchParams.delete('conversation');
+    window.history.pushState({}, '', url);
+}
+
+function showChatView(conversationId) {
+    if (!isMobileView()) {
+        // Desktop: normal navigation
+        window.location.href = `?conversation=${conversationId}{% if view_archived %}&archived=true{% endif %}`;
+        return;
+    }
+    
+    const sidebar = document.querySelector('.conversations-sidebar');
+    const chatArea = document.querySelector('.chat-area');
+    
+    // Hide sidebar first, then show chat area with animation
+    if (sidebar) {
+        sidebar.classList.add('hidden');
+    }
+    
+    // Small delay to allow sidebar to start sliding out
+    setTimeout(() => {
+        if (chatArea) {
+            chatArea.classList.remove('hidden');
+            // Force reflow to ensure transition
+            chatArea.offsetHeight;
+        }
+    }, 50);
+    
+    // Update URL with conversation parameter and reload to get conversation data
+    const url = new URL(window.location);
+    url.searchParams.set('conversation', conversationId);
+    window.location.href = url.toString();
+}
+
+// Handle initial state on mobile
+if (isMobileView()) {
+    const hasConversation = {% if selected_conversation %}true{% else %}false{% endif %};
+    
+    const sidebar = document.querySelector('.conversations-sidebar');
+    const chatArea = document.querySelector('.chat-area');
+    
+    // Set initial state without animation on page load
+    if (hasConversation) {
+        // Show chat view, hide sidebar
+        if (sidebar) {
+            sidebar.classList.add('hidden');
+            sidebar.style.transition = 'none'; // No animation on initial load
+        }
+        if (chatArea) {
+            chatArea.classList.remove('hidden');
+            chatArea.style.transition = 'none'; // No animation on initial load
+        }
+        // Re-enable transitions after initial state is set
+        setTimeout(() => {
+            if (sidebar) sidebar.style.transition = '';
+            if (chatArea) chatArea.style.transition = '';
+        }, 50);
+    } else {
+        // Show sidebar, hide chat area
+        if (sidebar) {
+            sidebar.classList.remove('hidden');
+            sidebar.style.transition = 'none'; // No animation on initial load
+        }
+        if (chatArea) {
+            chatArea.classList.add('hidden');
+            chatArea.style.transition = 'none'; // No animation on initial load
+        }
+        // Re-enable transitions after initial state is set
+        setTimeout(() => {
+            if (sidebar) sidebar.style.transition = '';
+            if (chatArea) chatArea.style.transition = '';
+        }, 50);
+    }
+}
+
+// Handle window resize
+let resizeTimer;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+        if (!isMobileView()) {
+            // Desktop: show both
+            const sidebar = document.querySelector('.conversations-sidebar');
+            const chatArea = document.querySelector('.chat-area');
+            if (sidebar) {
+                sidebar.classList.remove('hidden');
+                sidebar.style.position = '';
+                sidebar.style.display = '';
+            }
+            if (chatArea) {
+                chatArea.classList.remove('hidden');
+                chatArea.style.position = '';
+                chatArea.style.display = '';
+            }
+        } else {
+            // Mobile: apply mobile logic
+            const hasConversation = {% if selected_conversation %}true{% else %}false{% endif %};
+            const sidebar = document.querySelector('.conversations-sidebar');
+            const chatArea = document.querySelector('.chat-area');
+            if (hasConversation) {
+                if (sidebar) {
+                    sidebar.classList.add('hidden');
+                }
+                if (chatArea) {
+                    chatArea.classList.remove('hidden');
+                    chatArea.offsetHeight; // Force reflow
+                }
+            } else {
+                if (sidebar) {
+                    sidebar.classList.remove('hidden');
+                    sidebar.offsetHeight; // Force reflow
+                }
+                if (chatArea) {
+                    chatArea.classList.add('hidden');
+                }
+            }
+        }
+    }, 250);
+});
+
 // Archive conversation
 function archiveConversation(conversationId) {
     fetch(`{% url 'chat:archive_conversation' 0 %}`.replace('0', conversationId), {
@@ -1463,6 +1719,15 @@ function showErrorModal(message) {
 
             // Click handler - close swipe if clicked on item (not buttons)
             item.addEventListener('click', (e) => {
+                // Don't interfere with hamburger menu or other important buttons
+                if (e.target.closest('.toggle-sidebar-btn') || 
+                    e.target.closest('#sidebarToggle') ||
+                    e.target.closest('.mobile-back-btn') ||
+                    e.target.closest('#sidebar') ||
+                    e.target.closest('.overlay')) {
+                    return;
+                }
+                
                 // Don't interfere if we just swiped
                 if (justSwiped) {
                     e.preventDefault();
@@ -1489,6 +1754,15 @@ function showErrorModal(message) {
 
         // Close swiped items when clicking elsewhere
         document.addEventListener('click', (e) => {
+            // Don't interfere with hamburger menu or other important buttons
+            if (e.target.closest('.toggle-sidebar-btn') || 
+                e.target.closest('#sidebarToggle') ||
+                e.target.closest('.mobile-back-btn') ||
+                e.target.closest('#sidebar') ||
+                e.target.closest('.overlay')) {
+                return;
+            }
+            
             if (!e.target.closest('.conversation-swipe-wrapper')) {
                 conversationItems.forEach(item => {
                     if (item.style.transform && item.style.transform.includes('translateX')) {
@@ -1505,6 +1779,50 @@ function showErrorModal(message) {
     } else {
         initSwipe();
     }
+})();
+
+// Ensure hamburger menu button is always accessible
+// Re-initialize if base template's script didn't run
+(function() {
+    function ensureHamburgerWorks() {
+        const toggleBtn = document.getElementById('sidebarToggle');
+        if (toggleBtn && !toggleBtn.hasAttribute('data-listener-added')) {
+            // Check if base template's listener is already there
+            const hasListener = toggleBtn.onclick !== null || 
+                               toggleBtn.getAttribute('onclick') !== null;
+            
+            if (!hasListener) {
+                // Re-add the toggle functionality
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('overlay');
+                    
+                    if (sidebar && window.innerWidth <= 1200) {
+                        const isOpen = sidebar.classList.contains('open');
+                        if (isOpen) {
+                            sidebar.classList.remove('open');
+                            if (overlay) overlay.classList.remove('active');
+                            document.body.style.overflow = '';
+                        } else {
+                            sidebar.classList.add('open');
+                            if (overlay) overlay.classList.add('active');
+                            document.body.style.overflow = 'hidden';
+                        }
+                    }
+                });
+                toggleBtn.setAttribute('data-listener-added', 'true');
+            }
+        }
+    }
+    
+    // Try immediately and after DOM is ready
+    ensureHamburgerWorks();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureHamburgerWorks);
+    }
+    // Also try after a short delay to ensure base template's script has run
+    setTimeout(ensureHamburgerWorks, 100);
 })();
 </script>
 {% endblock %}
