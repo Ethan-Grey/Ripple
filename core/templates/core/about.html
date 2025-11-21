@@ -627,8 +627,8 @@
                     <a href="/home/">Dashboard</a>
                     <a href="/swipe/">Start Swiping</a>
                 {% else %}
-                    <a href="/register/">Sign Up</a>
-                    <a href="/login/">Log In</a>
+                    <a href="{% url 'users:register' %}">Sign Up</a>
+                    <a href="{% url 'users:login' %}">Log In</a>
                 {% endif %}
             </div>
         </div>
