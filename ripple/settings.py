@@ -395,7 +395,6 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-<<<<<<< HEAD
 # Logging configuration
 LOGGING = {
     'version': 1,
