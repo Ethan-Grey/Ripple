@@ -97,6 +97,38 @@ else:
     if IS_RAILWAY and 'rippleskillshare.up.railway.app' not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append('rippleskillshare.up.railway.app')
 
+# CSRF Trusted Origins - required for HTTPS sites
+CSRF_TRUSTED_ORIGINS = []
+csrf_origins_str = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if csrf_origins_str:
+    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in csrf_origins_str.split(',') if origin.strip()])
+
+# Auto-detect Railway domain and add to CSRF_TRUSTED_ORIGINS
+railway_domain = (
+    os.getenv('RAILWAY_PUBLIC_DOMAIN') or 
+    os.getenv('RAILWAY_STATIC_URL') or 
+    ('rippleskillshare.up.railway.app' if IS_RAILWAY else None)
+)
+if railway_domain:
+    # Remove protocol if present and add https://
+    railway_domain = railway_domain.replace('https://', '').replace('http://', '').split('/')[0]
+    if railway_domain and f'https://{railway_domain}' not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(f'https://{railway_domain}')
+
+# Add localhost for development (when not on Railway)
+if DEBUG and not IS_RAILWAY:
+    CSRF_TRUSTED_ORIGINS.extend([
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ])
+    # Add local IP if available
+    try:
+        LOCAL_IP = get_local_ip()
+        if LOCAL_IP and LOCAL_IP != '127.0.0.1':
+            CSRF_TRUSTED_ORIGINS.append(f'http://{LOCAL_IP}:8000')
+    except:
+        pass
+
 
 # Application definition
 
