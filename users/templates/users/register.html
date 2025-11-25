@@ -1,5 +1,4 @@
 {% load static %}
-{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,8 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <!-- Google reCAPTCHA v2 -->
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <style>
     * {
       margin: 0;
@@ -198,28 +195,6 @@
     .auth-alert::before {
       content: '⚠️';
       font-size: 18px;
-    }
-
-    /* reCAPTCHA Container */
-    .recaptcha-container {
-      display: flex;
-      justify-content: center;
-      margin: 16px 0 8px 0;
-      padding: 12px;
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-      border-radius: 12px;
-      border: 2px solid rgba(102, 126, 234, 0.1);
-    }
-
-    .recaptcha-container > div {
-      transform-origin: center;
-    }
-
-    /* Scale reCAPTCHA on mobile */
-    @media (max-width: 480px) {
-      .recaptcha-container > div {
-        transform: scale(0.85);
-      }
     }
 
     /* Form Styles */
@@ -668,11 +643,6 @@
             >
           </div>
 
-          <!-- reCAPTCHA -->
-          <div class="recaptcha-container">
-            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
-          </div>
-
           <div class="checkbox-group">
             <input type="checkbox" id="agree-terms" name="agree_terms" class="checkbox-input" required>
             <label for="agree-terms" class="checkbox-label">
@@ -876,18 +846,11 @@
       }
     });
 
-    // Form validation on submit with reCAPTCHA
+    // Form validation on submit
     registerForm.addEventListener('submit', function(e) {
       if (!agreeCheckbox.checked) {
         e.preventDefault();
         alert('You must agree to the Terms of Service and Privacy Policy to register.');
-        return false;
-      }
-
-      const recaptchaResponse = grecaptcha.getResponse();
-      if (recaptchaResponse.length === 0) {
-        e.preventDefault();
-        alert('Please complete the reCAPTCHA verification');
         return false;
       }
     });

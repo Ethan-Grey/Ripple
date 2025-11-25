@@ -1,20 +1,22 @@
-#Email Settings
-EMAIL_HOST_USER= rippleskillshare@gmail.com
-EMAIL_HOST_PASSWORD= yhtn imfh xgwt etnu
-DEFAULT_FROM_EMAIL= Ripple@gmail.com
+# Django Settings
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 
-#Django Settings
-SECRET_KEY= t#vq$(p)-2vkgu7op6yrsyy%7i=jeh#3ex&byf@ld+cp7f5-2!
+# Email Settings
+EMAIL_HOST_USER=your_email@gmail.com
+EMAIL_HOST_PASSWORD=your_app_password
+DEFAULT_FROM_EMAIL=noreply@ripple.com
 
-#Google OAuth Settings
-GOOGLE_CLIENT_ID=425312038747-5k24v9dbkdc9spsvpfdnv80k6rpgorfk.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+# Email Backend (console or smtp)
+# Set USE_CONSOLE_EMAIL=True for development (emails in console)
+# Set USE_CONSOLE_EMAIL=False for production (real emails)
+USE_CONSOLE_EMAIL=False
 
-#Stripe Settings
-STRIPE_SECRET_KEY=sk_test_51SO4lJB1IprhiClbPy0faLzsKhQaCIakVPWi0lrKcyIXzMJe8TAvOe0eunC1GUxzTm0TtP1W2t13zmMb2YOOcqsF003CdDOsYK
-STRIPE_PUBLISHABLE_KEY=pk_test_51SO4JBl1prhiclbuyMvX2fo3E0hVOyRun5XaZC8E868iFR7oauRywgBW5i14PegCg8jh99kgMmxWK3KYq3LhB8000Zcfbr4Qe
+# Database (for production)
+# DATABASE_URL=postgresql://user:password@localhost:5432/ripple
 
-USE_CONSOLE_EMAIL = False
-
-RECAPTCHA_SITE_KEY=6LeOUhMsAAAAAPfc2guOWOvuPnEj1LqdAfu133M4
-RECAPTCHA_SECRET_KEY=6LeOUhMsAAAAANkiR-Oyum-zy7XbMzBCubgQmd4h
+# Security (for production)
+# SECURE_SSL_REDIRECT=True
+# SESSION_COOKIE_SECURE=True
+# CSRF_COOKIE_SECURE=True
