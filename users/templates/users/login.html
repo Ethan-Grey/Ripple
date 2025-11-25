@@ -9,6 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Google reCAPTCHA v2 -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  
   <style>
     * {
       margin: 0;
@@ -197,6 +201,48 @@
       font-size: 18px;
     }
 
+    /* Social Login Section - SEPARATE FROM FORM */
+    .social-login-section {
+      margin-bottom: 24px;
+    }
+
+    /* Google Sign In Button */
+    .google-sign-in-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px 16px;
+      background: white;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      color: #374151;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+    }
+
+    .google-sign-in-btn:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+      color: #111827;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .google-sign-in-btn:active {
+      transform: translateY(0);
+    }
+
+    .google-icon {
+      width: 18px;
+      height: 18px;
+      margin-right: 12px;
+    }
+
     /* Form Styles */
     .login-form {
       display: flex;
@@ -276,6 +322,28 @@
       text-decoration: underline;
     }
 
+    /* reCAPTCHA Container */
+    .recaptcha-container {
+      display: flex;
+      justify-content: center;
+      margin: 8px 0;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+      border-radius: 12px;
+      border: 2px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .recaptcha-container > div {
+      transform-origin: center;
+    }
+
+    /* Scale reCAPTCHA on mobile */
+    @media (max-width: 480px) {
+      .recaptcha-container > div {
+        transform: scale(0.85);
+      }
+    }
+
     .submit-btn {
       width: 100%;
       padding: 16px;
@@ -291,13 +359,18 @@
       margin-top: 8px;
     }
 
-    .submit-btn:hover {
+    .submit-btn:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
 
-    .submit-btn:active {
+    .submit-btn:active:not(:disabled) {
       transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .form-footer {
@@ -372,43 +445,6 @@
       font-size: 13px;
       color: #9ca3af;
       font-weight: 600;
-    }
-
-    /* Google Sign In Button */
-    .google-sign-in-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      padding: 14px 16px;
-      background: white;
-      border: 2px solid #e5e7eb;
-      border-radius: 12px;
-      color: #374151;
-      font-size: 15px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      margin-top: 20px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .google-sign-in-btn:hover {
-      background: #f9fafb;
-      border-color: #d1d5db;
-      color: #111827;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-      transform: translateY(-1px);
-    }
-
-    .google-sign-in-btn:active {
-      transform: translateY(0);
-    }
-
-    .google-icon {
-      width: 18px;
-      height: 18px;
-      margin-right: 12px;
     }
 
     /* Responsive Design */
@@ -506,8 +542,20 @@
           {% endfor %}
         {% endif %}
 
-        <!-- Login Form -->
-        <form method="post" action="{% url 'users:login' %}" class="login-form">
+        <!-- Social Login Section - OUTSIDE OF FORM -->
+        <div class="social-login-section">
+          <a href="{% provider_login_url 'google' process='login' %}" class="google-sign-in-btn">
+            <img src="https://www.google.com/favicon.ico" alt="Google" class="google-icon">
+            Sign in with Google
+          </a>
+        </div>
+
+        <div class="divider">
+          <span class="divider-text">OR</span>
+        </div>
+
+        <!-- Login Form with reCAPTCHA -->
+        <form method="post" action="{% url 'users:login' %}" class="login-form" id="loginForm">
           {% csrf_token %}
           
           <div class="form-group">
@@ -544,20 +592,13 @@
             <a class="forgot-link" href="{% url 'users:password_reset' %}">Forgot password?</a>
           </div>
 
-          <button type="submit" class="submit-btn">Sign In</button>
+          <!-- reCAPTCHA only for regular login -->
+          <div class="recaptcha-container">
+            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="loginSubmitBtn">Sign In</button>
         </form>
-
-        <div class="divider">
-          <span class="divider-text">OR</span>
-        </div>
-
-        <!-- Google Sign In Button -->
-        <a href="{% provider_login_url 'google' process='login' %}" 
-           class="google-sign-in-btn"
-           id="googleSignInBtn">
-          <img src="https://www.google.com/favicon.ico" alt="Google" class="google-icon">
-          Sign in with Google
-        </a>
 
         <div class="form-footer">
           <p class="footer-text">
@@ -582,6 +623,16 @@
       const usernameInput = document.getElementById('username');
       if (usernameInput && !usernameInput.value) {
         usernameInput.focus();
+      }
+    });
+
+    // Form submission with reCAPTCHA validation
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      const recaptchaResponse = grecaptcha.getResponse();
+      if (recaptchaResponse.length === 0) {
+        e.preventDefault();
+        alert('Please complete the reCAPTCHA verification');
+        return false;
       }
     });
   </script>
