@@ -131,6 +131,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'users.context_processors.recaptcha_site_key',  # Add reCAPTCHA site key to templates
             ],
         },
     },
@@ -334,3 +335,9 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+# reCAPTCHA Configuration
+# Get your keys from: https://www.google.com/recaptcha/admin/create
+# Replace these with your actual keys after registration
+RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '6LeOUhMsAAAAAPfc2guOWOvuPnEj1LqdAfu133M4')
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '6LeOUhMsAAAAANkiR-Oyum-zy7XbMzBCubgQmd4h')

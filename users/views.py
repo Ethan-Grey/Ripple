@@ -18,10 +18,31 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
 from .message_utils import clear_all_messages
 from communities.models import CommunityRequest
-# Create your views here.
+import requests  # For reCAPTCHA verification
+
+
+def verify_recaptcha(recaptcha_response):
+    """Verify reCAPTCHA with Google"""
+    if not recaptcha_response:
+        return False
+    
+    url = 'https://www.google.com/recaptcha/api/siteverify'
+    data = {
+        'secret': settings.RECAPTCHA_SECRET_KEY,
+        'response': recaptcha_response
+    }
+    
+    try:
+        response = requests.post(url, data=data, timeout=5)
+        result = response.json()
+        return result.get('success', False)
+    except Exception as e:
+        print(f"reCAPTCHA verification error: {e}")
+        return False
+
 
 def custom_login(request):
-    """Custom login view that clears irrelevant messages"""
+    """Custom login view with reCAPTCHA validation"""
     if request.user.is_authenticated:
         return redirect('core:home')
     
@@ -29,14 +50,30 @@ def custom_login(request):
     clear_all_messages(request)
     
     if request.method == 'POST':
+        # Verify reCAPTCHA first
+        recaptcha_response = request.POST.get('g-recaptcha-response')
+        if not verify_recaptcha(recaptcha_response):
+            messages.error(request, 'Invalid reCAPTCHA. Please try again.')
+            form = AuthenticationForm(data=request.POST)
+            return render(request, 'users/login.html', {'form': form})
+        
+        # Proceed with authentication if reCAPTCHA is valid
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
             auth_login(request, form.get_user())
-            return redirect('core:home')
+            
+            # Handle "remember me" checkbox
+            if not request.POST.get('remember'):
+                request.session.set_expiry(0)
+            
+            # Redirect to next URL or home
+            next_url = request.GET.get('next', 'core:home')
+            return redirect(next_url)
     else:
         form = AuthenticationForm()
     
     return render(request, 'users/login.html', {'form': form})
+
 
 def register(request):
     if request.user.is_authenticated:
