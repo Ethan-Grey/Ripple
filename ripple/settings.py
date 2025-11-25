@@ -240,26 +240,47 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-# Email settings - easily switch between console and real emails
+# Email settings - SendGrid only
 USE_CONSOLE_EMAIL = os.getenv('USE_CONSOLE_EMAIL', '').lower() == 'true'
 
-# Check if SMTP credentials are available
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+# Check for SendGrid API key
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 
-# Use SMTP if credentials exist and console email is NOT explicitly enabled
-# Otherwise use console backend
-if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD and not USE_CONSOLE_EMAIL:
-    # Use SMTP when credentials are provided and console email is disabled
+# Use SendGrid if API key is provided and console email is NOT explicitly enabled
+if SENDGRID_API_KEY and not USE_CONSOLE_EMAIL:
+    # Use SendGrid SMTP API
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_HOST = 'smtp.sendgrid.net'
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
+    # SendGrid SMTP requires username to be 'apikey' and password to be the API key
+    EMAIL_HOST_USER = 'apikey'
+    EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
+    
+    # Log email configuration (without exposing API key)
+    if DEBUG:
+        print(f"\n{'='*60}")
+        print(f"Email Configuration:")
+        print(f"  Backend: SendGrid SMTP")
+        print(f"  Host: {EMAIL_HOST}")
+        print(f"  Port: {EMAIL_PORT}")
+        print(f"  From Email: {DEFAULT_FROM_EMAIL}")
+        print(f"  API Key: {'Set' if SENDGRID_API_KEY else 'Not Set'}")
+        print(f"{'='*60}\n")
 else:
     # For development: emails will be printed to console
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     DEFAULT_FROM_EMAIL = 'noreply@ripple.com'
+    if DEBUG:
+        print(f"\n{'='*60}")
+        print(f"Email Configuration: Console Backend (Development Mode)")
+        print(f"  Emails will be printed to console, not sent")
+        if not SENDGRID_API_KEY:
+            print(f"  Warning: SENDGRID_API_KEY not set!")
+        if USE_CONSOLE_EMAIL:
+            print(f"  USE_CONSOLE_EMAIL is enabled")
+        print(f"{'='*60}\n")
 
 # AllAuth settings
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # Enable email verification for regular signups

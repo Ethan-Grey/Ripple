@@ -111,14 +111,26 @@ def register(request):
                 'verification_url': verification_url,
             })
             
-            send_mail(
-                subject,
-                text_message,
-                settings.DEFAULT_FROM_EMAIL,
-                [email_value],
-                fail_silently=False,
-                html_message=html_message,
-            )
+            try:
+                send_mail(
+                    subject,
+                    text_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email_value],
+                    fail_silently=False,
+                    html_message=html_message,
+                )
+                if settings.DEBUG:
+                    print(f"Email sent successfully to {email_value}")
+            except Exception as e:
+                # Log the error but don't break the user flow
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to send email to {email_value}: {str(e)}")
+                if settings.DEBUG:
+                    print(f"ERROR: Failed to send email: {str(e)}")
+                # Still show success message to user (email might be in spam or delayed)
+                # In production, you might want to handle this differently
             
             return render(request, 'users/registration_success.html', {
                 'email': email_value

@@ -3,14 +3,16 @@ SECRET_KEY=your-secret-key-here
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Email Settings
-EMAIL_HOST_USER=your_email@gmail.com
-EMAIL_HOST_PASSWORD=your_app_password
-DEFAULT_FROM_EMAIL=noreply@ripple.com
+# Email Settings - SendGrid
+# Get your API key from https://app.sendgrid.com/settings/api_keys
+SENDGRID_API_KEY=SG.your-sendgrid-api-key-here
+# IMPORTANT: This email MUST be verified in SendGrid!
+# Go to https://app.sendgrid.com → Settings → Sender Authentication → Verify a Single Sender
+DEFAULT_FROM_EMAIL=your-verified-email@example.com
 
 # Email Backend (console or smtp)
 # Set USE_CONSOLE_EMAIL=True for development (emails in console)
-# Set USE_CONSOLE_EMAIL=False for production (real emails)
+# Set USE_CONSOLE_EMAIL=False for production (real emails via SendGrid)
 USE_CONSOLE_EMAIL=False
 
 # Database (for production)
