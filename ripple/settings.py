@@ -303,6 +303,8 @@ if SENDGRID_API_KEY and not USE_CONSOLE_EMAIL:
     EMAIL_HOST_USER = 'apikey'
     EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
+    # Add timeout settings to prevent worker timeouts
+    EMAIL_TIMEOUT = 10  # 10 seconds timeout for SMTP operations
     
     # Log email configuration (without exposing API key)
     if DEBUG:

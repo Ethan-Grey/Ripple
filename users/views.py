@@ -12,12 +12,17 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import views as auth_views
+from django.urls import reverse_lazy
+import logging
 from .models import Profile, Evidence, IdentitySubmission
 from skills.models import UserSkill, Skill, SkillEvidence, TeachingClass, TeacherApplication, ClassEnrollment
 from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
 from .message_utils import clear_all_messages
 from communities.models import CommunityRequest
+
+logger = logging.getLogger(__name__)
 # Create your views here.
 
 def custom_login(request):
@@ -172,6 +177,31 @@ def verify_email(request, uidb64, token):
 def logout_direct(request):
     auth_logout(request)
     return redirect('core:landing')
+
+
+class CustomPasswordResetView(auth_views.PasswordResetView):
+    """Custom password reset view with better error handling"""
+    template_name = 'users/password_reset.html'
+    email_template_name = 'users/password_reset_email.html'
+    subject_template_name = 'users/password_reset_subject.txt'
+    success_url = reverse_lazy('users:password_reset_done')
+    
+    def form_valid(self, form):
+        """Override to handle email sending errors gracefully"""
+        try:
+            # Call parent to send email
+            result = super().form_valid(form)
+            return result
+        except Exception as e:
+            # Log the error but don't crash the worker
+            logger.error(f"Failed to send password reset email: {str(e)}", exc_info=True)
+            # Log to console if in debug mode
+            if settings.DEBUG:
+                print(f"ERROR: Password reset email failed: {str(e)}")
+            # Still redirect to success page (security: don't reveal if email exists)
+            # The user will see the success message but email might not be sent
+            # In production, you might want to use a task queue for emails
+            return redirect(self.success_url)
 
 
 # Profile Views
