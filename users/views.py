@@ -46,7 +46,6 @@ def verify_recaptcha(recaptcha_response):
         print(f"reCAPTCHA verification error: {e}")
         return False
 
->>>>>>> Test
 
 def custom_login(request):
     """Custom login view with reCAPTCHA validation"""
