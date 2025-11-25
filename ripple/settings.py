@@ -110,6 +110,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'users.context_processors.recaptcha_site_key',  # Add reCAPTCHA site key to templates
             ],
         },
     },
@@ -261,3 +262,10 @@ ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 # Redirect cancelled/error social logins back to login page
 SOCIALACCOUNT_LOGIN_CANCELLED_URL = '/users/login/'
 SOCIALACCOUNT_LOGIN_ERROR_URL = '/users/login/'
+
+# reCAPTCHA Configuration
+# Get your keys from: https://www.google.com/recaptcha/admin/create
+# Replace these with your actual keys after registration
+RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '6LeOUhMsAAAAAPfc2guOWOvuPnEj1LqdAfu133M4')
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '6LeOUhMsAAAAANkiR-Oyum-zy7XbMzBCubgQmd4h')
+
