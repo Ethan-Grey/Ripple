@@ -294,25 +294,15 @@ SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 
 # Use SendGrid if API key is provided and console email is NOT explicitly enabled
 if SENDGRID_API_KEY and not USE_CONSOLE_EMAIL:
-    # Use SendGrid SMTP API
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.sendgrid.net'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    # SendGrid SMTP requires username to be 'apikey' and password to be the API key
-    EMAIL_HOST_USER = 'apikey'
-    EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+    # Use SendGrid Web API (faster and more reliable than SMTP)
+    EMAIL_BACKEND = 'ripple.email_backends.SendGridBackend'
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
-    # Add timeout settings to prevent worker timeouts
-    EMAIL_TIMEOUT = 10  # 10 seconds timeout for SMTP operations
     
     # Log email configuration (without exposing API key)
     if DEBUG:
         print(f"\n{'='*60}")
         print(f"Email Configuration:")
-        print(f"  Backend: SendGrid SMTP")
-        print(f"  Host: {EMAIL_HOST}")
-        print(f"  Port: {EMAIL_PORT}")
+        print(f"  Backend: SendGrid Web API")
         print(f"  From Email: {DEFAULT_FROM_EMAIL}")
         print(f"  API Key: {'Set' if SENDGRID_API_KEY else 'Not Set'}")
         print(f"{'='*60}\n")
