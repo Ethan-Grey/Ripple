@@ -241,25 +241,25 @@ AUTHENTICATION_BACKENDS = [
 
 
 # Email settings - easily switch between console and real emails
-USE_CONSOLE_EMAIL = os.getenv('USE_CONSOLE_EMAIL', 'True' if DEBUG else 'False').lower() == 'true'
+USE_CONSOLE_EMAIL = os.getenv('USE_CONSOLE_EMAIL', '').lower() == 'true'
 
 # Check if SMTP credentials are available
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
-# In DEBUG mode or if SMTP credentials are missing, use console email
-# This prevents SMTP errors during development
-if USE_CONSOLE_EMAIL or DEBUG or not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
-    # For development: emails will be printed to console
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    DEFAULT_FROM_EMAIL = 'noreply@ripple.com'
-else:
-    # For production: use SMTP
+# Use SMTP if credentials exist and console email is NOT explicitly enabled
+# Otherwise use console backend
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD and not USE_CONSOLE_EMAIL:
+    # Use SMTP when credentials are provided and console email is disabled
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
+else:
+    # For development: emails will be printed to console
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'noreply@ripple.com'
 
 # AllAuth settings
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # Enable email verification for regular signups
