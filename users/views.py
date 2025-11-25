@@ -180,28 +180,44 @@ def logout_direct(request):
 
 
 class CustomPasswordResetView(auth_views.PasswordResetView):
-    """Custom password reset view with better error handling"""
+    """Custom password reset view with better error handling and logging"""
     template_name = 'users/password_reset.html'
     email_template_name = 'users/password_reset_email.html'
     subject_template_name = 'users/password_reset_subject.txt'
     success_url = reverse_lazy('users:password_reset_done')
     
     def form_valid(self, form):
-        """Override to handle email sending errors gracefully"""
+        """Override to handle email sending with better logging"""
+        email = form.cleaned_data.get('email', '')
+        logger.info(f"Password reset requested for email: {email}")
+        
         try:
             # Call parent to send email
             result = super().form_valid(form)
+            logger.info(f"Password reset email sent successfully to: {email}")
             return result
         except Exception as e:
             # Log the error but don't crash the worker
-            logger.error(f"Failed to send password reset email: {str(e)}", exc_info=True)
-            # Log to console if in debug mode
-            if settings.DEBUG:
-                print(f"ERROR: Password reset email failed: {str(e)}")
+            error_msg = f"Failed to send password reset email to {email}: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            # Log to console for Railway logs
+            print(f"ERROR: {error_msg}")
             # Still redirect to success page (security: don't reveal if email exists)
             # The user will see the success message but email might not be sent
-            # In production, you might want to use a task queue for emails
             return redirect(self.success_url)
+    
+    def post(self, request, *args, **kwargs):
+        """Override post to add logging"""
+        form = self.get_form()
+        if form.is_valid():
+            email = form.cleaned_data.get('email', '')
+            # Check if user exists (for logging only, don't reveal to user)
+            user_exists = User.objects.filter(email=email).exists()
+            if user_exists:
+                logger.info(f"Password reset requested for existing user: {email}")
+            else:
+                logger.info(f"Password reset requested for non-existent email: {email}")
+        return super().post(request, *args, **kwargs)
 
 
 # Profile Views
