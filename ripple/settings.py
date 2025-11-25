@@ -46,9 +46,12 @@ def get_local_ip():
     except:
         return '127.0.0.1'
 
+# Check if we're running on Railway
+IS_RAILWAY = bool(os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('RAILWAY_PUBLIC_DOMAIN'))
+
 # Production: Use ALLOWED_HOSTS from environment
 # Development: Use localhost and local IP
-if DEBUG:
+if DEBUG and not IS_RAILWAY:
     LOCAL_IP = get_local_ip()
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost', LOCAL_IP]
     # Print the IP for easy access
@@ -78,10 +81,21 @@ else:
     if '127.0.0.1' not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append('127.0.0.1')
     
-    # Add Railway domain if not already included
-    railway_domain = os.getenv('RAILWAY_PUBLIC_DOMAIN', 'rippleskillshare.up.railway.app')
-    if railway_domain and railway_domain not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(railway_domain)
+    # Add Railway domain - check multiple possible environment variables
+    railway_domain = (
+        os.getenv('RAILWAY_PUBLIC_DOMAIN') or 
+        os.getenv('RAILWAY_STATIC_URL') or 
+        'rippleskillshare.up.railway.app'
+    )
+    if railway_domain:
+        # Remove protocol if present
+        railway_domain = railway_domain.replace('https://', '').replace('http://', '').split('/')[0]
+        if railway_domain and railway_domain not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(railway_domain)
+    
+    # If on Railway but domain not found, add default
+    if IS_RAILWAY and 'rippleskillshare.up.railway.app' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('rippleskillshare.up.railway.app')
 
 
 # Application definition
