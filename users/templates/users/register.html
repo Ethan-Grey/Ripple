@@ -521,6 +521,86 @@
       color: #111827;
     }
 
+    /* Captcha Popup Modal */
+    .captcha-popup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .captcha-popup.active {
+      display: flex;
+    }
+
+    .captcha-popup-content {
+      background: white;
+      max-width: 400px;
+      width: 100%;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      position: relative;
+      animation: slideUp 0.3s ease;
+      text-align: center;
+    }
+
+    .captcha-popup-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      background: #fef3c7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .captcha-popup-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+
+    .captcha-popup-message {
+      font-size: 15px;
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .captcha-popup-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      width: 100%;
+    }
+
+    .captcha-popup-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .captcha-popup-button:active {
+      transform: translateY(0);
+    }
+
     /* Responsive Design */
     @media (max-width: 968px) {
       .auth-container {
@@ -895,7 +975,7 @@
           const recaptchaResponse = grecaptcha.getResponse();
           if (recaptchaResponse.length === 0) {
             e.preventDefault();
-            alert('Please complete the reCAPTCHA verification');
+            showCaptchaPopup('Please complete the reCAPTCHA verification to continue.');
             return false;
           }
         } else {
@@ -905,7 +985,7 @@
               const recaptchaResponse = grecaptcha.getResponse();
               if (recaptchaResponse.length === 0) {
                 e.preventDefault();
-                alert('Please complete the reCAPTCHA verification');
+                showCaptchaPopup('Please complete the reCAPTCHA verification to continue.');
                 return false;
               }
             }
@@ -921,6 +1001,66 @@
         usernameInput.focus();
       }
     });
+  </script>
+
+  <!-- Captcha Popup Modal -->
+  <div id="captchaPopup" class="captcha-popup">
+    <div class="captcha-popup-content">
+      <div class="captcha-popup-icon">⚠️</div>
+      <div class="captcha-popup-title">reCAPTCHA Required</div>
+      <div class="captcha-popup-message" id="captchaPopupMessage">
+        Please complete the reCAPTCHA verification to continue.
+      </div>
+      <button class="captcha-popup-button" id="captchaPopupButton">OK</button>
+    </div>
+  </div>
+
+  <script>
+    // Function to show captcha popup with speech
+    function showCaptchaPopup(message) {
+      const popup = document.getElementById('captchaPopup');
+      const messageEl = document.getElementById('captchaPopupMessage');
+      const button = document.getElementById('captchaPopupButton');
+      
+      // Set the message
+      messageEl.textContent = message || 'Please complete the reCAPTCHA verification to continue.';
+      
+      // Show the popup
+      popup.classList.add('active');
+      
+      // Speak the message using Web Speech API
+      if ('speechSynthesis' in window) {
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(message || 'Please complete the reCAPTCHA verification to continue.');
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        // Speak the message
+        window.speechSynthesis.speak(utterance);
+      }
+      
+      // Close popup when button is clicked
+      button.onclick = function() {
+        popup.classList.remove('active');
+        // Stop speech if still speaking
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+      };
+      
+      // Close popup when clicking outside
+      popup.onclick = function(e) {
+        if (e.target === popup) {
+          popup.classList.remove('active');
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+          }
+        }
+      };
+    }
   </script>
 </body>
 </html>
