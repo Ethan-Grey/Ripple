@@ -1,3 +1,3 @@
-web: gunicorn ripple.wsgi:application --bind 0.0.0.0:$PORT
+web: bash start.sh
 release: python manage.py migrate --noinput
 
