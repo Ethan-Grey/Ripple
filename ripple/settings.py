@@ -157,6 +157,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'users.context_processors.recaptcha_site_key',
             ],
         },
     },
@@ -336,6 +337,10 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# Google reCAPTCHA settings
+RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '')
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '')
 
 # Custom adapters to handle email verification
 SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'

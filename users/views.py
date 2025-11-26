@@ -32,9 +32,15 @@ def verify_recaptcha(recaptcha_response):
     if not recaptcha_response:
         return False
     
+    # If reCAPTCHA is not configured, skip verification (for development)
+    recaptcha_secret = getattr(settings, 'RECAPTCHA_SECRET_KEY', None)
+    if not recaptcha_secret:
+        logger.warning("RECAPTCHA_SECRET_KEY not set, skipping reCAPTCHA verification")
+        return True  # Allow login if reCAPTCHA is not configured
+    
     url = 'https://www.google.com/recaptcha/api/siteverify'
     data = {
-        'secret': settings.RECAPTCHA_SECRET_KEY,
+        'secret': recaptcha_secret,
         'response': recaptcha_response
     }
     
@@ -43,7 +49,7 @@ def verify_recaptcha(recaptcha_response):
         result = response.json()
         return result.get('success', False)
     except Exception as e:
-        print(f"reCAPTCHA verification error: {e}")
+        logger.error(f"reCAPTCHA verification error: {e}")
         return False
 
 
@@ -56,14 +62,16 @@ def custom_login(request):
     clear_all_messages(request)
     
     if request.method == 'POST':
-        # Verify reCAPTCHA first
-        recaptcha_response = request.POST.get('g-recaptcha-response')
-        if not verify_recaptcha(recaptcha_response):
-            messages.error(request, 'Invalid reCAPTCHA. Please try again.')
-            form = AuthenticationForm(data=request.POST)
-            return render(request, 'users/login.html', {'form': form})
+        # Verify reCAPTCHA only if it's configured
+        recaptcha_secret = getattr(settings, 'RECAPTCHA_SECRET_KEY', None)
+        if recaptcha_secret:
+            recaptcha_response = request.POST.get('g-recaptcha-response')
+            if not verify_recaptcha(recaptcha_response):
+                messages.error(request, 'Invalid reCAPTCHA. Please try again.')
+                form = AuthenticationForm(data=request.POST)
+                return render(request, 'users/login.html', {'form': form})
         
-        # Proceed with authentication if reCAPTCHA is valid
+        # Proceed with authentication
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
             auth_login(request, form.get_user())

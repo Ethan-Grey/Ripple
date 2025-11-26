@@ -7,5 +7,5 @@ def recaptcha_site_key(request):
     This allows you to use {{ RECAPTCHA_SITE_KEY }} in any template.
     """
     return {
-        'RECAPTCHA_SITE_KEY': settings.RECAPTCHA_SITE_KEY
+        'RECAPTCHA_SITE_KEY': getattr(settings, 'RECAPTCHA_SITE_KEY', '')
     }

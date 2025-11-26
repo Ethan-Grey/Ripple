@@ -9,8 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <!-- Google reCAPTCHA v2 -->
+  <!-- Google reCAPTCHA v2 (only load if site key is configured) -->
+  {% if RECAPTCHA_SITE_KEY %}
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  {% endif %}
   <style>
     * {
       margin: 0;
@@ -668,10 +670,12 @@
             >
           </div>
 
-          <!-- reCAPTCHA -->
+          <!-- reCAPTCHA (only show if configured) -->
+          {% if RECAPTCHA_SITE_KEY %}
           <div class="recaptcha-container">
             <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
           </div>
+          {% endif %}
 
           <div class="checkbox-group">
             <input type="checkbox" id="agree-terms" name="agree_terms" class="checkbox-input" required>
@@ -876,7 +880,7 @@
       }
     });
 
-    // Form validation on submit with reCAPTCHA
+    // Form validation on submit with reCAPTCHA (only if reCAPTCHA is configured)
     registerForm.addEventListener('submit', function(e) {
       if (!agreeCheckbox.checked) {
         e.preventDefault();
@@ -884,11 +888,29 @@
         return false;
       }
 
-      const recaptchaResponse = grecaptcha.getResponse();
-      if (recaptchaResponse.length === 0) {
-        e.preventDefault();
-        alert('Please complete the reCAPTCHA verification');
-        return false;
+      // Only validate reCAPTCHA if it's configured
+      const recaptchaSiteKey = '{{ RECAPTCHA_SITE_KEY|default:"" }}';
+      if (recaptchaSiteKey) {
+        if (typeof grecaptcha !== 'undefined') {
+          const recaptchaResponse = grecaptcha.getResponse();
+          if (recaptchaResponse.length === 0) {
+            e.preventDefault();
+            alert('Please complete the reCAPTCHA verification');
+            return false;
+          }
+        } else {
+          // If grecaptcha is not loaded yet, wait a bit and try again
+          setTimeout(function() {
+            if (typeof grecaptcha !== 'undefined') {
+              const recaptchaResponse = grecaptcha.getResponse();
+              if (recaptchaResponse.length === 0) {
+                e.preventDefault();
+                alert('Please complete the reCAPTCHA verification');
+                return false;
+              }
+            }
+          }, 500);
+        }
       }
     });
 
