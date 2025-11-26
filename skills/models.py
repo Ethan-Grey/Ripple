@@ -223,6 +223,13 @@ class TeachingClass(models.Model):
     
     def __str__(self):
         return self.title
+    
+    @property
+    def price_display(self):
+        """Return formatted price string for display"""
+        if self.price_cents == 0:
+            return "Free"
+        return f"${self.price_cents / 100:.2f}"
 
 
 class ClassTopic(models.Model):

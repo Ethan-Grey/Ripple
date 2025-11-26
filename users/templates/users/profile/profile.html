@@ -342,52 +342,64 @@
                         {% if my_classes_published or my_classes_drafts %}
                         <div class="classes-grid">
                             {% for cls in my_classes_published %}
-                            <a href="{% url 'skills:class_detail' cls.slug %}" class="class-card">
-                                <div class="class-status published">
-                                    <svg fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Published
-                                </div>
-                                <div class="class-content">
-                                    <h3 class="class-title">{{ cls.title }}</h3>
-                                    <div class="class-meta">
-                                        <span class="meta-item">{{ cls.get_difficulty_display }}</span>
-                                        <span class="meta-dot">•</span>
-                                        <span class="meta-item">{{ cls.duration_minutes }}m</span>
+                            <div class="class-card-new">
+                                <div class="class-card-top">
+                                    <div class="class-card-header">
+                                        <h3 class="class-card-title">{{ cls.title }}</h3>
+                                        <span class="class-card-status published-badge">Published</span>
                                     </div>
-                                    <div class="class-actions">
-                                        <span class="btn btn-primary btn-small">View Class</span>
-                                        <a href="{% url 'skills:manage_schedule' cls.slug %}" class="btn btn-outline btn-small" onclick="event.stopPropagation();">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                            </svg>
-                                            Manage Schedule
-                                        </a>
+                                    <div class="class-card-info">
+                                        <div class="class-info-item">
+                                            <span class="class-info-label">Level</span>
+                                            <span class="class-info-value">{{ cls.get_difficulty_display }}</span>
+                                        </div>
+                                        <div class="class-info-item">
+                                            <span class="class-info-label">Duration</span>
+                                            <span class="class-info-value">{{ cls.duration_minutes }}m</span>
+                                        </div>
+                                        <div class="class-info-item">
+                                            <span class="class-info-label">Price</span>
+                                            <span class="class-info-value price-highlight">{{ cls.price_display }}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </a>
+                                <div class="class-card-footer">
+                                    <a href="{% url 'skills:class_detail' cls.slug %}" class="class-card-btn primary-btn">View Class</a>
+                                    <a href="{% url 'skills:manage_schedule' cls.slug %}" class="class-card-btn secondary-btn">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                        </svg>
+                                        Manage Schedule
+                                    </a>
+                                </div>
+                            </div>
                             {% endfor %}
                             {% for cls in my_classes_drafts %}
-                            <a href="{% url 'skills:class_detail' cls.slug %}" class="class-card draft">
-                                <div class="class-status draft-status">
-                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
-                                    Draft
-                                </div>
-                                <div class="class-content">
-                                    <h3 class="class-title">{{ cls.title }}</h3>
-                                    <div class="class-meta">
-                                        {% if not cls.is_tradeable %}
-                                            <span class="meta-item warning">Not tradeable</span>
-                                        {% endif %}
+                            <div class="class-card-new draft-card">
+                                <div class="class-card-top">
+                                    <div class="class-card-header">
+                                        <h3 class="class-card-title">{{ cls.title }}</h3>
+                                        <span class="class-card-status draft-badge">Draft</span>
                                     </div>
-                                    <div class="class-actions">
-                                        <span class="btn btn-primary btn-small">View Class</span>
+                                    <div class="class-card-info">
+                                        <div class="class-info-item">
+                                            <span class="class-info-label">Level</span>
+                                            <span class="class-info-value">{{ cls.get_difficulty_display }}</span>
+                                        </div>
+                                        <div class="class-info-item">
+                                            <span class="class-info-label">Duration</span>
+                                            <span class="class-info-value">{{ cls.duration_minutes }}m</span>
+                                        </div>
+                                        <div class="class-info-item">
+                                            <span class="class-info-label">Price</span>
+                                            <span class="class-info-value price-highlight">{{ cls.price_display }}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </a>
+                                <div class="class-card-footer">
+                                    <a href="{% url 'skills:class_detail' cls.slug %}" class="class-card-btn primary-btn">View Class</a>
+                                </div>
+                            </div>
                             {% endfor %}
                         </div>
                         {% else %}
@@ -993,130 +1005,175 @@
     color: #5b21b6;
 }
 
-/* Classes Grid */
+/* Classes Grid - Redesigned */
 .classes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
 }
 
-.class-card {
+.class-card-new {
     background: white;
-    border: 2px solid #e5e7eb;
-    border-radius: 16px;
-    padding: 24px;
-    text-decoration: none;
-    transition: all 0.2s;
-    position: relative;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    color: inherit;
-    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    min-height: 200px;
 }
 
-.class-card:hover {
+.class-card-new:hover {
     border-color: var(--brand);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
 }
 
-.class-card.enrolled-card {
-    text-decoration: none;
-}
-
-.class-card.enrolled-card a {
-    text-decoration: none;
-}
-
-.class-card a {
-    text-decoration: none;
-    pointer-events: auto;
-}
-
-.class-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 16px;
-}
-
-.class-status svg {
-    width: 18px;
-    height: 18px;
-}
-
-.class-status.published {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.class-status.draft-status {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.class-status.enrolled-status {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.class-content {
+.class-card-top {
+    padding: 20px;
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-.class-title {
-    font-size: 20px;
+.class-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    gap: 12px;
+}
+
+.class-card-title {
+    font-size: 18px;
     font-weight: 700;
     color: var(--text);
-    margin: 0 0 12px 0;
+    margin: 0;
+    line-height: 1.4;
+    flex: 1;
 }
 
-.class-card:hover .class-title {
-    color: var(--brand);
+.class-card-status {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.class-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #6b7280;
-    font-weight: 600;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
+.published-badge {
+    background: #d1fae5;
+    color: #065f46;
 }
 
-.meta-item.warning {
-    color: #ef4444;
+.draft-badge {
+    background: #fef3c7;
+    color: #92400e;
 }
 
-.meta-dot {
-    color: #d1d5db;
-}
-
-.class-actions {
+.class-card-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
     margin-top: auto;
+}
+
+.class-info-item {
     display: flex;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.class-info-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.class-info-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.class-info-value.price-highlight {
+    color: var(--brand);
+    font-size: 15px;
+}
+
+.class-card-footer {
+    padding: 16px 20px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 10px;
     flex-wrap: wrap;
-    padding-top: 12px;
-    pointer-events: none;
 }
 
-.class-actions a,
-.class-actions button {
-    pointer-events: auto;
+.class-card-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    flex: 1;
+    min-width: 120px;
 }
 
-.class-actions .btn-small {
+.class-card-btn.primary-btn {
+    background: var(--brand-gradient);
+    color: white;
+}
+
+.class-card-btn.primary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.class-card-btn.secondary-btn {
+    background: white;
+    color: var(--brand);
+    border: 1.5px solid var(--brand);
+}
+
+.class-card-btn.secondary-btn:hover {
+    background: var(--brand);
+    color: white;
+}
+
+.class-card-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.draft-card .class-card-footer {
+    justify-content: flex-start;
+}
+
+/* Ensure all cards have equal height using grid */
+.classes-grid {
+    align-items: stretch;
+}
+
+.classes-grid > .class-card-new {
+    height: 100%;
+}
+
+/* Keep old styles for enrolled classes if needed */
+.class-card {
     padding: 8px 16px;
     font-size: 13px;
     flex: 1;
@@ -1621,6 +1678,51 @@ function toggleAddSkillForm(skillType = 'learn') {
     }
 }
 
+// Equalize class card heights
+function equalizeCardHeights() {
+    const grid = document.querySelector('.classes-grid');
+    if (!grid) return;
+    
+    // Get all cards in the grid (new and old)
+    const cards = grid.querySelectorAll('.class-card-new, .class-card');
+    if (cards.length === 0) return;
+    
+    // Reset heights first
+    cards.forEach(card => card.style.height = 'auto');
+    
+    // Group cards by row
+    const rows = [];
+    let currentRow = [];
+    let currentTop = null;
+    
+    cards.forEach((card, index) => {
+        const rect = card.getBoundingClientRect();
+        if (currentTop === null || Math.abs(rect.top - currentTop) < 10) {
+            currentRow.push(card);
+            currentTop = rect.top;
+        } else {
+            rows.push(currentRow);
+            currentRow = [card];
+            currentTop = rect.top;
+        }
+    });
+    if (currentRow.length > 0) {
+        rows.push(currentRow);
+    }
+    
+    // Set same height for all cards in each row
+    rows.forEach(row => {
+        let maxHeight = 0;
+        row.forEach(card => {
+            card.style.height = 'auto';
+            maxHeight = Math.max(maxHeight, card.offsetHeight);
+        });
+        row.forEach(card => {
+            card.style.height = maxHeight + 'px';
+        });
+    });
+}
+
 // Tab switching
 document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.nav-tab');
@@ -1636,7 +1738,20 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
             const panel = document.getElementById(targetTab + '-tab') || document.getElementById(targetTab);
             if (panel) panel.classList.add('active');
+            
+            // Equalize card heights after tab switch
+            setTimeout(equalizeCardHeights, 100);
         });
+    });
+    
+    // Equalize card heights on page load
+    equalizeCardHeights();
+    
+    // Also equalize on window resize
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(equalizeCardHeights, 250);
     });
 });
 </script>
