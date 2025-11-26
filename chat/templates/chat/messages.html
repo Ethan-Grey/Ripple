@@ -17,8 +17,44 @@
         position: fixed !important;
     }
     
-    /* Ensure messages page doesn't block the hamburger button */
-    .messages-page,
+    /* Messages page wrapper - ensure it fills page-body properly */
+    .messages-page {
+        position: relative;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Make page-body a flex container for messages page to prevent overflow */
+    body.messages-page-active .page-body {
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    body.messages-page-active .messages-page {
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+    }
+    
+    body.messages-page-active .messages-container {
+        height: 100% !important;
+        max-height: 100% !important;
+        min-height: 0 !important;
+    }
+    
+    /* Ensure messages container doesn't block the hamburger button */
     .messages-container {
         position: relative;
         z-index: 0;
@@ -43,15 +79,29 @@
 /* Main Container */
 
 
+/* Ensure messages page fills available space */
+.messages-page {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
 .messages-container {
     max-width: 1800px;
     width: 100%;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 420px 1fr;
-    height: calc(100vh - 116px);
-    min-height: 400px;
-    max-height: calc(1050px);
+    grid-template-rows: 1fr;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    flex: 1;
     background: var(--card, white);
     border-radius: 24px;
     overflow: hidden;
@@ -62,12 +112,26 @@
     box-sizing: border-box;
 }
 
+/* Ensure grid items fill the container */
+.messages-container > * {
+    min-height: 0;
+    height: 100%;
+}
+
+
 /* Conversations Sidebar */
 .conversations-sidebar {
     border-right: 2px solid var(--border, #f3f4f6);
     display: flex;
     flex-direction: column;
     background: var(--background, #fafbfc);
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.conversations-header {
+    flex-shrink: 0;
 }
 
 .conversations-header {
@@ -299,12 +363,14 @@
     font-weight: 500;
 }
 
-/* Chat Area */
+/* Chat Area - Flexbox layout to keep input visible */
 .chat-area {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
     background: var(--card, white);
 }
 
@@ -312,6 +378,8 @@
     padding: 24px 32px;
     border-bottom: 2px solid var(--border, #f3f4f6);
     background: var(--card, white);
+    flex-shrink: 0 !important;
+    min-height: 0 !important;
 }
 
 .chat-user-info {
@@ -348,13 +416,16 @@
     font-weight: 600;
 }
 
-/* Messages Area */
+/* Messages Area - Scrollable, takes remaining space */
 .messages-area {
-    flex: 1;
-    overflow-y: auto;
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
     padding: 32px;
     background: var(--background, #f9fafb);
-    min-height: 0;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    position: relative;
 }
 
 .message {
@@ -433,12 +504,15 @@
     font-weight: 600;
 }
 
-/* Message Input Area */
+/* Message Input Area - Always visible at bottom */
 .message-input-area {
     padding: 24px 32px;
     border-top: 2px solid var(--border, #f3f4f6);
     background: var(--card, white);
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 10;
+    min-height: fit-content;
 }
 
 .message-form {
@@ -602,10 +676,54 @@
 
 /* Responsive Design */
 @media (max-width: 968px) {
+    body.messages-page-active .page-body {
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    body.messages-page-active .messages-page {
+        padding: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+    }
+    
+    body.messages-page-active .messages-container {
+        height: 100% !important;
+        max-height: 100% !important;
+    }
+    
     .messages-container {
         grid-template-columns: 1fr;
         position: relative;
         overflow: hidden;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        border-radius: 16px;
+    }
+    
+    .chat-area {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+    }
+    
+    .messages-area {
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        max-height: none !important;
+    }
+    
+    .message-input-area {
+        flex-shrink: 0 !important;
+        min-height: fit-content !important;
     }
     
     .conversations-sidebar {
@@ -639,7 +757,12 @@
         right: 0;
         bottom: 0;
         z-index: 2;
-        display: block;
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
         transform: translateX(100%);
         transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         will-change: transform;
@@ -662,44 +785,59 @@
     .empty-chat {
         display: none !important;
     }
-    
-    .messages-page {
-        padding: 16px 16px 12px 16px;
-        height: calc(100vh - 80px);
-        max-height: calc(100vh - 80px);
-        top: 80px;
-    }
-    
-    .messages-container {
-        height: calc(100vh - 124px);
-        min-height: 350px;
-        max-height: calc(100vh - 124px);
-    }
 }
 
 @media (max-width: 480px) {
-    .messages-page {
-        padding: 16px 16px 12px 16px;
-        height: calc(100vh - 80px);
+    body.messages-page-active .page-body {
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    body.messages-page-active .messages-page {
+        padding: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+    }
+    
+    body.messages-page-active .messages-container {
+        height: 100% !important;
+        max-height: 100% !important;
     }
     
     .messages-container {
-        border-radius: 16px;
-        height: calc(100vh - 124px);
-        min-height: 300px;
-        max-height: calc(100vh - 124px);
+        border-radius: 12px;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+    }
+    
+    .chat-area {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
     }
     
     .chat-header {
         padding: 20px;
+        flex-shrink: 0 !important;
     }
     
     .messages-area {
         padding: 20px;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        max-height: none !important;
     }
     
     .message-input-area {
         padding: 16px;
+        flex-shrink: 0 !important;
+        min-height: fit-content !important;
     }
     
     .message-bubble {
@@ -1059,11 +1197,50 @@ let lastMessageId = {{ last_message_id|default:"0" }};
 let pollingInterval = null;
 let isPolling = false;
 
-// Auto-scroll to bottom of messages
-const messagesArea = document.getElementById('messagesArea');
-if (messagesArea && messagesArea.children.length > 0) {
-    messagesArea.scrollTop = messagesArea.scrollHeight;
+// Auto-scroll to bottom of messages and ensure layout
+function ensureMessagesLayout() {
+    const messagesArea = document.getElementById('messagesArea');
+    if (messagesArea) {
+        // Ensure messages area can scroll
+        messagesArea.style.overflowY = 'auto';
+        messagesArea.style.overflowX = 'hidden';
+        messagesArea.style.flex = '1';
+        messagesArea.style.minHeight = '0';
+        
+        // Scroll to bottom after a short delay to ensure content is rendered
+        setTimeout(() => {
+            if (messagesArea.children.length > 0) {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+        }, 100);
+    }
+    
+    // Ensure chat area is properly structured
+    const chatArea = document.querySelector('.chat-area');
+    if (chatArea) {
+        chatArea.style.display = 'flex';
+        chatArea.style.flexDirection = 'column';
+        chatArea.style.height = '100%';
+        chatArea.style.minHeight = '0';
+        chatArea.style.overflow = 'hidden';
+    }
+    
+    // Ensure input area is always visible
+    const inputArea = document.querySelector('.message-input-area');
+    if (inputArea) {
+        inputArea.style.flexShrink = '0';
+    }
 }
+
+// Call on load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureMessagesLayout);
+} else {
+    ensureMessagesLayout();
+}
+
+// Also call after a delay to ensure everything is ready
+setTimeout(ensureMessagesLayout, 300);
 
 // AJAX message sending
 const messageForm = document.getElementById('messageForm');
@@ -1842,49 +2019,90 @@ function showErrorModal(message) {
     setTimeout(ensureHamburgerWorks, 100);
 })();
 
-// Prevent page scrolling - make messages page static
+// Prevent page scrolling - make messages page static and add active class
 (function() {
-    function preventPageScroll() {
+    function setupMessagesPage() {
+        // Add class to body for CSS targeting
+        document.body.classList.add('messages-page-active');
+        
+        // Calculate exact available height
+        const topbar = document.querySelector('.topbar');
+        const pageBody = document.querySelector('.page-body');
+        
+        if (topbar && pageBody) {
+            const topbarHeight = topbar.offsetHeight;
+            
+            // Get actual padding from computed styles
+            const computedStyle = window.getComputedStyle(pageBody);
+            const pageBodyTopPadding = parseInt(computedStyle.paddingTop) || (window.innerWidth > 768 ? 32 : 8);
+            const pageBodyBottomPadding = parseInt(computedStyle.paddingBottom) || (window.innerWidth > 768 ? 32 : 8);
+            
+            // Page-body height = viewport - topbar (padding is inside)
+            const pageBodyHeight = window.innerHeight - topbarHeight;
+            
+            // Set page-body height and make it a flex container
+            pageBody.style.height = pageBodyHeight + 'px';
+            pageBody.style.maxHeight = pageBodyHeight + 'px';
+            pageBody.style.display = 'flex';
+            pageBody.style.flexDirection = 'column';
+            pageBody.style.overflow = 'hidden';
+            pageBody.style.boxSizing = 'border-box';
+            // Padding is already set in CSS, don't override it
+        }
+        
         // Prevent body from scrolling
         document.body.style.overflow = 'hidden';
         document.body.style.height = '100vh';
-        document.body.style.position = 'fixed';
-        document.body.style.width = '100%';
         
         // Also prevent html from scrolling
         document.documentElement.style.overflow = 'hidden';
         document.documentElement.style.height = '100vh';
-        
-        // Prevent page-body wrapper from scrolling
+    }
+    
+    function updateHeight() {
+        const topbar = document.querySelector('.topbar');
         const pageBody = document.querySelector('.page-body');
-        if (pageBody) {
-            pageBody.style.overflow = 'hidden';
-            pageBody.style.height = '100vh';
+        if (topbar && pageBody) {
+            const topbarHeight = topbar.offsetHeight;
+            const pageBodyHeight = window.innerHeight - topbarHeight;
+            pageBody.style.height = pageBodyHeight + 'px';
+            pageBody.style.maxHeight = pageBodyHeight + 'px';
         }
     }
     
     // Apply immediately
-    preventPageScroll();
+    setupMessagesPage();
     
     // Also apply on load
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', preventPageScroll);
+        document.addEventListener('DOMContentLoaded', setupMessagesPage);
     } else {
-        preventPageScroll();
+        setupMessagesPage();
     }
+    
+    // Update on resize
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(updateHeight, 100);
+    });
     
     // Clean up on page unload (when navigating away)
     window.addEventListener('beforeunload', function() {
+        document.body.classList.remove('messages-page-active');
         document.body.style.overflow = '';
         document.body.style.height = '';
-        document.body.style.position = '';
-        document.body.style.width = '';
         document.documentElement.style.overflow = '';
         document.documentElement.style.height = '';
         const pageBody = document.querySelector('.page-body');
         if (pageBody) {
-            pageBody.style.overflow = '';
             pageBody.style.height = '';
+            pageBody.style.maxHeight = '';
+            pageBody.style.display = '';
+            pageBody.style.flexDirection = '';
+            pageBody.style.overflow = '';
+            pageBody.style.paddingTop = '';
+            pageBody.style.paddingBottom = '';
         }
     });
 })();
