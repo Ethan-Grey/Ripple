@@ -211,7 +211,7 @@ class TeachingClass(models.Model):
     trade_notes = models.CharField(max_length=200, blank=True)
     intro_video = models.FileField(upload_to='class_intros/', blank=True, null=True)
     thumbnail = models.ImageField(upload_to='class_thumbs/', blank=True, null=True)
-    is_published = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=True)
     avg_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
     reviews_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
