@@ -11,6 +11,8 @@
           <video controls class="hero-video">
             <source src="{{ cls.intro_video.url }}" type="video/mp4">
           </video>
+        {% elif cls.thumbnail %}
+          <img src="{{ cls.thumbnail.url }}" alt="{{ cls.title }}" class="hero-image">
         {% else %}
           <div class="hero-image hero-placeholder">
             <div class="placeholder-content">
