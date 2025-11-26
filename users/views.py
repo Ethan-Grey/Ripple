@@ -32,15 +32,9 @@ def verify_recaptcha(recaptcha_response):
     if not recaptcha_response:
         return False
     
-    # If reCAPTCHA is not configured, skip verification (for development)
-    recaptcha_secret = getattr(settings, 'RECAPTCHA_SECRET_KEY', None)
-    if not recaptcha_secret:
-        logger.warning("RECAPTCHA_SECRET_KEY not set, skipping reCAPTCHA verification")
-        return True  # Allow login if reCAPTCHA is not configured
-    
     url = 'https://www.google.com/recaptcha/api/siteverify'
     data = {
-        'secret': recaptcha_secret,
+        'secret': settings.RECAPTCHA_SECRET_KEY,
         'response': recaptcha_response
     }
     
@@ -49,7 +43,7 @@ def verify_recaptcha(recaptcha_response):
         result = response.json()
         return result.get('success', False)
     except Exception as e:
-        logger.error(f"reCAPTCHA verification error: {e}")
+        print(f"reCAPTCHA verification error: {e}")
         return False
 
 
@@ -62,16 +56,14 @@ def custom_login(request):
     clear_all_messages(request)
     
     if request.method == 'POST':
-        # Verify reCAPTCHA only if it's configured
-        recaptcha_secret = getattr(settings, 'RECAPTCHA_SECRET_KEY', None)
-        if recaptcha_secret:
-            recaptcha_response = request.POST.get('g-recaptcha-response')
-            if not verify_recaptcha(recaptcha_response):
-                messages.error(request, 'Invalid reCAPTCHA. Please try again.')
-                form = AuthenticationForm(data=request.POST)
-                return render(request, 'users/login.html', {'form': form})
+        # Verify reCAPTCHA first
+        recaptcha_response = request.POST.get('g-recaptcha-response')
+        if not verify_recaptcha(recaptcha_response):
+            messages.error(request, 'Invalid reCAPTCHA. Please try again.')
+            form = AuthenticationForm(data=request.POST)
+            return render(request, 'users/login.html', {'form': form})
         
-        # Proceed with authentication
+        # Proceed with authentication if reCAPTCHA is valid
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
             auth_login(request, form.get_user())
@@ -163,7 +155,7 @@ def register(request):
             })
             
             try:
-                send_mail(
+                result = send_mail(
                     subject,
                     text_message,
                     settings.DEFAULT_FROM_EMAIL,
@@ -171,17 +163,16 @@ def register(request):
                     fail_silently=False,
                     html_message=html_message,
                 )
-                if settings.DEBUG:
-                    print(f"Email sent successfully to {email_value}")
+                logger.info(f"Email sent successfully to {email_value}. send_mail returned: {result}")
+                print(f"[Email] Successfully sent verification email to {email_value}")
             except Exception as e:
-                # Log the error but don't break the user flow
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Failed to send email to {email_value}: {str(e)}")
-                if settings.DEBUG:
-                    print(f"ERROR: Failed to send email: {str(e)}")
-                # Still show success message to user (email might be in spam or delayed)
-                # In production, you might want to handle this differently
+                # Log the error with full details
+                error_msg = f"Failed to send email to {email_value}: {str(e)}"
+                logger.error(error_msg, exc_info=True)
+                print(f"[Email] ERROR: {error_msg}")
+                # Don't silently fail - show error to user if email is critical
+                messages.error(request, 'Failed to send verification email. Please try again or contact support.')
+                return render(request, 'users/register.html', {'form': form})
             
             return render(request, 'users/registration_success.html', {
                 'email': email_value
@@ -232,38 +223,195 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
     subject_template_name = 'users/password_reset_subject.txt'
     success_url = reverse_lazy('users:password_reset_done')
     
-    def form_valid(self, form):
-        """Override to handle email sending with better logging"""
-        email = form.cleaned_data.get('email', '')
-        logger.info(f"Password reset requested for email: {email}")
+    def get_users(self, email):
+        """Override to add logging when users are found"""
+        users = super().get_users(email)
+        user_count = len(list(users)) if users else 0
+        logger.info(f"[Password Reset] Found {user_count} user(s) for email: {email}")
+        print(f"[Password Reset] Found {user_count} user(s) for email: {email}")
         
-        try:
-            # Call parent to send email
-            result = super().form_valid(form)
-            logger.info(f"Password reset email sent successfully to: {email}")
-            return result
-        except Exception as e:
-            # Log the error but don't crash the worker
-            error_msg = f"Failed to send password reset email to {email}: {str(e)}"
-            logger.error(error_msg, exc_info=True)
-            # Log to console for Railway logs
-            print(f"ERROR: {error_msg}")
-            # Still redirect to success page (security: don't reveal if email exists)
-            # The user will see the success message but email might not be sent
+        # Convert to list to check, then return iterator
+        user_list = list(users) if users else []
+        if user_list:
+            for user in user_list:
+                logger.info(f"[Password Reset] User found: {user.username} (ID: {user.id}, active: {user.is_active})")
+                print(f"[Password Reset] User found: {user.username} (ID: {user.id}, active: {user.is_active})")
+        else:
+            logger.warning(f"[Password Reset] No active users found for email: {email}")
+            print(f"[Password Reset] WARNING: No active users found for email: {email}")
+        
+        # Return iterator
+        return iter(user_list)
+    
+    def form_valid(self, form):
+        """Override to handle email sending with better logging and explicit user checking"""
+        email = form.cleaned_data.get('email', '').strip()
+        logger.info(f"Password reset requested for email: {email}")
+        print(f"[Password Reset] ========================================")
+        print(f"[Password Reset] Request received for email: {email}")
+        print(f"[Password Reset] ========================================")
+        
+        # Check email backend configuration
+        from django.conf import settings
+        logger.info(f"[Password Reset] Email backend: {getattr(settings, 'EMAIL_BACKEND', 'Not set')}")
+        print(f"[Password Reset] Email backend: {getattr(settings, 'EMAIL_BACKEND', 'Not set')}")
+        print(f"[Password Reset] From email: {getattr(settings, 'DEFAULT_FROM_EMAIL', 'Not set')}")
+        
+        # Manually check for users - Django's get_users uses email__iexact
+        users = User.objects.filter(email__iexact=email, is_active=True)
+        user_list = list(users)
+        user_count = len(user_list)
+        
+        print(f"[Password Reset] Manually checking for users with email: {email}")
+        print(f"[Password Reset] Found {user_count} active user(s)")
+        
+        if user_list:
+            for user in user_list:
+                logger.info(f"[Password Reset] User found: {user.username} (ID: {user.id}, email: {user.email})")
+                print(f"[Password Reset] User found: {user.username} (ID: {user.id}, email: {user.email})")
+            
+            # Users exist - explicitly send email for each user
+            print(f"[Password Reset] Users found - sending password reset emails...")
+            
+            # Get email context and send for each user
+            from django.contrib.sites.shortcuts import get_current_site
+            from django.template.loader import render_to_string
+            from django.urls import reverse
+            
+            site = get_current_site(self.request)
+            # Always use https in production, http only in local dev
+            protocol = 'https' if (self.request.is_secure() or not settings.DEBUG) else 'http'
+            print(f"[Password Reset] Using protocol: {protocol} (is_secure: {self.request.is_secure()}, DEBUG: {settings.DEBUG})")
+            
+            emails_sent = 0
+            for user in user_list:
+                try:
+                    # Build context for email
+                    context = {
+                        'email': user.email,
+                        'domain': site.domain,
+                        'site_name': site.name,
+                        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                        'user': user,
+                        'token': default_token_generator.make_token(user),
+                        'protocol': protocol,
+                    }
+                    
+                    # Get from_email
+                    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
+                    
+                    print(f"[Password Reset] Sending email to user: {user.username} ({user.email})")
+                    
+                    # Call our send_mail override
+                    result = self.send_mail(
+                        self.subject_template_name,
+                        self.email_template_name,
+                        context,
+                        from_email,
+                        user.email,
+                        html_email_template_name=None,
+                    )
+                    
+                    if result:
+                        emails_sent += 1
+                        logger.info(f"[Password Reset] Email sent successfully to {user.email}")
+                        print(f"[Password Reset] Email sent successfully to {user.email}")
+                    else:
+                        logger.warning(f"[Password Reset] send_mail returned False for {user.email}")
+                        print(f"[Password Reset] WARNING: send_mail returned False for {user.email}")
+                        
+                except Exception as e:
+                    error_msg = f"Failed to send password reset email to {user.email}: {str(e)}"
+                    logger.error(error_msg, exc_info=True)
+                    print(f"[Password Reset] ERROR: {error_msg}")
+                    import traceback
+                    print(f"[Password Reset] Traceback:\n{traceback.format_exc()}")
+            
+            if emails_sent > 0:
+                logger.info(f"[Password Reset] Successfully sent {emails_sent} password reset email(s)")
+                print(f"[Password Reset] Success! Sent {emails_sent} email(s)")
+            else:
+                logger.error(f"[Password Reset] Failed to send any emails")
+                print(f"[Password Reset] ERROR: Failed to send any emails")
+            
+            # Always redirect to success (for security)
+            return redirect(self.success_url)
+        else:
+            # No users found - but we still show success for security
+            logger.warning(f"[Password Reset] No active users found for email: {email}")
+            print(f"[Password Reset] WARNING: No active users found for email: {email}")
+            print(f"[Password Reset] Checking all users with similar emails...")
+            # Check if email exists at all (case insensitive)
+            all_users = User.objects.filter(email__iexact=email)
+            if all_users.exists():
+                inactive_users = [u for u in all_users if not u.is_active]
+                logger.warning(f"[Password Reset] Found {len(inactive_users)} inactive user(s) with this email")
+                print(f"[Password Reset] Found {len(inactive_users)} inactive user(s) - email won't be sent")
+            else:
+                logger.warning(f"[Password Reset] No users found at all with email: {email}")
+                print(f"[Password Reset] No users found at all with email: {email}")
+            
+            # Still redirect to success (security: don't reveal if email exists)
             return redirect(self.success_url)
     
-    def post(self, request, *args, **kwargs):
-        """Override post to add logging"""
-        form = self.get_form()
-        if form.is_valid():
-            email = form.cleaned_data.get('email', '')
-            # Check if user exists (for logging only, don't reveal to user)
-            user_exists = User.objects.filter(email=email).exists()
-            if user_exists:
-                logger.info(f"Password reset requested for existing user: {email}")
-            else:
-                logger.info(f"Password reset requested for non-existent email: {email}")
-        return super().post(request, *args, **kwargs)
+    def send_mail(self, subject_template_name, email_template_name, context,
+                  from_email, to_email, html_email_template_name=None):
+        """Override send_mail to add better logging and error handling"""
+        from django.template.loader import render_to_string
+        from django.contrib.sites.shortcuts import get_current_site
+        from django.conf import settings
+        
+        email = to_email
+        logger.info(f"[Password Reset] send_mail called for: {email}")
+        print(f"[Password Reset] ========================================")
+        print(f"[Password Reset] send_mail METHOD CALLED!")
+        print(f"[Password Reset] ========================================")
+        print(f"[Password Reset] Recipient: {email}")
+        print(f"[Password Reset] Subject template: {subject_template_name}")
+        print(f"[Password Reset] Email template: {email_template_name}")
+        print(f"[Password Reset] From email parameter: {from_email}")
+        print(f"[Password Reset] Default from email setting: {getattr(settings, 'DEFAULT_FROM_EMAIL', 'Not set')}")
+        print(f"[Password Reset] Email backend: {getattr(settings, 'EMAIL_BACKEND', 'Not set')}")
+        
+        # Ensure from_email is set
+        if not from_email:
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
+            print(f"[Password Reset] Using default from_email: {from_email}")
+        
+        try:
+            # Render subject and body
+            subject = render_to_string(subject_template_name, context).strip()
+            message = render_to_string(email_template_name, context)
+            html_message = None
+            if html_email_template_name:
+                html_message = render_to_string(html_email_template_name, context)
+            
+            logger.info(f"[Password Reset] Email rendered - Subject: {subject[:50]}...")
+            print(f"[Password Reset] Email rendered successfully")
+            print(f"[Password Reset] Subject: {subject}")
+            
+            # Send the email using Django's send_mail
+            from django.core.mail import send_mail
+            result = send_mail(
+                subject,
+                message,
+                from_email,
+                [email],
+                fail_silently=False,
+                html_message=html_message,
+            )
+            
+            logger.info(f"[Password Reset] Email sent via send_mail. Result: {result}")
+            print(f"[Password Reset] Email sent successfully! Result: {result} (1=success, 0=failure)")
+            return result
+            
+        except Exception as e:
+            error_msg = f"Failed to send password reset email in send_mail: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            print(f"[Password Reset] ERROR in send_mail: {error_msg}")
+            import traceback
+            print(f"[Password Reset] Traceback:\n{traceback.format_exc()}")
+            raise
 
 
 # Profile Views

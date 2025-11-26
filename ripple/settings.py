@@ -170,9 +170,10 @@ WSGI_APPLICATION = 'ripple.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Use PostgreSQL in production (via DATABASE_URL), SQLite in development
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
 
-if DATABASE_URL:
+# Only use PostgreSQL if DATABASE_URL is a non-empty string that starts with a database scheme
+if DATABASE_URL and (DATABASE_URL.startswith('postgresql://') or DATABASE_URL.startswith('postgres://')):
     # Production: Use PostgreSQL on Railway
     import dj_database_url
     DATABASES = {
@@ -270,26 +271,41 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-# Email settings - easily switch between console and real emails
-USE_CONSOLE_EMAIL = os.getenv('USE_CONSOLE_EMAIL', 'True' if DEBUG else 'False').lower() == 'true'
+# Email settings - SendGrid only
+USE_CONSOLE_EMAIL = os.getenv('USE_CONSOLE_EMAIL', '').lower() == 'true'
 
-# Check if SMTP credentials are available
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+# Check for SendGrid API key
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 
-# In DEBUG mode or if SMTP credentials are missing, use console email
-# This prevents SMTP errors during development
-if USE_CONSOLE_EMAIL or DEBUG or not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+# Use SendGrid if API key is provided and console email is NOT explicitly enabled
+if SENDGRID_API_KEY and not USE_CONSOLE_EMAIL:
+    # Use SendGrid Web API (faster and more reliable than SMTP)
+    EMAIL_BACKEND = 'ripple.email_backends.SendGridBackend'
+    DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
+    
+    # Always log email configuration (without exposing API key)
+    print(f"\n{'='*60}")
+    print(f"Email Configuration:")
+    print(f"  Backend: SendGrid Web API")
+    print(f"  From Email: {DEFAULT_FROM_EMAIL}")
+    print(f"  API Key: Set and configured")
+    print(f"  Status: SendGrid is configured and ready to send emails")
+    print(f"{'='*60}\n")
+else:
     # For development: emails will be printed to console
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     DEFAULT_FROM_EMAIL = 'noreply@ripple.com'
-else:
-    # For production: use SMTP
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
+    # Always log email configuration
+    print(f"\n{'='*60}")
+    print(f"Email Configuration: Console Backend (Development Mode)")
+    print(f"  Backend: Console Email Backend")
+    print(f"  From Email: {DEFAULT_FROM_EMAIL}")
+    print(f"  Status: Emails will be printed to console, not sent")
+    if not SENDGRID_API_KEY:
+        print(f"  Warning: SENDGRID_API_KEY not set!")
+    if USE_CONSOLE_EMAIL:
+        print(f"  Note: USE_CONSOLE_EMAIL is explicitly enabled")
+    print(f"{'='*60}\n")
 
 # AllAuth settings
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # Enable email verification for regular signups
