@@ -21,9 +21,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
 from .message_utils import clear_all_messages
 from communities.models import CommunityRequest
-<<<<<<< HEAD
 # Create your views here.
-=======
 import requests  # For reCAPTCHA verification
 
 logger = logging.getLogger(__name__)
@@ -49,7 +47,6 @@ def verify_recaptcha(recaptcha_response):
         print(f"reCAPTCHA verification error: {e}")
         return False
 
->>>>>>> origin/main
 
 def custom_login(request):
     """Custom login view that clears irrelevant messages"""

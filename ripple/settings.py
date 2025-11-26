@@ -157,10 +157,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-<<<<<<< HEAD
-=======
                 'users.context_processors.recaptcha_site_key',
->>>>>>> origin/main
             ],
         },
     },
@@ -369,8 +366,6 @@ ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_LOGIN_CANCELLED_URL = '/users/login/'
 SOCIALACCOUNT_LOGIN_ERROR_URL = '/users/login/'
 
-<<<<<<< HEAD
-=======
 # CSRF Trusted Origins - Required for CSRF verification
 CSRF_TRUSTED_ORIGINS = []
 if os.getenv('DATABASE_URL'):  # On Railway (production)
@@ -396,7 +391,6 @@ elif DEBUG:
         'http://127.0.0.1:8000',
     ]
 
->>>>>>> origin/main
 # Production Security Settings
 if not DEBUG:
     # HTTPS/SSL Settings
@@ -417,10 +411,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-<<<<<<< HEAD
-=======
 else:
     # Development: use insecure cookies for easier testing
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
->>>>>>> origin/main

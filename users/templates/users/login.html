@@ -9,15 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<<<<<<< HEAD
-=======
   
   <!-- Google reCAPTCHA v2 (only load if site key is configured) -->
   {% if RECAPTCHA_SITE_KEY %}
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   {% endif %}
   
->>>>>>> origin/main
   <style>
     * {
       margin: 0;
@@ -553,9 +550,7 @@
             <a class="forgot-link" href="{% url 'users:password_reset' %}">Forgot password?</a>
           </div>
 
-<<<<<<< HEAD
           <button type="submit" class="submit-btn">Sign In</button>
-=======
           <!-- reCAPTCHA only for regular login and if configured -->
           {% if RECAPTCHA_SITE_KEY %}
           <div class="recaptcha-container">
@@ -564,7 +559,6 @@
           {% endif %}
 
           <button type="submit" class="submit-btn" id="loginSubmitBtn">Sign In</button>
->>>>>>> origin/main
         </form>
 
         <div class="divider">
@@ -604,8 +598,6 @@
         usernameInput.focus();
       }
     });
-<<<<<<< HEAD
-=======
 
     // Form submission with reCAPTCHA validation (only if reCAPTCHA is configured)
     const recaptchaSiteKey = '{{ RECAPTCHA_SITE_KEY|default:"" }}';
@@ -634,7 +626,6 @@
         }
       });
     }
->>>>>>> origin/main
   </script>
 </body>
 </html>

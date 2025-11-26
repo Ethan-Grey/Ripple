@@ -8,13 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<<<<<<< HEAD
-=======
   <!-- Google reCAPTCHA v2 (only load if site key is configured) -->
   {% if RECAPTCHA_SITE_KEY %}
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   {% endif %}
->>>>>>> origin/main
   <style>
     * {
       margin: 0;
@@ -650,8 +647,6 @@
             >
           </div>
 
-<<<<<<< HEAD
-=======
           <!-- reCAPTCHA (only show if configured) -->
           {% if RECAPTCHA_SITE_KEY %}
           <div class="recaptcha-container">
@@ -659,7 +654,6 @@
           </div>
           {% endif %}
 
->>>>>>> origin/main
           <div class="checkbox-group">
             <input type="checkbox" id="agree-terms" name="agree_terms" class="checkbox-input" required>
             <label for="agree-terms" class="checkbox-label">
@@ -863,19 +857,14 @@
       }
     });
 
-<<<<<<< HEAD
     // Form validation on submit
-=======
     // Form validation on submit with reCAPTCHA (only if reCAPTCHA is configured)
->>>>>>> origin/main
     registerForm.addEventListener('submit', function(e) {
       if (!agreeCheckbox.checked) {
         e.preventDefault();
         alert('You must agree to the Terms of Service and Privacy Policy to register.');
         return false;
       }
-<<<<<<< HEAD
-=======
 
       // Only validate reCAPTCHA if it's configured
       const recaptchaSiteKey = '{{ RECAPTCHA_SITE_KEY|default:"" }}';
@@ -901,7 +890,6 @@
           }, 500);
         }
       }
->>>>>>> origin/main
     });
 
     // Auto-focus on username field
