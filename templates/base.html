@@ -492,6 +492,37 @@
             justify-content: center;
         }
         
+        /* Skip link styles */
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            z-index: 9999;
+            padding: 1em;
+            background: var(--brand-gradient);
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 8px;
+        }
+        
+        .skip-link:focus {
+            left: 1rem;
+            top: 1rem;
+        }
+        
+        /* Screen reader only class */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        
         .toggle-sidebar-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
@@ -898,81 +929,85 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body data-theme="light">
+    <!-- Skip to main content link for screen readers -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
     <!-- Sidebar toggle button -->
-    <button class="toggle-sidebar-btn" id="sidebarToggle" aria-label="Toggle navigation">
-        <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+    <button class="toggle-sidebar-btn" id="sidebarToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+        <i class="bi bi-list" style="font-size: 1.5rem;" aria-hidden="true"></i>
+        <span class="sr-only">Toggle navigation menu</span>
     </button>
     
     <!-- Overlay for when sidebar is open on small screens -->
-    <div class="overlay" id="overlay"></div>
+    <div class="overlay" id="overlay" role="presentation" aria-hidden="true"></div>
     
     <div class="layout">
-        <aside class="sidebar" id="sidebar">
-            <a href="{% url 'core:home' %}" class="brand" style="text-decoration: none; display: block;">Ripple</a>
+        <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+            <a href="{% url 'core:home' %}" class="brand" style="text-decoration: none; display: block;" aria-label="Ripple home page">Ripple</a>
             
-            <nav class="nav" role="navigation">
+            <nav class="nav" role="navigation" aria-label="Primary navigation">
 
                
-                <a class="nav-item" href="{% url 'core:home' %}">
-                    <i class="bi bi-house-door nav-icon"></i>
+                <a class="nav-item" href="{% url 'core:home' %}" aria-label="Go to dashboard">
+                    <i class="bi bi-house-door nav-icon" aria-hidden="true"></i>
                     <span class="nav-text">Dashboard</span>
                 </a>
-                <a class="nav-item" href="{% url 'skills:class_list' %}">
-                    <i class="bi bi-book nav-icon"></i>
+                <a class="nav-item" href="{% url 'skills:class_list' %}" aria-label="Browse classes">
+                    <i class="bi bi-book nav-icon" aria-hidden="true"></i>
                     <span class="nav-text">Classes</span>
                 </a>
-                <a class="nav-item" href="{% url 'core:swipe' %}">
-                    <i class="bi bi-arrow-left-right nav-icon"></i>
+                <a class="nav-item" href="{% url 'core:swipe' %}" aria-label="Swipe through classes">
+                    <i class="bi bi-arrow-left-right nav-icon" aria-hidden="true"></i>
                     <span class="nav-text">Class Swipe</span>
                 </a>
-                <a class="nav-item" href="{% url 'communities:communities' %}">
-                    <i class="bi bi-people nav-icon"></i>
+                <a class="nav-item" href="{% url 'communities:communities' %}" aria-label="View communities">
+                    <i class="bi bi-people nav-icon" aria-hidden="true"></i>
                     <span class="nav-text">Communities</span>
                 </a>
-                <a class="nav-item" href="{% url 'chat:messages' %}">
-                    <i class="bi bi-chat-dots nav-icon"></i>
+                <a class="nav-item" href="{% url 'chat:messages' %}" aria-label="View messages">
+                    <i class="bi bi-chat-dots nav-icon" aria-hidden="true"></i>
                     <span class="nav-text">Messages</span>
                 </a>
-                <a class="nav-item" href="{% url 'skills:trade_offers' %}">
-                    <i class="bi bi-arrow-left-right nav-icon"></i>
+                <a class="nav-item" href="{% url 'skills:trade_offers' %}" aria-label="View trade offers">
+                    <i class="bi bi-arrow-left-right nav-icon" aria-hidden="true"></i>
                     <span class="nav-text">Trade Offers</span>
                     {% if user.is_authenticated %}
                         {% pending_trade_offers_count as pending_count %}
                         {% if pending_count > 0 %}
-                            <span class="nav-badge">{{ pending_count }}</span>
+                            <span class="nav-badge" aria-label="{{ pending_count }} pending trade offers">{{ pending_count }}</span>
                         {% endif %}
                     {% endif %}
                 </a>
 
                 {% if user.is_staff %}
-                    <hr class="my-3 border-secondary">
-                   <div class="admin-section-label">Admin Section</div>
-                   <a class="nav-item" href="{% url 'core:admin_reports' %}" style="background:#dc2626;color:#ffffff">
-                        <i class="bi bi-exclamation-triangle nav-icon"></i>
+                    <hr class="my-3 border-secondary" role="separator" aria-label="Admin section">
+                   <div class="admin-section-label" role="heading" aria-level="2">Admin Section</div>
+                   <a class="nav-item" href="{% url 'core:admin_reports' %}" style="background:#dc2626;color:#ffffff" aria-label="Review reported content">
+                        <i class="bi bi-exclamation-triangle nav-icon" aria-hidden="true"></i>
                         <span class="nav-text">Reports Review</span>
                     </a>
-                    <a class="nav-item" href="{% url 'skill_admin:skill_review' %}" style="background:#f59e0b;color:#92400e">
-                        <i class="bi bi-clipboard-check nav-icon"></i>
+                    <a class="nav-item" href="{% url 'skill_admin:skill_review' %}" style="background:#f59e0b;color:#92400e" aria-label="Review teacher applications">
+                        <i class="bi bi-clipboard-check nav-icon" aria-hidden="true"></i>
                         <span class="nav-text">Admin Review</span>
                     </a>
-                    <a class="nav-item admin-verifications" href="{% url 'users:admin_user_verifications' %}">
-                        <i class="bi bi-shield-check nav-icon"></i>
+                    <a class="nav-item admin-verifications" href="{% url 'users:admin_user_verifications' %}" aria-label="Review user verifications">
+                        <i class="bi bi-shield-check nav-icon" aria-hidden="true"></i>
                         <span class="nav-text">User Verifications</span>
                     </a>
-                    <a class="nav-item admin-classes" href="{% url 'users:admin_user_classes' %}">
-                        <i class="bi bi-easel3 nav-icon"></i>
+                    <a class="nav-item admin-classes" href="{% url 'users:admin_user_classes' %}" aria-label="Manage user classes">
+                        <i class="bi bi-easel3 nav-icon" aria-hidden="true"></i>
                         <span class="nav-text">User Classes</span>
                     </a>
-                    <a class="nav-item admin-skills" href="{% url 'users:admin_user_skills' %}">
-                        <i class="bi bi-gear nav-icon"></i>
+                    <a class="nav-item admin-skills" href="{% url 'users:admin_user_skills' %}" aria-label="Manage user skills">
+                        <i class="bi bi-gear nav-icon" aria-hidden="true"></i>
                         <span class="nav-text">User Skills</span>
                     </a>
-                    <a class="nav-item admin-communities" href="{% url 'communities:admin_community_requests' %}">
-                        <i class="bi bi-inbox nav-icon"></i>
+                    <a class="nav-item admin-communities" href="{% url 'communities:admin_community_requests' %}" aria-label="Review community requests">
+                        <i class="bi bi-inbox nav-icon" aria-hidden="true"></i>
                         <span class="nav-text">Community Requests</span>
                     </a>
-                    <a class="nav-item admin-django" href="/admin/">
-                        <i class="bi bi-speedometer2 nav-icon"></i>
+                    <a class="nav-item admin-django" href="/admin/" aria-label="Access Django admin panel">
+                        <i class="bi bi-speedometer2 nav-icon" aria-hidden="true"></i>
                         <span class="nav-text">Django Admin</span>
                     </a>
                 {% endif %}
@@ -981,42 +1016,47 @@
             </nav>
         </aside>
 
-        <main class="content">
-            <header class="topbar">
-                <form class="search" action="{% url 'core:search' %}" method="get" role="search">
-                    <input type="text" name="q" placeholder="Search for skills, classes, or users..." value="{{ request.GET.q }}" aria-label="Search"/>
+        <main class="content" id="main-content">
+            <header class="topbar" role="banner">
+                <form class="search" action="{% url 'core:search' %}" method="get" role="search" aria-label="Site search">
+                    <label for="search-input" class="sr-only">Search for skills, classes, or users</label>
+                    <input type="text" name="q" id="search-input" placeholder="Search for skills, classes, or users..." value="{{ request.GET.q }}" aria-label="Search input" autocomplete="off"/>
                 </form>
                 {% if user.is_authenticated %}
                 <div class="dropdown">
-                    <button class="user-pill dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border: none; background: var(--brand-gradient);">
+                    <button class="user-pill dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="User account menu for {{ user.username }}" aria-haspopup="true" style="border: none; background: var(--brand-gradient);">
                         {% user_avatar user size='small' css_class='user-avatar-img' %}
+                        <span class="sr-only">Open user menu</span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="bi bi-person me-2"></i> Profile</a></li>
-                        <li><a class="dropdown-item" href="{% url 'users:applications' %}"><i class="bi bi-clipboard2-plus me-2"></i> Applications</a></li>
-                        <li><a class="dropdown-item" href="{% url 'core:report_content' %}"><i class="bi bi-flag me-2"></i> Report Content</a></li>
-                        <li><a class="dropdown-item" href="{% url 'core:user_reports' %}"><i class="bi bi-eye me-2"></i> My Reports</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" id="themeToggleDropdown"><i class="bi bi-moon me-2" id="themeIcon"></i> <span id="themeText">Dark Mode</span></a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="{% url 'users:logout' %}"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" role="menu">
+                        <li role="none"><a class="dropdown-item" href="{% url 'users:profile' %}" role="menuitem"><i class="bi bi-person me-2" aria-hidden="true"></i> Profile</a></li>
+                        <li role="none"><a class="dropdown-item" href="{% url 'users:applications' %}" role="menuitem"><i class="bi bi-clipboard2-plus me-2" aria-hidden="true"></i> Applications</a></li>
+                        <li role="none"><a class="dropdown-item" href="{% url 'core:report_content' %}" role="menuitem"><i class="bi bi-flag me-2" aria-hidden="true"></i> Report Content</a></li>
+                        <li role="none"><a class="dropdown-item" href="{% url 'core:user_reports' %}" role="menuitem"><i class="bi bi-eye me-2" aria-hidden="true"></i> My Reports</a></li>
+                        <li><hr class="dropdown-divider" role="separator"></li>
+                        <li role="none"><a class="dropdown-item" href="#" id="themeToggleDropdown" role="menuitem" aria-label="Toggle dark mode"><i class="bi bi-moon me-2" id="themeIcon" aria-hidden="true"></i> <span id="themeText">Dark Mode</span></a></li>
+                        <li><hr class="dropdown-divider" role="separator"></li>
+                        <li role="none"><a class="dropdown-item text-danger" href="{% url 'users:logout' %}" role="menuitem"><i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i> Logout</a></li>
                     </ul>
                 </div>
                 {% else %}
-                <a href="{% url 'users:login' %}" class="user-pill" style="text-decoration: none;">
-                    <i class="bi bi-person-circle"></i>
+                <a href="{% url 'users:login' %}" class="user-pill" style="text-decoration: none;" aria-label="Sign in to your account">
+                    <i class="bi bi-person-circle" aria-hidden="true"></i>
+                    <span class="sr-only">Sign in</span>
                 </a>
                 {% endif %}
             </header>
 
-            <section class="page-body">
+            <section class="page-body" role="main">
                 {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
+                    <div role="region" aria-live="polite" aria-atomic="true" aria-label="System messages">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                <span class="alert-message">{{ message }}</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close message"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% endif %}
                 
                 {% block content %}{% endblock %}
@@ -1081,8 +1121,18 @@
         }
         
         // Event listeners
-        toggleBtn.addEventListener('click', toggleSidebar);
-        overlay.addEventListener('click', closeSidebar);
+        toggleBtn.addEventListener('click', function() {
+            toggleSidebar();
+            // Update aria-expanded
+            const isOpen = sidebar.classList.contains('open');
+            toggleBtn.setAttribute('aria-expanded', isOpen);
+            overlay.setAttribute('aria-hidden', !isOpen);
+        });
+        overlay.addEventListener('click', function() {
+            closeSidebar();
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            overlay.setAttribute('aria-hidden', 'true');
+        });
         
         // Close sidebar when clicking nav links on small windows
         const navLinks = sidebar.querySelectorAll('.nav-item');

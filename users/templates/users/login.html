@@ -492,6 +492,19 @@
       }
     }
 
+    /* Screen reader only class */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    
     /* Captcha Popup Modal */
     .captcha-popup {
       display: none;
@@ -623,21 +636,25 @@
 
         <!-- Error Messages -->
         {% if form.non_field_errors %}
-          {% for error in form.non_field_errors %}
-            <div class="auth-alert">{{ error }}</div>
-          {% endfor %}
-        {% elif form.errors %}
-          {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-              <div class="auth-alert">{{ error }}</div>
+          <div role="alert" aria-live="assertive" aria-atomic="true">
+            {% for error in form.non_field_errors %}
+              <div class="auth-alert" role="alert">{{ error }}</div>
             {% endfor %}
-          {% endfor %}
+          </div>
+        {% elif form.errors %}
+          <div role="alert" aria-live="assertive" aria-atomic="true">
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                <div class="auth-alert" role="alert">{{ error }}</div>
+              {% endfor %}
+            {% endfor %}
+          </div>
         {% endif %}
 
         <!-- Social Login Section - OUTSIDE OF FORM -->
         <div class="social-login-section">
-          <a href="{% provider_login_url 'google' process='login' %}" class="google-sign-in-btn">
-            <img src="https://www.google.com/favicon.ico" alt="Google" class="google-icon">
+          <a href="{% provider_login_url 'google' process='login' %}" class="google-sign-in-btn" aria-label="Sign in with your Google account">
+            <img src="https://www.google.com/favicon.ico" alt="" class="google-icon" aria-hidden="true">
             Sign in with Google
           </a>
         </div>
@@ -661,7 +678,10 @@
               value="{{ request.POST.username }}" 
               required
               autofocus
+              aria-required="true"
+              aria-describedby="username-help"
             >
+            <span id="username-help" class="sr-only">Enter your username to sign in</span>
           </div>
 
           <div class="form-group">
@@ -673,25 +693,28 @@
               name="password" 
               placeholder="Enter your password" 
               required
+              aria-required="true"
+              aria-describedby="password-help"
             >
+            <span id="password-help" class="sr-only">Enter your password to sign in</span>
           </div>
 
           <div class="form-row">
             <label class="remember-label">
-              <input type="checkbox" name="remember" class="remember-checkbox">
-              <span>Remember me</span>
+              <input type="checkbox" name="remember" id="remember" class="remember-checkbox" aria-describedby="remember-help">
+              <span id="remember-help">Remember me</span>
             </label>
-            <a class="forgot-link" href="{% url 'users:password_reset' %}">Forgot password?</a>
+            <a class="forgot-link" href="{% url 'users:password_reset' %}" aria-label="Reset your password if you forgot it">Forgot password?</a>
           </div>
 
           <!-- reCAPTCHA only for regular login and if configured -->
           {% if RECAPTCHA_SITE_KEY %}
-          <div class="recaptcha-container">
-            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
+          <div class="recaptcha-container" role="group" aria-label="Security verification">
+            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}" aria-label="Complete reCAPTCHA verification"></div>
           </div>
           {% endif %}
 
-          <button type="submit" class="submit-btn" id="loginSubmitBtn">Sign In</button>
+          <button type="submit" class="submit-btn" id="loginSubmitBtn" aria-label="Sign in to your account">Sign In</button>
         </form>
 
         <div class="form-footer">
@@ -750,14 +773,14 @@
   </script>
 
   <!-- Captcha Popup Modal -->
-  <div id="captchaPopup" class="captcha-popup">
+  <div id="captchaPopup" class="captcha-popup" role="dialog" aria-labelledby="captchaPopupTitle" aria-modal="true" aria-live="assertive">
     <div class="captcha-popup-content">
-      <div class="captcha-popup-icon">⚠️</div>
-      <div class="captcha-popup-title">reCAPTCHA Required</div>
+      <div class="captcha-popup-icon" aria-hidden="true">⚠️</div>
+      <div class="captcha-popup-title" id="captchaPopupTitle">reCAPTCHA Required</div>
       <div class="captcha-popup-message" id="captchaPopupMessage">
         Please complete the reCAPTCHA verification to continue.
       </div>
-      <button class="captcha-popup-button" id="captchaPopupButton">OK</button>
+      <button class="captcha-popup-button" id="captchaPopupButton" aria-label="Close this dialog">OK</button>
     </div>
   </div>
 

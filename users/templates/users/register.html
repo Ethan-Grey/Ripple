@@ -521,6 +521,19 @@
       color: #111827;
     }
 
+    /* Screen reader only class */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    
     /* Captcha Popup Modal */
     .captcha-popup {
       display: none;
@@ -683,16 +696,20 @@
 
         <!-- Error Messages -->
         {% if messages %}
-          {% for message in messages %}
-            <div class="auth-alert">{{ message }}</div>
-          {% endfor %}
+          <div role="alert" aria-live="assertive" aria-atomic="true">
+            {% for message in messages %}
+              <div class="auth-alert" role="alert">{{ message }}</div>
+            {% endfor %}
+          </div>
         {% endif %}
         {% if form.errors %}
-          {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-              <div class="auth-alert">{{ error }}</div>
+          <div role="alert" aria-live="assertive" aria-atomic="true">
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                <div class="auth-alert" role="alert">{{ error }}</div>
+              {% endfor %}
             {% endfor %}
-          {% endfor %}
+          </div>
         {% endif %}
 
         <!-- Register Form -->
@@ -710,7 +727,11 @@
               value="{{ request.POST.username }}" 
               required
               autofocus
+              aria-required="true"
+              aria-describedby="username-help"
+              autocomplete="username"
             >
+            <span id="username-help" class="sr-only">Choose a unique username for your account</span>
           </div>
 
           <div class="form-group">
@@ -723,7 +744,11 @@
               placeholder="your.email@example.com" 
               value="{{ request.POST.email }}" 
               required
+              aria-required="true"
+              aria-describedby="email-help"
+              autocomplete="email"
             >
+            <span id="email-help" class="sr-only">Enter your email address for account verification</span>
           </div>
 
           <div class="form-group">
@@ -735,7 +760,11 @@
               name="password1" 
               placeholder="Create a strong password" 
               required
+              aria-required="true"
+              aria-describedby="password1-help"
+              autocomplete="new-password"
             >
+            <span id="password1-help" class="sr-only">Create a strong password with at least 8 characters</span>
           </div>
 
           <div class="form-group">
@@ -747,24 +776,28 @@
               name="password2" 
               placeholder="Re-enter your password" 
               required
+              aria-required="true"
+              aria-describedby="password2-help"
+              autocomplete="new-password"
             >
+            <span id="password2-help" class="sr-only">Re-enter your password to confirm</span>
           </div>
 
           <!-- reCAPTCHA (only show if configured) -->
           {% if RECAPTCHA_SITE_KEY %}
-          <div class="recaptcha-container">
-            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
+          <div class="recaptcha-container" role="group" aria-label="Security verification">
+            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}" aria-label="Complete reCAPTCHA verification"></div>
           </div>
           {% endif %}
 
           <div class="checkbox-group">
-            <input type="checkbox" id="agree-terms" name="agree_terms" class="checkbox-input" required>
-            <label for="agree-terms" class="checkbox-label">
-              I agree to the <a href="#" id="tosLink" class="checkbox-link">Terms of Service</a> and <a href="#" id="privacyLink" class="checkbox-link">Privacy Policy</a>
+            <input type="checkbox" id="agree-terms" name="agree_terms" class="checkbox-input" required aria-required="true" aria-describedby="terms-help">
+            <label for="agree-terms" class="checkbox-label" id="terms-help">
+              I agree to the <a href="#" id="tosLink" class="checkbox-link" aria-label="Read Terms of Service in a new window">Terms of Service</a> and <a href="#" id="privacyLink" class="checkbox-link" aria-label="Read Privacy Policy in a new window">Privacy Policy</a>
             </label>
           </div>
 
-          <button type="submit" class="submit-btn" id="submitBtn" disabled>Create Account</button>
+          <button type="submit" class="submit-btn" id="submitBtn" disabled aria-label="Create your Ripple account">Create Account</button>
         </form>
 
         <div class="divider">
@@ -789,11 +822,11 @@
   </div>
 
   <!-- Terms of Service Modal -->
-  <div id="tosModal" class="modal">
+  <div id="tosModal" class="modal" role="dialog" aria-labelledby="tosModalTitle" aria-modal="true">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Terms of Service</h2>
-        <button class="modal-close" id="tosClose">&times;</button>
+        <h2 class="modal-title" id="tosModalTitle">Terms of Service</h2>
+        <button class="modal-close" id="tosClose" aria-label="Close Terms of Service dialog">&times;</button>
       </div>
       <div class="modal-body">
         <p><strong>Last Updated:</strong> November 10, 2025</p>
@@ -834,11 +867,11 @@
   </div>
 
   <!-- Privacy Policy Modal -->
-  <div id="privacyModal" class="modal">
+  <div id="privacyModal" class="modal" role="dialog" aria-labelledby="privacyModalTitle" aria-modal="true">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Privacy Policy</h2>
-        <button class="modal-close" id="privacyClose">&times;</button>
+        <h2 class="modal-title" id="privacyModalTitle">Privacy Policy</h2>
+        <button class="modal-close" id="privacyClose" aria-label="Close Privacy Policy dialog">&times;</button>
       </div>
       <div class="modal-body">
         <p><strong>Last Updated:</strong> November 10, 2025</p>
@@ -1004,14 +1037,14 @@
   </script>
 
   <!-- Captcha Popup Modal -->
-  <div id="captchaPopup" class="captcha-popup">
+  <div id="captchaPopup" class="captcha-popup" role="dialog" aria-labelledby="captchaPopupTitle" aria-modal="true" aria-live="assertive">
     <div class="captcha-popup-content">
-      <div class="captcha-popup-icon">⚠️</div>
-      <div class="captcha-popup-title">reCAPTCHA Required</div>
+      <div class="captcha-popup-icon" aria-hidden="true">⚠️</div>
+      <div class="captcha-popup-title" id="captchaPopupTitle">reCAPTCHA Required</div>
       <div class="captcha-popup-message" id="captchaPopupMessage">
         Please complete the reCAPTCHA verification to continue.
       </div>
-      <button class="captcha-popup-button" id="captchaPopupButton">OK</button>
+      <button class="captcha-popup-button" id="captchaPopupButton" aria-label="Close this dialog">OK</button>
     </div>
   </div>
 
