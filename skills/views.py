@@ -5,7 +5,7 @@ from django.db import models
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
-from django.views.generic import ListView, DetailView, CreateView, View
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
@@ -399,6 +399,134 @@ class TeacherApplicationCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse('skills:class_list')
+
+
+class ClassEditView(LoginRequiredMixin, View):
+    template_name = 'skills/class_edit.html'
+    
+    def get_object(self):
+        obj = get_object_or_404(TeachingClass, slug=self.kwargs['slug'])
+        # Check permissions: admin can edit all, users can only edit their own
+        if not (self.request.user.is_staff or obj.teacher_id == self.request.user.id):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("You don't have permission to edit this class.")
+        return obj
+    
+    def get(self, request, slug):
+        teaching_class = self.get_object()
+        context = {
+            'teaching_class': teaching_class,
+            'price_dollars': teaching_class.price_cents / 100.0 if teaching_class.price_cents else 0,
+            'is_admin': request.user.is_staff,
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request, slug):
+        teaching_class = self.get_object()
+        
+        # If admin, update class directly
+        if request.user.is_staff:
+            return self._update_class_directly(request, teaching_class)
+        else:
+            # If regular user, create a new application for approval
+            return self._create_edit_application(request, teaching_class)
+    
+    def _update_class_directly(self, request, teaching_class):
+        """Admin can update class directly"""
+        # Handle price conversion from dollars to cents
+        price_dollars = request.POST.get('price_dollars')
+        if price_dollars is not None and price_dollars != '':
+            try:
+                cents = int((Decimal(price_dollars) * 100).quantize(Decimal('1')))
+                teaching_class.price_cents = max(cents, 0)
+            except (InvalidOperation, ValueError):
+                teaching_class.price_cents = 0
+        
+        # Update fields
+        teaching_class.title = request.POST.get('title', teaching_class.title)
+        teaching_class.short_description = request.POST.get('short_description', teaching_class.short_description)
+        teaching_class.full_description = request.POST.get('full_description', teaching_class.full_description)
+        teaching_class.difficulty = request.POST.get('difficulty', teaching_class.difficulty)
+        
+        try:
+            teaching_class.duration_minutes = int(request.POST.get('duration_minutes', teaching_class.duration_minutes) or 0)
+        except (ValueError, TypeError):
+            teaching_class.duration_minutes = 0
+        
+        # Handle is_tradeable
+        trade_val = request.POST.get('is_tradeable')
+        teaching_class.is_tradeable = str(trade_val).lower() in ['true', '1', 'on', 'yes'] if trade_val else False
+        
+        teaching_class.trade_notes = request.POST.get('trade_notes', teaching_class.trade_notes)
+        
+        # Handle is_published checkbox
+        published_val = request.POST.get('is_published')
+        teaching_class.is_published = str(published_val).lower() in ['true', '1', 'on', 'yes'] if published_val else False
+        
+        # Handle file uploads
+        if 'intro_video' in request.FILES:
+            teaching_class.intro_video = request.FILES['intro_video']
+        if 'thumbnail' in request.FILES:
+            teaching_class.thumbnail = request.FILES['thumbnail']
+        
+        teaching_class.save()
+        messages.success(request, 'Class updated successfully!')
+        return HttpResponseRedirect(reverse('skills:class_detail', args=[teaching_class.slug]))
+    
+    def _create_edit_application(self, request, teaching_class):
+        """Regular user creates an application for edit approval"""
+        from django.utils.text import slugify
+        
+        # Handle price conversion from dollars to cents
+        price_dollars = request.POST.get('price_dollars')
+        price_cents = teaching_class.price_cents
+        if price_dollars is not None and price_dollars != '':
+            try:
+                price_cents = int((Decimal(price_dollars) * 100).quantize(Decimal('1')))
+                price_cents = max(price_cents, 0)
+            except (InvalidOperation, ValueError):
+                price_cents = teaching_class.price_cents
+        
+        # Handle duration
+        try:
+            duration_minutes = int(request.POST.get('duration_minutes', teaching_class.duration_minutes) or 0)
+        except (ValueError, TypeError):
+            duration_minutes = teaching_class.duration_minutes
+        
+        # Handle is_tradeable
+        trade_val = request.POST.get('is_tradeable')
+        is_tradeable = str(trade_val).lower() in ['true', '1', 'on', 'yes'] if trade_val else teaching_class.is_tradeable
+        
+        # Create new application for edit
+        full_description = request.POST.get('full_description', teaching_class.full_description)
+        short_description = request.POST.get('short_description', teaching_class.short_description)
+        
+        application = TeacherApplication.objects.create(
+            applicant=request.user,
+            title=request.POST.get('title', teaching_class.title),
+            bio=full_description or short_description or teaching_class.full_description,
+            difficulty=request.POST.get('difficulty', teaching_class.difficulty),
+            duration_minutes=duration_minutes,
+            price_cents=price_cents,
+            is_tradeable=is_tradeable,
+            status=TeacherApplication.PENDING,
+        )
+        
+        # Handle file uploads - only if new files are provided
+        if 'intro_video' in request.FILES:
+            application.intro_video = request.FILES['intro_video']
+            application.save()
+        
+        if 'thumbnail' in request.FILES:
+            application.thumbnail = request.FILES['thumbnail']
+            application.save()
+        
+        # Store reference to the class being edited in decision_notes for admin reference
+        application.decision_notes = f"EDIT REQUEST for existing class: {teaching_class.slug} (ID: {teaching_class.id})"
+        application.save()
+        
+        messages.success(request, 'Your class edit has been submitted for review. An admin will review your changes and update the class once approved.')
+        return HttpResponseRedirect(reverse('skills:class_detail', args=[teaching_class.slug]))
 
 
 class ClassDeleteView(LoginRequiredMixin, View):
