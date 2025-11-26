@@ -78,10 +78,36 @@ else:
     if '127.0.0.1' not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append('127.0.0.1')
     
-    # Add Railway domain if not already included
-    railway_domain = os.getenv('RAILWAY_PUBLIC_DOMAIN', 'rippleskillshare.up.railway.app')
+    # Add Railway domain - check multiple possible environment variables
+    railway_domain = (
+        os.getenv('RAILWAY_PUBLIC_DOMAIN') or 
+        os.getenv('RAILWAY_STATIC_URL') or 
+        'rippleskillshare.up.railway.app'
+    )
+    # Extract domain from URL if it's a full URL
+    if railway_domain and (railway_domain.startswith('http://') or railway_domain.startswith('https://')):
+        from urllib.parse import urlparse
+        railway_domain = urlparse(railway_domain).netloc
+    # Add the Railway domain
     if railway_domain and railway_domain not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(railway_domain)
+
+# Always add Railway domain if DATABASE_URL is set (indicates production on Railway)
+# This ensures the domain is added even if DEBUG=True
+if os.getenv('DATABASE_URL'):
+    railway_domain = (
+        os.getenv('RAILWAY_PUBLIC_DOMAIN') or 
+        os.getenv('RAILWAY_STATIC_URL') or 
+        'rippleskillshare.up.railway.app'
+    )
+    if railway_domain:
+        # Extract domain from URL if it's a full URL
+        if railway_domain.startswith('http://') or railway_domain.startswith('https://'):
+            from urllib.parse import urlparse
+            railway_domain = urlparse(railway_domain).netloc
+        # Add the Railway domain to ALLOWED_HOSTS if not already present
+        if railway_domain not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(railway_domain)
 
 
 # Application definition
