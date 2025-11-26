@@ -1,3 +1,3 @@
 web: bash start.sh
-release: python manage.py migrate --noinput
+release: python run_migrations.py
 

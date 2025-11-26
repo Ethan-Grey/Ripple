@@ -4,8 +4,8 @@
 
 set -e  # Exit on error
 
-echo "Running database migrations..."
-python manage.py migrate --noinput
+# Migrations are handled by Railway's 'release' phase in Procfile
+# No need to run them here to avoid conflicts
 
 echo "Collecting static files..."
 python manage.py collectstatic --noinput --clear || true
