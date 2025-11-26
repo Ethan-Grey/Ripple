@@ -345,6 +345,31 @@ ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_LOGIN_CANCELLED_URL = '/users/login/'
 SOCIALACCOUNT_LOGIN_ERROR_URL = '/users/login/'
 
+# CSRF Trusted Origins - Required for CSRF verification
+CSRF_TRUSTED_ORIGINS = []
+if os.getenv('DATABASE_URL'):  # On Railway (production)
+    railway_domain = (
+        os.getenv('RAILWAY_PUBLIC_DOMAIN') or 
+        os.getenv('RAILWAY_STATIC_URL') or 
+        'rippleskillshare.up.railway.app'
+    )
+    if railway_domain:
+        # Extract domain from URL if it's a full URL
+        if railway_domain.startswith('http://') or railway_domain.startswith('https://'):
+            from urllib.parse import urlparse
+            railway_domain = urlparse(railway_domain).netloc
+        # Add both HTTP and HTTPS versions
+        CSRF_TRUSTED_ORIGINS.extend([
+            f'https://{railway_domain}',
+            f'http://{railway_domain}',  # Allow HTTP for Railway internal routing
+        ])
+elif DEBUG:
+    # Development: allow localhost
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ]
+
 # Production Security Settings
 if not DEBUG:
     # HTTPS/SSL Settings
@@ -355,6 +380,8 @@ if not DEBUG:
     # Trust Railway's proxy for SSL
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     
+    # In production, only use secure cookies if we're actually on HTTPS
+    # Railway uses HTTPS, but the request might come through as HTTP internally
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
@@ -363,3 +390,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+else:
+    # Development: use insecure cookies for easier testing
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
