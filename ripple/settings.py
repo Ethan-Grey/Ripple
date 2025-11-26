@@ -78,10 +78,36 @@ else:
     if '127.0.0.1' not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append('127.0.0.1')
     
-    # Add Railway domain if not already included
-    railway_domain = os.getenv('RAILWAY_PUBLIC_DOMAIN', 'rippleskillshare.up.railway.app')
+    # Add Railway domain - check multiple possible environment variables
+    railway_domain = (
+        os.getenv('RAILWAY_PUBLIC_DOMAIN') or 
+        os.getenv('RAILWAY_STATIC_URL') or 
+        'rippleskillshare.up.railway.app'
+    )
+    # Extract domain from URL if it's a full URL
+    if railway_domain and (railway_domain.startswith('http://') or railway_domain.startswith('https://')):
+        from urllib.parse import urlparse
+        railway_domain = urlparse(railway_domain).netloc
+    # Add the Railway domain
     if railway_domain and railway_domain not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(railway_domain)
+
+# Always add Railway domain if DATABASE_URL is set (indicates production on Railway)
+# This ensures the domain is added even if DEBUG=True
+if os.getenv('DATABASE_URL'):
+    railway_domain = (
+        os.getenv('RAILWAY_PUBLIC_DOMAIN') or 
+        os.getenv('RAILWAY_STATIC_URL') or 
+        'rippleskillshare.up.railway.app'
+    )
+    if railway_domain:
+        # Extract domain from URL if it's a full URL
+        if railway_domain.startswith('http://') or railway_domain.startswith('https://'):
+            from urllib.parse import urlparse
+            railway_domain = urlparse(railway_domain).netloc
+        # Add the Railway domain to ALLOWED_HOSTS if not already present
+        if railway_domain not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(railway_domain)
 
 
 # Application definition
@@ -131,6 +157,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+<<<<<<< HEAD
+=======
+                'users.context_processors.recaptcha_site_key',
+>>>>>>> origin/main
             ],
         },
     },
@@ -143,25 +173,29 @@ WSGI_APPLICATION = 'ripple.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Use PostgreSQL in production (via DATABASE_URL), SQLite in development
-DATABASE_URL = os.getenv('DATABASE_URL')
-if DATABASE_URL:
-    # Production: Use PostgreSQL
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
+
+# Only use PostgreSQL if DATABASE_URL is a non-empty string that starts with a database scheme
+if DATABASE_URL and (DATABASE_URL.startswith('postgresql://') or DATABASE_URL.startswith('postgres://')):
+    # Production: Use PostgreSQL on Railway
     import dj_database_url
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
+            ssl_require=True,  # Require SSL for Railway PostgreSQL
         )
     }
 else:
-    # Development: Use SQLite
+    # Development: SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
 
 
 # Password validation
@@ -240,26 +274,41 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-# Email settings - easily switch between console and real emails
+# Email settings - SendGrid only
 USE_CONSOLE_EMAIL = os.getenv('USE_CONSOLE_EMAIL', '').lower() == 'true'
 
-# Check if SMTP credentials are available
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+# Check for SendGrid API key
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 
-# Use SMTP if credentials exist and console email is NOT explicitly enabled
-# Otherwise use console backend
-if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD and not USE_CONSOLE_EMAIL:
-    # Use SMTP when credentials are provided and console email is disabled
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
+# Use SendGrid if API key is provided and console email is NOT explicitly enabled
+if SENDGRID_API_KEY and not USE_CONSOLE_EMAIL:
+    # Use SendGrid Web API (faster and more reliable than SMTP)
+    EMAIL_BACKEND = 'ripple.email_backends.SendGridBackend'
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@ripple.com')
+    
+    # Always log email configuration (without exposing API key)
+    print(f"\n{'='*60}")
+    print(f"Email Configuration:")
+    print(f"  Backend: SendGrid Web API")
+    print(f"  From Email: {DEFAULT_FROM_EMAIL}")
+    print(f"  API Key: Set and configured")
+    print(f"  Status: SendGrid is configured and ready to send emails")
+    print(f"{'='*60}\n")
 else:
     # For development: emails will be printed to console
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     DEFAULT_FROM_EMAIL = 'noreply@ripple.com'
+    # Always log email configuration
+    print(f"\n{'='*60}")
+    print(f"Email Configuration: Console Backend (Development Mode)")
+    print(f"  Backend: Console Email Backend")
+    print(f"  From Email: {DEFAULT_FROM_EMAIL}")
+    print(f"  Status: Emails will be printed to console, not sent")
+    if not SENDGRID_API_KEY:
+        print(f"  Warning: SENDGRID_API_KEY not set!")
+    if USE_CONSOLE_EMAIL:
+        print(f"  Note: USE_CONSOLE_EMAIL is explicitly enabled")
+    print(f"{'='*60}\n")
 
 # AllAuth settings
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # Enable email verification for regular signups
@@ -308,6 +357,10 @@ SOCIALACCOUNT_PROVIDERS = {
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
+# Google reCAPTCHA settings
+RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY', '')
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '')
+
 # Custom adapters to handle email verification
 SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
 ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
@@ -316,6 +369,34 @@ ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_LOGIN_CANCELLED_URL = '/users/login/'
 SOCIALACCOUNT_LOGIN_ERROR_URL = '/users/login/'
 
+<<<<<<< HEAD
+=======
+# CSRF Trusted Origins - Required for CSRF verification
+CSRF_TRUSTED_ORIGINS = []
+if os.getenv('DATABASE_URL'):  # On Railway (production)
+    railway_domain = (
+        os.getenv('RAILWAY_PUBLIC_DOMAIN') or 
+        os.getenv('RAILWAY_STATIC_URL') or 
+        'rippleskillshare.up.railway.app'
+    )
+    if railway_domain:
+        # Extract domain from URL if it's a full URL
+        if railway_domain.startswith('http://') or railway_domain.startswith('https://'):
+            from urllib.parse import urlparse
+            railway_domain = urlparse(railway_domain).netloc
+        # Add both HTTP and HTTPS versions
+        CSRF_TRUSTED_ORIGINS.extend([
+            f'https://{railway_domain}',
+            f'http://{railway_domain}',  # Allow HTTP for Railway internal routing
+        ])
+elif DEBUG:
+    # Development: allow localhost
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ]
+
+>>>>>>> origin/main
 # Production Security Settings
 if not DEBUG:
     # HTTPS/SSL Settings
@@ -326,6 +407,8 @@ if not DEBUG:
     # Trust Railway's proxy for SSL
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     
+    # In production, only use secure cookies if we're actually on HTTPS
+    # Railway uses HTTPS, but the request might come through as HTTP internally
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
@@ -334,3 +417,10 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+<<<<<<< HEAD
+=======
+else:
+    # Development: use insecure cookies for easier testing
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+>>>>>>> origin/main

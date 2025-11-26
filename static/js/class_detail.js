@@ -330,11 +330,26 @@ function selectDate(dateStr) {
     }
   });
   
+  // Show selected date display
+  const dateDisplay = document.getElementById('selected-date-display');
+  if (dateDisplay) {
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    const dateFormatted = dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+    dateDisplay.textContent = dateFormatted;
+    dateDisplay.style.display = 'block';
+  }
+  
+  // Reset selected slot when changing dates
+  bookingModalState.selectedSlot = null;
+  const confirmBtn = document.getElementById('confirm-slot-btn');
+  if (confirmBtn) confirmBtn.disabled = true;
+  
   const slotsContainer = document.getElementById('available-slots');
   const slots = bookingModalState.slotsByDate[dateStr] || [];
   
   if (slots.length === 0) {
     slotsContainer.innerHTML = '<p class="no-slots">No slots available for this date</p>';
+    if (dateDisplay) dateDisplay.style.display = 'none';
     return;
   }
   
@@ -345,7 +360,7 @@ function selectDate(dateStr) {
     if (bookingModalState.selectedSlot && bookingModalState.selectedSlot.id === slot.id) {
       button.classList.add('selected');
     }
-    button.textContent = `${slot.start_time_display} - ${slot.end_time_display}`;
+    button.textContent = slot.start_time_display;
     button.onclick = (e) => selectTimeSlot(slot, e);
     slotsContainer.appendChild(button);
   });
@@ -361,7 +376,10 @@ function selectTimeSlot(slot, event) {
     event.target.classList.add('selected');
   }
   
-  document.getElementById('confirm-slot-btn').disabled = false;
+  const confirmBtn = document.getElementById('confirm-slot-btn');
+  if (confirmBtn) confirmBtn.disabled = false;
+  
+  // Date display remains showing the selected date, time is indicated by selected button
 }
 
 function confirmSlot() {

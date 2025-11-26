@@ -1253,11 +1253,25 @@ function selectDate(dateStr) {
     }
   });
   
+  // Show selected date display
+  const dateDisplay = document.getElementById('selected-date-display');
+  if (dateDisplay) {
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    const dateFormatted = dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+    dateDisplay.textContent = dateFormatted;
+    dateDisplay.style.display = 'block';
+  }
+  
+  // Reset selected slot when changing dates
+  bookingModalState.selectedSlot = null;
+  document.getElementById('confirm-slot-btn').disabled = true;
+  
   const slotsContainer = document.getElementById('available-slots');
   const slots = bookingModalState.slotsByDate[dateStr] || [];
   
   if (slots.length === 0) {
     slotsContainer.innerHTML = '<p class="no-slots">No slots available for this date</p>';
+    dateDisplay.style.display = 'none';
     return;
   }
   
@@ -1268,7 +1282,7 @@ function selectDate(dateStr) {
     if (bookingModalState.selectedSlot && bookingModalState.selectedSlot.id === slot.id) {
       button.classList.add('selected');
     }
-    button.textContent = `${slot.start_time_display} - ${slot.end_time_display}`;
+    button.textContent = slot.start_time_display;
     button.onclick = (e) => selectTimeSlot(slot, e);
     slotsContainer.appendChild(button);
   });
@@ -1285,6 +1299,9 @@ function selectTimeSlot(slot, event) {
   }
   
   document.getElementById('confirm-slot-btn').disabled = false;
+  
+  // Update selected date display (time is shown on button selection, date stays visible)
+  // The date display already shows the selected date, no need to add time here
 }
 
 function confirmSlot() {
@@ -1376,7 +1393,9 @@ document.addEventListener('click', function(event) {
     <div id="booking-step-1" class="booking-step">
       <div class="booking-left">
         <div class="booking-teacher-info">
-          {% user_avatar cls.teacher size='medium' css_class='booking-teacher-avatar' %}
+          <div class="booking-teacher-avatar-wrapper">
+            {% user_avatar cls.teacher size='medium' css_class='booking-teacher-avatar' %}
+          </div>
           <div>
             <h3>{{ cls.teacher.username }}</h3>
             <p>{% if cls.teacher.profile.bio %}{{ cls.teacher.profile.bio }}{% else %}Instructor{% endif %}</p>
@@ -1398,16 +1417,21 @@ document.addEventListener('click', function(event) {
       
       <div class="booking-right">
         <h3>Select a Date & Time</h3>
-        <div class="calendar-header">
-          <button onclick="previousMonth()">‹</button>
-          <span id="current-month-display"></span>
-          <button onclick="nextMonth()">›</button>
+        <div class="calendar-wrapper">
+          <div class="calendar-header">
+            <button onclick="previousMonth()">‹</button>
+            <span id="current-month-display"></span>
+            <button onclick="nextMonth()">›</button>
+          </div>
+          <div id="calendar-container" class="calendar-dates"></div>
         </div>
-        <div id="calendar-container" class="calendar-dates"></div>
-        <div id="slots-loading" style="display: none; text-align: center; padding: 20px;">Loading slots...</div>
-        <div id="slots-error" style="display: none; text-align: center; padding: 20px; color: #ef4444;"></div>
+        <div id="slots-loading" style="display: none; text-align: center; padding: 20px; color: #6b7280;">Loading time slots...</div>
+        <div id="slots-error" style="display: none; text-align: center; padding: 20px; color: #ef4444; background: #fee2e2; border-radius: 8px; margin: 16px 0;"></div>
+        <div id="selected-date-display" style="display: none; margin: 16px 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text);"></div>
         <div id="available-slots" class="time-slots"></div>
-        <button id="confirm-slot-btn" class="btn btn-primary" onclick="confirmSlot()" disabled>Confirm</button>
+        <div class="confirm-button-wrapper" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+          <button id="confirm-slot-btn" class="btn btn-primary" onclick="confirmSlot()" disabled style="width: 100%;">Confirm</button>
+        </div>
       </div>
     </div>
     
@@ -1415,7 +1439,9 @@ document.addEventListener('click', function(event) {
     <div id="booking-step-2" class="booking-step" style="display: none;">
       <div class="booking-left">
         <div class="booking-teacher-info">
-          {% user_avatar cls.teacher size='medium' css_class='booking-teacher-avatar' %}
+          <div class="booking-teacher-avatar-wrapper">
+            {% user_avatar cls.teacher size='medium' css_class='booking-teacher-avatar' %}
+          </div>
           <div>
             <h3>{{ cls.teacher.username }}</h3>
             <p>{% if cls.teacher.profile.bio %}{{ cls.teacher.profile.bio }}{% else %}Instructor{% endif %}</p>
@@ -1505,12 +1531,14 @@ document.addEventListener('click', function(event) {
 .booking-modal-content {
   background: white;
   border-radius: 20px;
-  max-width: 1000px;
+  max-width: 800px;
   width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
 }
 
 .booking-modal-close {
@@ -1539,54 +1567,84 @@ document.addEventListener('click', function(event) {
 
 .booking-step {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  padding: 40px;
+  grid-template-columns: 350px 350px;
+  gap: 30px;
+  padding: 30px;
+  min-height: 500px;
+  justify-content: center;
 }
 
 .booking-left {
   border-right: 1px solid #e5e7eb;
   padding-right: 40px;
+  overflow-y: auto;
+  max-height: calc(90vh - 80px);
+  flex-shrink: 0;
+  max-width: 350px;
+  width: 100%;
 }
 
 .booking-teacher-info {
   display: flex;
   gap: 16px;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 24px;
+  flex-wrap: nowrap;
 }
 
-.booking-teacher-avatar, .booking-teacher-avatar-placeholder {
-  width: 60px;
-  height: 60px;
+.booking-teacher-avatar-wrapper {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  min-height: 80px;
   border-radius: 50%;
   flex-shrink: 0;
+  align-self: flex-start;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+  background: #f9fafb;
 }
 
-.booking-teacher-avatar {
+.booking-teacher-avatar,
+.user-avatar-img,
+.user-avatar-initials {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  border: none !important;
+}
+
+.booking-teacher-avatar,
+.user-avatar-img {
   object-fit: cover;
 }
 
-.booking-teacher-avatar-placeholder {
-  background: linear-gradient(135deg, var(--brand) 0%, #5a77ff 100%);
+.user-avatar-initials {
+  border-radius: 50%;
+}
+
+.booking-teacher-info > div:not(.booking-teacher-avatar-wrapper) {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 4px;
 }
 
 .booking-teacher-info h3 {
   margin: 0 0 4px 0;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
+  line-height: 1.3;
+  color: #111827;
 }
 
 .booking-teacher-info p {
   margin: 0;
   color: #6b7280;
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .booking-left hr {
@@ -1609,12 +1667,15 @@ document.addEventListener('click', function(event) {
   margin: 0 0 12px 0;
   font-size: 18px;
   font-weight: 700;
+  color: #111827;
 }
 
 .booking-session-info p {
   color: #6b7280;
   line-height: 1.6;
   margin: 0 0 20px 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .booking-price, .booking-selected-slot {
@@ -1624,31 +1685,48 @@ document.addEventListener('click', function(event) {
 .booking-price strong, .booking-selected-slot strong {
   display: block;
   font-size: 18px;
-  color: var(--text);
+  color: #111827;
   margin-top: 4px;
+  font-weight: 700;
+}
+
+.booking-right {
+  overflow-y: auto;
+  max-height: calc(90vh - 80px);
+  padding-right: 10px;
+  max-width: 350px;
+  width: 100%;
 }
 
 .booking-right h3 {
-  margin: 0 0 24px 0;
-  font-size: 20px;
+  margin: 0 0 16px 0;
+  font-size: 18px;
   font-weight: 700;
+  color: #111827;
+}
+
+.calendar-wrapper {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  max-width: 100%;
 }
 
 .calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .calendar-header button {
   background: #f3f4f6;
   border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1660,23 +1738,24 @@ document.addEventListener('click', function(event) {
 }
 
 .calendar-header span {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .calendar-dates {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: 4px;
+  margin-bottom: 16px;
+  max-width: 100%;
 }
 
 .calendar-weekday {
   text-align: center;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   color: #6b7280;
-  padding: 8px;
+  padding: 4px 2px;
   text-transform: uppercase;
 }
 
@@ -1693,12 +1772,18 @@ document.addEventListener('click', function(event) {
 
 .calendar-date {
   aspect-ratio: 1;
-  border: 2px solid #e5e7eb;
+  border: 1.5px solid #e5e7eb;
   background: white;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   font-weight: 600;
+  font-size: 11px;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 2px;
 }
 
 .calendar-date:hover {
@@ -1715,18 +1800,46 @@ document.addEventListener('click', function(event) {
 .time-slots {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-  min-height: 150px;
+  gap: 8px;
+  margin-bottom: 0;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.confirm-button-wrapper {
+  flex-shrink: 0;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+#confirm-slot-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #e5e7eb;
+  box-shadow: none;
+}
+
+#confirm-slot-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+#selected-date-display {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
 }
 
 .time-slot-btn {
-  padding: 14px 20px;
+  padding: 10px 16px;
   border: 2px solid #e5e7eb;
   background: white;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   text-align: left;
   transition: all 0.2s;
@@ -1804,7 +1917,7 @@ document.addEventListener('click', function(event) {
   flex: 1;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .booking-step {
     grid-template-columns: 1fr;
     gap: 24px;
@@ -1816,6 +1929,18 @@ document.addEventListener('click', function(event) {
     border-bottom: 1px solid #e5e7eb;
     padding-right: 0;
     padding-bottom: 24px;
+    max-height: none;
+    max-width: 100%;
+  }
+  
+  .booking-right {
+    max-height: none;
+    padding-right: 0;
+    max-width: 100%;
+  }
+  
+  .booking-modal-content {
+    max-width: 95vw;
   }
 }
 </style>

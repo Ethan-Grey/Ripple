@@ -35,50 +35,84 @@ def skill_detail(request, user_id=None, skill_id=None, application_id=None):
 def verify_skill(request, user_id=None, skill_id=None, application_id=None):
     """Re-purposed: Approve a teacher application."""
     if request.method == 'POST':
-        application = get_object_or_404(TeacherApplication, id=application_id)
-        notes = request.POST.get('verification_message', '').strip()
-        application.status = TeacherApplication.APPROVED
-        application.decision_notes = notes
-        application.reviewer = request.user
+        from django.db import transaction
         from django.utils import timezone
-        application.reviewed_at = timezone.now()
-        application.save()
-        # Auto-create a TeachingClass using application data
-        base_slug = slugify(application.title) or f"class-{application.id}"
-        unique_slug = base_slug
-        i = 1
-        while TeachingClass.objects.filter(slug=unique_slug).exists():
-            i += 1
-            unique_slug = f"{base_slug}-{i}"
-        is_published = request.POST.get('is_published') == 'on'
-        # Difficulty and tradeable/price/duration come from the user's application by default
-        post_is_trade = request.POST.get('is_tradeable')
-        is_tradeable = (post_is_trade == 'on') if post_is_trade is not None else application.is_tradeable
-        difficulty = (request.POST.get('difficulty') or application.difficulty or 'beginner')
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
         try:
-            duration_minutes = int((request.POST.get('duration_minutes') if request.POST.get('duration_minutes') is not None else application.duration_minutes) or 0)
-        except Exception:
-            duration_minutes = 0
-        try:
-            price_cents = int((request.POST.get('price_cents') if request.POST.get('price_cents') is not None else application.price_cents) or 0)
-        except Exception:
-            price_cents = 0
+            application = get_object_or_404(TeacherApplication, id=application_id)
+            notes = request.POST.get('verification_message', '').strip()
+            
+            # Use transaction to ensure both saves happen together
+            with transaction.atomic():
+                application.status = TeacherApplication.APPROVED
+                application.decision_notes = notes
+                application.reviewer = request.user
+                application.reviewed_at = timezone.now()
+                application.save()
+                
+                # Auto-create a TeachingClass using application data
+                base_slug = slugify(application.title) or f"class-{application.id}"
+                unique_slug = base_slug
+                i = 1
+                while TeachingClass.objects.filter(slug=unique_slug).exists():
+                    i += 1
+                    unique_slug = f"{base_slug}-{i}"
+                
+                # Check if publish checkbox is checked
+                # HTML checkboxes: if checked, sends 'on'; if unchecked, not in POST
+                is_published = request.POST.get('is_published') == 'on'
+                
+                # Difficulty and tradeable/price/duration come from the user's application by default
+                post_is_trade = request.POST.get('is_tradeable')
+                is_tradeable = (post_is_trade == 'on') if post_is_trade is not None else application.is_tradeable
+                difficulty = (request.POST.get('difficulty') or application.difficulty or 'beginner')
+                try:
+                    duration_minutes = int((request.POST.get('duration_minutes') if request.POST.get('duration_minutes') is not None else application.duration_minutes) or 0)
+                except Exception:
+                    duration_minutes = 0
+                try:
+                    price_cents = int((request.POST.get('price_cents') if request.POST.get('price_cents') is not None else application.price_cents) or 0)
+                except Exception:
+                    price_cents = 0
 
-        TeachingClass.objects.create(
-            teacher=application.applicant,
-            title=application.title,
-            slug=unique_slug,
-            short_description=(application.bio or '')[:140],
-            full_description=application.bio or '',
-            intro_video=application.intro_video,
-            thumbnail=application.thumbnail,
-            is_published=is_published,
-            is_tradeable=is_tradeable,
-            difficulty=difficulty,
-            duration_minutes=duration_minutes,
-            price_cents=price_cents,
-        )
-        messages.success(request, f'Approved teacher application for {application.applicant.username}.')
+                teaching_class = TeachingClass.objects.create(
+                    teacher=application.applicant,
+                    title=application.title,
+                    slug=unique_slug,
+                    short_description=(application.bio or '')[:140],
+                    full_description=application.bio or '',
+                    intro_video=application.intro_video,
+                    thumbnail=application.thumbnail,
+                    is_published=is_published,
+                    is_tradeable=is_tradeable,
+                    difficulty=difficulty,
+                    duration_minutes=duration_minutes,
+                    price_cents=price_cents,
+                )
+                
+                # Force refresh from database to ensure it's saved
+                teaching_class.refresh_from_db()
+                
+                # Log the creation for debugging
+                logger.info(f"Created TeachingClass: ID={teaching_class.id}, Title={teaching_class.title}, Published={teaching_class.is_published}, Teacher={teaching_class.teacher.username}")
+                print(f"DEBUG: Created class {teaching_class.id} - {teaching_class.title} (published={teaching_class.is_published})")
+                
+            # Verify the class exists after transaction
+            if not TeachingClass.objects.filter(id=teaching_class.id).exists():
+                logger.error(f"ERROR: Class {teaching_class.id} was not saved to database!")
+                messages.error(request, 'Error: Class was not saved. Please check database connection.')
+            else:
+                messages.success(request, f'Approved teacher application for {application.applicant.username}. Class created successfully.')
+                
+        except Exception as e:
+            logger.error(f"Error creating class: {str(e)}", exc_info=True)
+            print(f"ERROR creating class: {str(e)}")
+            messages.error(request, f'Error creating class: {str(e)}')
+            return redirect('skill_admin:skill_detail', application_id=application_id)
+            
         return redirect('skill_admin:skill_review')
     return redirect('skill_admin:skill_detail', application_id=application_id)
 

@@ -1,5 +1,6 @@
 # Django Settings
 SECRET_KEY=your-secret-key-here
+<<<<<<< HEAD
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
@@ -12,6 +13,24 @@ DEFAULT_FROM_EMAIL=noreply@ripple.com
 # Set USE_CONSOLE_EMAIL=True for development (emails in console)
 # Set USE_CONSOLE_EMAIL=False for production (real emails)
 USE_CONSOLE_EMAIL=False
+=======
+
+# Email Settings - SendGrid
+# Get your API key from https://app.sendgrid.com/settings/api_keys
+SENDGRID_API_KEY=SG.your-sendgrid-api-key-here
+# IMPORTANT: This email MUST be verified in SendGrid!
+# Go to https://app.sendgrid.com → Settings → Sender Authentication → Verify a Single Sender
+DEFAULT_FROM_EMAIL=your-verified-email@example.com
+
+# Email Backend (console or smtp)
+# Set USE_CONSOLE_EMAIL=True for development (emails in console)
+# Set USE_CONSOLE_EMAIL=False for production (real emails via SendGrid)
+USE_CONSOLE_EMAIL=False
+
+# Google OAuth Settings
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+>>>>>>> origin/main
 
 # Database (for production)
 # DATABASE_URL=postgresql://user:password@localhost:5432/ripple

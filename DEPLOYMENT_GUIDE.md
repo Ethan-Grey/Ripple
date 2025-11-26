@@ -22,11 +22,11 @@ ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
 # Database (PostgreSQL)
 DATABASE_URL=postgresql://user:password@host:port/dbname
 
-# Email Settings (for production)
+# Email Settings (for production) - SendGrid
 USE_CONSOLE_EMAIL=False
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
+SENDGRID_API_KEY=SG.your-sendgrid-api-key-here
 DEFAULT_FROM_EMAIL=noreply@yourdomain.com
+# Note: Get your SendGrid API key from https://app.sendgrid.com/settings/api_keys
 
 # Stripe (if using payments)
 STRIPE_SECRET_KEY=sk_live_...
@@ -190,7 +190,7 @@ Before deploying, make sure to:
 - [ ] Set a strong `SECRET_KEY` (generate with: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`)
 - [ ] Set `ALLOWED_HOSTS` to your domain
 - [ ] Configure PostgreSQL database
-- [ ] Set up email service (Gmail SMTP or SendGrid)
+- [ ] Set up email service (SendGrid)
 - [ ] Configure Stripe keys (if using payments)
 - [ ] Configure Google OAuth (if using social login)
 - [ ] Run `python manage.py collectstatic` locally to test

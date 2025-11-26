@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Skill, SwipeAction, UserSkill, Offer, Match, ClassTimeSlot, ClassBooking, ClassFavorite, ClassReview
+from .models import Skill, SwipeAction, UserSkill, Offer, Match, ClassTimeSlot, ClassBooking, ClassFavorite, ClassReview, TeachingClass
 
 
 @admin.register(Skill)
@@ -63,3 +63,16 @@ class ClassReviewAdmin(admin.ModelAdmin):
     list_display = ('reviewer', 'teaching_class', 'rating', 'created_at')
     list_filter = ('rating', 'created_at')
     search_fields = ('reviewer__username', 'teaching_class__title')
+
+@admin.register(TeachingClass)
+class TeachingClassAdmin(admin.ModelAdmin):
+    list_display = ('title', 'teacher', 'is_published', 'price_cents', 'duration_minutes', 'created_at')
+    list_filter = ('is_published', 'difficulty', 'is_tradeable', 'created_at')
+    search_fields = ('title', 'teacher__username', 'short_description')
+    readonly_fields = ('created_at', 'updated_at', 'avg_rating', 'reviews_count')
+    
+    def save_model(self, request, obj, form, change):
+        # If creating a new class, default to published
+        if not change:
+            obj.is_published = True
+        super().save_model(request, obj, form, change)
