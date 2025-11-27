@@ -24,4 +24,7 @@ urlpatterns = [
     # Admin report management
     path('admin-reports/', views.admin_reports, name='admin_reports'),
     path('admin-handle-report/<int:report_id>/', views.admin_handle_report, name='admin_handle_report'),
+    
+    # Custom admin page
+    path('custom-admin/', views.custom_admin, name='custom_admin'),
 ]

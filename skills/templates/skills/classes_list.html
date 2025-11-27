@@ -512,15 +512,47 @@
   gap: 4px;
 }
 
-.bookmark-icon {
-  font-size: 24px;
-  opacity: 0.4;
-  transition: all 0.3s ease;
+.class-card-wrapper {
+  position: relative;
 }
 
-.class-card:hover .bookmark-icon {
-  opacity: 1;
-  transform: scale(1.15);
+.favorite-heart-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 0;
+}
+
+.favorite-heart-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.favorite-heart-btn:active {
+  transform: scale(0.95);
+}
+
+.favorite-heart-btn i {
+  font-size: 20px;
+  transition: all 0.2s ease;
+}
+
+.favorite-heart-btn:hover i {
+  transform: scale(1.2);
 }
 
 /* Empty State */
@@ -837,7 +869,8 @@
         "rating": {{ c.avg_rating|default:0 }},
         "reviews": {{ c.reviews_count|default:0 }},
         "topics": [{% for t in c.topics.all|slice:":3" %}"{{ t.name|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
-        "isEnrolled": {% if user.is_authenticated and c in user.enrolled_classes.all %}true{% else %}false{% endif %}
+        "isEnrolled": {% if user.is_authenticated and c in user.enrolled_classes.all %}true{% else %}false{% endif %},
+        "isFavorited": {% if user.is_authenticated and c.id in favorited_class_ids %}true{% else %}false{% endif %}
       }{% if not forloop.last %}, {% endif %}
     {% empty %}
     
@@ -876,39 +909,81 @@
 const e = React.createElement;
 
 function Card({c}) {
+  const isAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
+  const [isFavorited, setIsFavorited] = React.useState(c.isFavorited || false);
+  
+  const handleFavoriteClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated || !c.slug) return;
+    
+    // Get CSRF token
+    const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+    
+    fetch(`/classes/${c.slug}/favorite/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+      setIsFavorited(data.is_favorited);
+    })
+    .catch(error => {
+      console.error('Error toggling favorite:', error);
+    });
+  };
+  
   const href = `/classes/${c.slug}/`;
-  return e('a', {href, className: 'class-card'}, [
-    e('div', {className: 'thumb-wrap', key: 'img'}, [
-      c.thumb 
-        ? e('img', {className: 'thumb', src: c.thumb, alt: c.title})
-        : e('div', {className: 'thumb-placeholder'}, c.title[0]?.toUpperCase() || 'C'),
-      (c.rating > 0 && c.reviews > 0) 
-        ? e('div', {className: 'rating-badge'}, `⭐ ${c.rating} · ${c.reviews}`)
-        : null
-    ]),
-    e('div', {className: 'card-content', key: 'content'}, [
-      e('div', {className: 'teacher-name'}, `By ${c.teacher}`),
-      e('h3', {className: 'class-title'}, c.title),
-      e('div', {className: 'topics-list'}, [
-        ...(c.topics || []).slice(0, 3).map((t, i) => 
-          e('span', {className: 'topic-pill', key: i}, t)
-        ),
-        (c.topics?.length > 3) 
-          ? e('span', {className: 'topic-pill more', key: 'more'}, `+${c.topics.length - 3}`)
+  return e('div', {className: 'class-card-wrapper'}, [
+    e('a', {href, className: 'class-card', key: 'card'}, [
+      e('div', {className: 'thumb-wrap', key: 'img'}, [
+        c.thumb 
+          ? e('img', {className: 'thumb', src: c.thumb, alt: c.title})
+          : e('div', {className: 'thumb-placeholder'}, c.title[0]?.toUpperCase() || 'C'),
+        (c.rating > 0 && c.reviews > 0) 
+          ? e('div', {className: 'rating-badge'}, `⭐ ${c.rating} · ${c.reviews}`)
           : null
-      ])
-    ]),
-    e('div', {className: 'card-footer', key: 'foot'}, [
-      e('div', {className: 'card-meta'}, [
-        e('span', {className: 'difficulty-badge', key: 'diff'}, c.difficulty),
-        e('span', {className: 'meta-dot', key: 'dot'}, '•'),
-        e('span', {className: 'duration', key: 'dur'}, [
-          e('span', {key: 'icon'}, '⏱️'),
-          `${c.duration}m`
+      ]),
+      e('div', {className: 'card-content', key: 'content'}, [
+        e('div', {className: 'teacher-name'}, `By ${c.teacher}`),
+        e('h3', {className: 'class-title'}, c.title),
+        e('div', {className: 'topics-list'}, [
+          ...(c.topics || []).slice(0, 3).map((t, i) => 
+            e('span', {className: 'topic-pill', key: i}, t)
+          ),
+          (c.topics?.length > 3) 
+            ? e('span', {className: 'topic-pill more', key: 'more'}, `+${c.topics.length - 3}`)
+            : null
         ])
       ]),
-      e('div', {className: 'bookmark-icon', 'aria-hidden': 'true', key: 'bookmark'}, '🔖')
-    ])
+      e('div', {className: 'card-footer', key: 'foot'}, [
+        e('div', {className: 'card-meta'}, [
+          e('span', {className: 'difficulty-badge', key: 'diff'}, c.difficulty),
+          e('span', {className: 'meta-dot', key: 'dot'}, '•'),
+          e('span', {className: 'duration', key: 'dur'}, [
+            e('span', {key: 'icon'}, '⏱️'),
+            `${c.duration}m`
+          ])
+        ])
+      ])
+    ]),
+    isAuthenticated ? e('button', {
+      className: 'favorite-heart-btn',
+      onClick: handleFavoriteClick,
+      'aria-label': isFavorited ? 'Remove from favorites' : 'Add to favorites',
+      key: 'favorite'
+    }, [
+      e('i', {
+        className: isFavorited ? 'bi bi-heart-fill' : 'bi bi-heart',
+        style: {color: isFavorited ? '#ef4444' : '#9ca3af'}
+      })
+    ]) : null
   ]);
 }
 

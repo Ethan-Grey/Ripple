@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} · Admin Panel{% endblock %}
+
+{% block content %}
+<style>
+.custom-admin-page {
+    min-height: calc(100vh - 80px);
+    background: #f5f5f5;
+    padding: 0;
+}
+
+.admin-header {
+    background: linear-gradient(135deg, #417690 0%, #205067 100%);
+    color: white;
+    padding: 20px 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.admin-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-header h1 a {
+    color: white;
+    text-decoration: none;
+}
+
+.admin-header .user-tools {
+    float: right;
+    margin-top: -30px;
+    font-size: 13px;
+}
+
+.admin-header .user-tools a {
+    color: white;
+    text-decoration: none;
+    margin-left: 15px;
+}
+
+.admin-header .user-tools a:hover {
+    text-decoration: underline;
+}
+
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+}
+
+.admin-welcome {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 20px 30px;
+    margin-bottom: 30px;
+    border-radius: 4px;
+}
+
+.admin-welcome h2 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    font-weight: 400;
+    color: #333;
+}
+
+.admin-welcome p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.admin-section {
+    background: white;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.admin-section h3 {
+    background: #79aec8;
+    color: white;
+    margin: 0;
+    padding: 12px 15px;
+    font-size: 14px;
+    font-weight: 400;
+    border-bottom: 1px solid #417690;
+}
+
+.admin-section table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-section table tr {
+    border-bottom: 1px solid #eee;
+}
+
+.admin-section table tr:last-child {
+    border-bottom: none;
+}
+
+.admin-section table tr:hover {
+    background: #f8f8f8;
+}
+
+.admin-section table td {
+    padding: 12px 15px;
+    font-size: 14px;
+}
+
+.admin-section table td:first-child {
+    width: 60%;
+}
+
+.admin-section table td a {
+    color: #417690;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.admin-section table td a:hover {
+    text-decoration: underline;
+}
+
+.admin-section table td:last-child {
+    text-align: right;
+    color: #666;
+    font-size: 13px;
+}
+
+.add-button {
+    display: inline-block;
+    background: #417690;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 13px;
+    margin-top: 20px;
+    transition: background 0.2s;
+}
+
+.add-button:hover {
+    background: #205067;
+    color: white;
+    text-decoration: none;
+}
+
+.recent-actions {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 20px 30px;
+    margin-bottom: 30px;
+    border-radius: 4px;
+}
+
+.recent-actions h2 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    font-weight: 400;
+    color: #333;
+}
+
+.recent-actions ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.recent-actions li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    color: #666;
+}
+
+.recent-actions li:last-child {
+    border-bottom: none;
+}
+
+.recent-actions li a {
+    color: #417690;
+    text-decoration: none;
+}
+
+.recent-actions li a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .admin-header .user-tools {
+        float: none;
+        margin-top: 15px;
+        display: block;
+    }
+    
+    .admin-container {
+        padding: 0 15px 30px;
+    }
+}
+</style>
+
+<div class="custom-admin-page">
+    <div class="admin-header">
+        <h1>
+            <a href="{% url 'core:custom_admin' %}">Ripple Administration</a>
+        </h1>
+        <div class="user-tools">
+            Welcome, <strong>{{ user.get_full_name|default:user.username }}</strong>.
+            <a href="{% url 'core:home' %}">View site</a> /
+            <a href="{% url 'users:logout' %}">Log out</a>
+        </div>
+        <div style="clear: both;"></div>
+    </div>
+
+    <div class="admin-container">
+        <div class="admin-welcome">
+            <h2>Welcome to Ripple Administration</h2>
+            <p>Please choose from the options below to manage your site's content.</p>
+        </div>
+
+        {% for section in admin_sections %}
+        <div class="admin-section">
+            <h3>{{ section.name }}</h3>
+            <table>
+                <tbody>
+                    {% for model in section.models %}
+                    <tr>
+                        <td>
+                            <a href="{{ model.url }}">{{ model.name }}</a>
+                        </td>
+                        <td>{{ model.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+
+        <div class="recent-actions">
+            <h2>Quick Actions</h2>
+            <ul>
+                <li><a href="{% url 'core:admin_reports' %}">Review Reports</a></li>
+                <li><a href="{% url 'skill_admin:skill_review' %}">Review Teacher Applications</a></li>
+                <li><a href="{% url 'users:admin_user_verifications' %}">User Verifications</a></li>
+                <li><a href="{% url 'communities:admin_community_requests' %}">Community Requests</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

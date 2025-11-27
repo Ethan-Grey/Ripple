@@ -158,6 +158,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'users.context_processors.recaptcha_site_key',
+                'users.context_processors.unread_messages_count',
             ],
         },
     },

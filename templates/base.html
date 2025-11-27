@@ -964,9 +964,12 @@
                     <i class="bi bi-people nav-icon" aria-hidden="true"></i>
                     <span class="nav-text">Communities</span>
                 </a>
-                <a class="nav-item" href="{% url 'chat:messages' %}" aria-label="View messages">
+                <a class="nav-item" href="{% url 'chat:messages' %}" aria-label="View messages" id="messages-nav-item">
                     <i class="bi bi-chat-dots nav-icon" aria-hidden="true"></i>
                     <span class="nav-text">Messages</span>
+                    {% if user.is_authenticated and unread_messages_count > 0 %}
+                        <span class="nav-badge" id="messages-badge" aria-label="{{ unread_messages_count }} unread messages">{{ unread_messages_count }}</span>
+                    {% endif %}
                 </a>
                 <a class="nav-item" href="{% url 'skills:trade_offers' %}" aria-label="View trade offers">
                     <i class="bi bi-arrow-left-right nav-icon" aria-hidden="true"></i>
@@ -1006,9 +1009,9 @@
                         <i class="bi bi-inbox nav-icon" aria-hidden="true"></i>
                         <span class="nav-text">Community Requests</span>
                     </a>
-                    <a class="nav-item admin-django" href="/admin/" aria-label="Access Django admin panel">
+                    <a class="nav-item admin-django" href="{% url 'core:custom_admin' %}" aria-label="Access admin panel">
                         <i class="bi bi-speedometer2 nav-icon" aria-hidden="true"></i>
-                        <span class="nav-text">Django Admin</span>
+                        <span class="nav-text">Admin Panel</span>
                     </a>
                 {% endif %}
                 
@@ -1225,6 +1228,96 @@
             });
         }
     </script>
+    
+    <!-- Message Notification System -->
+    {% if user.is_authenticated %}
+    <script>
+        (function() {
+            let lastUnreadCount = {{ unread_messages_count|default:0 }};
+            let notificationPermission = false;
+            
+            // Request notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(function(permission) {
+                    notificationPermission = permission === 'granted';
+                });
+            } else if ('Notification' in window && Notification.permission === 'granted') {
+                notificationPermission = true;
+            }
+            
+            // Function to update the badge in navbar
+            function updateMessageBadge(count) {
+                const badge = document.getElementById('messages-badge');
+                const navItem = document.getElementById('messages-nav-item');
+                
+                if (count > 0) {
+                    if (!badge && navItem) {
+                        // Create badge if it doesn't exist
+                        const newBadge = document.createElement('span');
+                        newBadge.id = 'messages-badge';
+                        newBadge.className = 'nav-badge';
+                        newBadge.setAttribute('aria-label', count + ' unread messages');
+                        newBadge.textContent = count;
+                        navItem.appendChild(newBadge);
+                    } else if (badge) {
+                        // Update existing badge
+                        badge.textContent = count;
+                        badge.setAttribute('aria-label', count + ' unread messages');
+                    }
+                } else {
+                    // Remove badge if count is 0
+                    if (badge) {
+                        badge.remove();
+                    }
+                }
+                
+                // Show browser notification if count increased
+                if (count > lastUnreadCount && notificationPermission && document.hidden) {
+                    const notification = new Notification('New Message' + (count > 1 ? 's' : ''), {
+                        body: 'You have ' + count + ' unread message' + (count > 1 ? 's' : ''),
+                        icon: '/static/logos/Ripple logo.png',
+                        tag: 'ripple-messages',
+                        requireInteraction: false
+                    });
+                    
+                    notification.onclick = function() {
+                        window.focus();
+                        window.location.href = '{% url "chat:messages" %}';
+                        notification.close();
+                    };
+                }
+                
+                lastUnreadCount = count;
+            }
+            
+            // Poll for unread message count every 10 seconds
+            function pollUnreadCount() {
+                fetch('{% url "chat:get_unread_count" %}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateMessageBadge(data.unread_count);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling unread count:', error);
+                    });
+            }
+            
+            // Start polling after page load
+            setTimeout(pollUnreadCount, 2000); // Initial poll after 2 seconds
+            setInterval(pollUnreadCount, 10000); // Then every 10 seconds
+            
+            // Also poll when page becomes visible
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    pollUnreadCount();
+                }
+            });
+        })();
+    </script>
+    {% endif %}
+    
     <script src="{% static 'js/main.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>

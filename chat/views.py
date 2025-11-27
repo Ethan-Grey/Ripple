@@ -317,6 +317,22 @@ def get_conversations_update(request):
 
 
 @login_required
+def get_unread_count(request):
+    """AJAX endpoint to get total unread message count"""
+    unread_count = MessageStatus.objects.filter(
+        user=request.user,
+        is_read=False
+    ).exclude(
+        message__sender=request.user
+    ).count()
+    
+    return JsonResponse({
+        'success': True,
+        'unread_count': unread_count
+    })
+
+
+@login_required
 def archive_conversation(request, conversation_id):
     """Archive a conversation for the current user"""
     conversation = get_object_or_404(

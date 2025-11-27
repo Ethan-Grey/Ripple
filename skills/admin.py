@@ -66,10 +66,42 @@ class ClassReviewAdmin(admin.ModelAdmin):
 
 @admin.register(TeachingClass)
 class TeachingClassAdmin(admin.ModelAdmin):
-    list_display = ('title', 'teacher', 'is_published', 'price_cents', 'duration_minutes', 'created_at')
+    list_display = ('title', 'teacher', 'is_published', 'price_display', 'duration_minutes', 'avg_rating', 'enrollment_count', 'created_at')
     list_filter = ('is_published', 'difficulty', 'is_tradeable', 'created_at')
     search_fields = ('title', 'teacher__username', 'short_description')
     readonly_fields = ('created_at', 'updated_at', 'avg_rating', 'reviews_count')
+    list_editable = ('is_published',)
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'teacher', 'short_description', 'description', 'thumbnail')
+        }),
+        ('Pricing & Details', {
+            'fields': ('price_cents', 'duration_minutes', 'difficulty', 'is_tradeable', 'is_published')
+        }),
+        ('Topics', {
+            'fields': ('topics',)
+        }),
+        ('Statistics', {
+            'fields': ('avg_rating', 'reviews_count'),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def price_display(self, obj):
+        if obj.price_cents:
+            return f"${obj.price_cents / 100:.2f}"
+        return "Free"
+    price_display.short_description = 'Price'
+    
+    def enrollment_count(self, obj):
+        return obj.enrollments.filter(status='active').count()
+    enrollment_count.short_description = 'Enrollments'
     
     def save_model(self, request, obj, form, change):
         # If creating a new class, default to published

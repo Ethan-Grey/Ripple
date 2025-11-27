@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
-from skills.models import Skill, UserSkill, Match, TeachingClass, SwipeAction, ClassEnrollment, ClassBooking, ClassTimeSlot, TeacherApplication
-from communities.models import Community, CommunityRequest
-from chat.models import Conversation, MessageStatus
+from skills.models import Skill, UserSkill, Match, TeachingClass, SwipeAction, ClassEnrollment, ClassBooking, ClassTimeSlot, TeacherApplication, ClassReview
+from communities.models import Community, CommunityRequest, Post, Comment
+from chat.models import Conversation, Message, MessageStatus
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.contrib import messages
 from datetime import timedelta
+from users.models import Profile, Evidence, IdentitySubmission
 
 
 def landing(request):
@@ -618,6 +619,69 @@ def admin_reports(request):
     }
     
     return render(request, 'core/admin_reports.html', context)
+
+
+@login_required
+def custom_admin(request):
+    """Custom admin page that looks like Django admin but with custom HTML"""
+    if not request.user.is_staff:
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('core:home')
+    
+    # Get all models and their counts
+    admin_sections = [
+        {
+            'name': 'Users & Profiles',
+            'models': [
+                {'name': 'Users', 'count': User.objects.count(), 'url': '/admin/auth/user/'},
+                {'name': 'Profiles', 'count': Profile.objects.count(), 'url': '/admin/users/profile/'},
+                {'name': 'Evidence', 'count': Evidence.objects.count(), 'url': '/admin/users/evidence/'},
+                {'name': 'Identity Submissions', 'count': IdentitySubmission.objects.count(), 'url': '/admin/users/identitysubmission/'},
+            ]
+        },
+        {
+            'name': 'Skills & Classes',
+            'models': [
+                {'name': 'Skills', 'count': Skill.objects.count(), 'url': '/admin/skills/skill/'},
+                {'name': 'User Skills', 'count': UserSkill.objects.count(), 'url': '/admin/skills/userskill/'},
+                {'name': 'Teaching Classes', 'count': TeachingClass.objects.count(), 'url': '/admin/skills/teachingclass/'},
+                {'name': 'Class Enrollments', 'count': ClassEnrollment.objects.count(), 'url': '/admin/skills/classenrollment/'},
+                {'name': 'Class Bookings', 'count': ClassBooking.objects.count(), 'url': '/admin/skills/classbooking/'},
+                {'name': 'Class Reviews', 'count': ClassReview.objects.count(), 'url': '/admin/skills/classreview/'},
+                {'name': 'Teacher Applications', 'count': TeacherApplication.objects.count(), 'url': '/admin/skills/teacherapplication/'},
+            ]
+        },
+        {
+            'name': 'Communities',
+            'models': [
+                {'name': 'Communities', 'count': Community.objects.count(), 'url': '/admin/communities/community/'},
+                {'name': 'Community Requests', 'count': CommunityRequest.objects.count(), 'url': '/admin/communities/communityrequest/'},
+                {'name': 'Posts', 'count': Post.objects.count(), 'url': '/admin/communities/post/'},
+                {'name': 'Comments', 'count': Comment.objects.count(), 'url': '/admin/communities/comment/'},
+            ]
+        },
+        {
+            'name': 'Messaging',
+            'models': [
+                {'name': 'Conversations', 'count': Conversation.objects.count(), 'url': '/admin/chat/conversation/'},
+                {'name': 'Messages', 'count': Message.objects.count(), 'url': '/admin/chat/message/'},
+                {'name': 'Message Status', 'count': MessageStatus.objects.count(), 'url': '/admin/chat/messagestatus/'},
+            ]
+        },
+        {
+            'name': 'Reports & Moderation',
+            'models': [
+                {'name': 'Reports', 'count': Report.objects.count(), 'url': '/admin/core/report/'},
+                {'name': 'User Warnings', 'count': UserWarning.objects.count(), 'url': '/admin/core/userwarning/'},
+            ]
+        },
+    ]
+    
+    context = {
+        'admin_sections': admin_sections,
+    }
+    
+    return render(request, 'core/custom_admin.html', context)
 
 
 @login_required
