@@ -5,46 +5,453 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registration Complete · Ripple</title>
-  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow: hidden;
+    }
+
+    .auth-container {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Left Side - Welcome Section */
+    .auth-welcome {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 450px;
+    }
+
+    .welcome-icon {
+      font-size: 80px;
+      margin-bottom: 32px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .welcome-title {
+      font-size: 48px;
+      font-weight: 900;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+      line-height: 1.2;
+    }
+
+    .welcome-subtitle {
+      font-size: 20px;
+      line-height: 1.6;
+      opacity: 0.95;
+      font-weight: 500;
+    }
+
+    /* Decorative Shapes */
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.1;
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    .shape-1 {
+      width: 300px;
+      height: 300px;
+      background: white;
+      top: -100px;
+      left: -100px;
+    }
+
+    .shape-2 {
+      width: 200px;
+      height: 200px;
+      background: white;
+      bottom: -50px;
+      right: -50px;
+      animation-delay: 1s;
+    }
+
+    .shape-3 {
+      width: 150px;
+      height: 150px;
+      background: white;
+      top: 50%;
+      right: 10%;
+      animation-delay: 2s;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.1; }
+      50% { transform: scale(1.1); opacity: 0.15; }
+    }
+
+    /* Right Side - Success Message */
+    .auth-form-section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      background: #ffffff;
+      position: relative;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .form-wrapper {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .success-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+      animation: successPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes successPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3); }
+      50% { transform: scale(1.05); box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4); }
+    }
+
+    .success-icon svg {
+      width: 40px;
+      height: 40px;
+      color: white;
+      stroke-width: 3;
+    }
+
+    .success-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #111827;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .success-subtitle {
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+
+    /* Success Card */
+    .success-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.08) 100%);
+      border: 2px solid rgba(16, 185, 129, 0.2);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .success-message {
+      font-size: 15px;
+      color: #374151;
+      line-height: 1.8;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .success-message strong {
+      color: #111827;
+      font-weight: 700;
+    }
+
+    .email-display {
+      display: inline-block;
+      background: rgba(102, 126, 234, 0.1);
+      color: #667eea;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-weight: 700;
+      margin: 0 4px;
+    }
+
+    /* Info List */
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: #f9fafb;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      transition: all 0.2s ease;
+    }
+
+    .info-item:hover {
+      border-color: #d1d5db;
+      background: #f3f4f6;
+    }
+
+    .info-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .info-text {
+      font-size: 14px;
+      color: #4b5563;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .primary-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      text-decoration: none;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .primary-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .secondary-btn {
+      width: 100%;
+      padding: 14px;
+      background: transparent;
+      color: #667eea;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .secondary-btn:hover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .secondary-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Footer */
+    .form-footer {
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .footer-text {
+      font-size: 14px;
+      color: #9ca3af;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+
+    .footer-text a {
+      color: #667eea;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .footer-text a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 968px) {
+      .auth-container {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-welcome {
+        display: none;
+      }
+
+      .auth-form-section {
+        padding: 30px 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .auth-form-section {
+        padding: 30px 16px;
+      }
+
+      .success-title {
+        font-size: 28px;
+      }
+
+      .success-icon {
+        width: 64px;
+        height: 64px;
+      }
+
+      .success-icon svg {
+        width: 32px;
+        height: 32px;
+      }
+    }
+  </style>
 </head>
-<body class="auth-body">
-  <div class="auth-split">
-    <section class="auth-left">
-      <div class="welcome">
-        <h1>Check Your Email</h1>
-        <p>We've sent you a verification link to complete your registration and activate your account.</p>
+<body>
+  <div class="auth-container">
+    <!-- Left Side - Welcome -->
+    <div class="auth-welcome">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      
+      <div class="welcome-content">
+        <div class="welcome-icon">📧</div>
+        <h1 class="welcome-title">Check Your Email</h1>
+        <p class="welcome-subtitle">We've sent you a verification link to complete your registration and activate your account</p>
       </div>
-      <div class="shapes">
-        <div class="s1"></div>
-        <div class="s2"></div>
-        <div class="s3"></div>
-      </div>
-    </section>
-    <section class="auth-right">
-      <h3>Registration Complete</h3>
-      <div class="auth-form">
-        <div class="form-group">
-          <div class="success-message">
-            <strong><i class="bi bi-check-circle-fill"></i> Email Sent!</strong> Check your inbox at <strong>{{ email }}</strong> and click the verification link to activate your account.
+    </div>
+
+    <!-- Right Side - Success Message -->
+    <div class="auth-form-section">
+      <div class="form-wrapper">
+        <div class="success-header">
+          <div class="success-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h2 class="success-title">Registration Complete!</h2>
+          <p class="success-subtitle">Your account has been created successfully</p>
+        </div>
+
+        <!-- Success Card -->
+        <div class="success-card">
+          <p class="success-message">
+            We've sent a verification email to<br>
+            <span class="email-display">{{ email }}</span><br>
+            Click the link in the email to activate your account.
+          </p>
+        </div>
+
+        <!-- Info List -->
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-icon">⏱️</span>
+            <p class="info-text">The verification link will expire in 24 hours</p>
+          </div>
+          
+          <div class="info-item">
+            <span class="info-icon">📬</span>
+            <p class="info-text">Check your spam folder if you don't see the email</p>
+          </div>
+          
+          <div class="info-item">
+            <span class="info-icon">🔒</span>
+            <p class="info-text">You'll need to verify your email before logging in</p>
           </div>
         </div>
-        <div class="form-group">
-          <p style="color: var(--muted); font-size: 14px; text-align: center;">Didn't receive the email? Check your spam folder or try registering again.</p>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <a href="{% url 'users:login' %}" class="primary-btn">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+            </svg>
+            Go to Login
+          </a>
+          
+          <a href="{% url 'core:landing' %}" class="secondary-btn">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            Back to Home
+          </a>
         </div>
-        <div class="form-group">
-          <a href="{% url 'users:login' %}" class="cta" style="display: block; text-align: center; text-decoration: none;">Go to Login</a>
-          <div class="muted" style="margin-top: 16px; text-align: center;">
-            <a href="{% url 'core:landing' %}" class="link" style="font-size: 14px; opacity: 0.7;">
-              ← Back to Home
-            </a>
-          </div>
+
+        <!-- Footer -->
+        <div class="form-footer">
+          <p class="footer-text">
+            Need help? Contact our support team at<br>
+            <a href="mailto:support@ripple.com">support@ripple.com</a>
+          </p>
         </div>
-        <div class="muted">Need help? <a class="link" href="/">Contact Support</a></div>
       </div>
-    </section>
+    </div>
   </div>
 </body>
 </html>

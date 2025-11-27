@@ -5,46 +5,413 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Email Verified · Ripple</title>
-  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .auth-container {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Left Side - Welcome Section */
+    .auth-welcome {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 80px 60px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 500px;
+    }
+
+    .welcome-icon {
+      font-size: 80px;
+      margin-bottom: 32px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .welcome-title {
+      font-size: 48px;
+      font-weight: 900;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+      line-height: 1.2;
+    }
+
+    .welcome-subtitle {
+      font-size: 20px;
+      line-height: 1.6;
+      opacity: 0.95;
+      font-weight: 500;
+    }
+
+    .welcome-features {
+      margin-top: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      text-align: left;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 16px 20px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .feature-text {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* Decorative Shapes */
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.1;
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    .shape-1 {
+      width: 300px;
+      height: 300px;
+      background: white;
+      top: -100px;
+      left: -100px;
+    }
+
+    .shape-2 {
+      width: 200px;
+      height: 200px;
+      background: white;
+      bottom: -50px;
+      right: -50px;
+      animation-delay: 1s;
+    }
+
+    .shape-3 {
+      width: 150px;
+      height: 150px;
+      background: white;
+      top: 50%;
+      right: 10%;
+      animation-delay: 2s;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.1; }
+      50% { transform: scale(1.1); opacity: 0.15; }
+    }
+
+    /* Right Side - Success Message */
+    .auth-form-section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 80px 60px;
+      background: #ffffff;
+      position: relative;
+    }
+
+    .form-wrapper {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .form-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #111827;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .form-subtitle {
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    /* Success Message */
+    .success-container {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .success-icon {
+      font-size: 80px;
+      color: #10b981;
+      margin-bottom: 24px;
+      animation: scaleIn 0.5s ease-out;
+    }
+
+    @keyframes scaleIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .success-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 16px;
+    }
+
+    .success-message {
+      font-size: 16px;
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    /* Button Styles */
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      margin-top: 8px;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .submit-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .form-footer {
+      margin-top: 32px;
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 15px;
+      color: #6b7280;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+
+    .footer-link {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 700;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+      color: #5a67d8;
+      text-decoration: underline;
+    }
+
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #9ca3af;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+
+    .back-home:hover {
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .back-home svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 968px) {
+      .auth-container {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-welcome {
+        display: none;
+      }
+
+      .auth-form-section {
+        padding: 60px 24px;
+      }
+
+      .form-wrapper {
+        max-width: 100%;
+      }
+
+      .welcome-title {
+        font-size: 36px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .auth-form-section {
+        padding: 40px 20px;
+      }
+
+      .form-title {
+        font-size: 28px;
+      }
+
+      .form-subtitle {
+        font-size: 14px;
+      }
+
+      .success-title {
+        font-size: 24px;
+      }
+
+      .success-icon {
+        font-size: 60px;
+      }
+    }
+
+    /* Screen reader only class */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
 </head>
-<body class="auth-body">
-  <div class="auth-split">
-    <section class="auth-left">
-      <div class="welcome">
-        <h1>Account Activated</h1>
-        <p>Your email has been verified and your account is now active. Welcome to Ripple!</p>
-      </div>
-      <div class="shapes">
-        <div class="s1"></div>
-        <div class="s2"></div>
-        <div class="s3"></div>
-      </div>
-    </section>
-    <section class="auth-right">
-      <h3>Verification Complete</h3>
-      <div class="auth-form">
-        <div class="form-group">
-          <div class="success-message">
-            <strong><i class="bi bi-check-circle-fill"></i> Success!</strong> Your email has been verified and your account is now active.
+<body>
+  <div class="auth-container">
+    <!-- Left Side - Welcome -->
+    <div class="auth-welcome">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      
+      <div class="welcome-content">
+        <div class="welcome-icon">🌊</div>
+        <h1 class="welcome-title">Welcome to Ripple</h1>
+        <p class="welcome-subtitle">Your account is now active and ready to connect with learners worldwide</p>
+        
+        <div class="welcome-features">
+          <div class="feature-item">
+            <span class="feature-icon">🎯</span>
+            <span class="feature-text">Connect with experts in your field</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🤝</span>
+            <span class="feature-text">Start trading skills with peers</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🌟</span>
+            <span class="feature-text">Join thriving learning communities</span>
           </div>
         </div>
-        <div class="form-group">
-          <p style="color: var(--muted); font-size: 16px; text-align: center;">You can now log in to your Ripple account and start connecting with others.</p>
-        </div>
-        <div class="form-group">
-          <a href="{% url 'users:login' %}" class="cta" style="display: block; text-align: center; text-decoration: none;">Proceed to Login</a>
-          <div class="muted" style="margin-top: 16px; text-align: center;">
-            <a href="{% url 'core:landing' %}" class="link" style="font-size: 14px; opacity: 0.7;">
-              ← Back to Home
-            </a>
-          </div>
-        </div>
-        <div class="muted">Back to <a class="link" href="/">Home</a></div>
       </div>
-    </section>
+    </div>
+
+    <!-- Right Side - Success Message -->
+    <div class="auth-form-section">
+      <div class="form-wrapper">
+        <div class="form-header">
+          <h2 class="form-title">Email Verified</h2>
+          <p class="form-subtitle">Your account is now active and ready to use</p>
+        </div>
+
+        <div class="success-container">
+          <div class="success-icon">✅</div>
+          <h3 class="success-title">Verification Complete</h3>
+          <p class="success-message">
+            Your email has been successfully verified. Your Ripple account is now active and ready to use.
+          </p>
+        </div>
+
+        <a href="{% url 'users:login' %}" class="submit-btn" aria-label="Proceed to login page">
+          Proceed to Login
+        </a>
+
+        <div class="form-footer">
+          <p class="footer-text">
+            Ready to start your learning journey?
+          </p>
+          
+          <a href="{% url 'core:landing' %}" class="back-home">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Home
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </body>
 </html>
