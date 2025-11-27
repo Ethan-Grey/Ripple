@@ -5,7 +5,16 @@
 {% block extra_head %}
 <style>
     /* Hide Django messages popup on messages page */
-    .page-body > .alert {
+    .page-body > .alert,
+    .alert,
+    .alert-dismissible {
+        display: none !important;
+    }
+    
+    /* Hide notification banners */
+    [role="region"][aria-label="System messages"],
+    .alert-container,
+    .notification-banner {
         display: none !important;
     }
     
@@ -782,6 +791,11 @@
         display: flex;
     }
     
+    /* Hide Archive and Delete buttons on mobile */
+    .chat-actions {
+        display: none !important;
+    }
+    
     .empty-chat {
         display: none !important;
     }
@@ -837,6 +851,12 @@
     .message-input-area {
         padding: 16px;
         flex-shrink: 0 !important;
+    }
+    
+    /* Hide Archive and Delete buttons on mobile */
+    .chat-actions {
+        display: none !important;
+    }
         min-height: fit-content !important;
     }
     
