@@ -193,10 +193,18 @@
                 <label for="contentType">What are you reporting?</label>
                 <select name="content_type" id="contentType" required onchange="updateObjectSelector()">
                     <option value="">Select type...</option>
-                    <option value="11">User</option>
-                    <option value="16">Community</option>
-                    <option value="14">Class</option>
-                    <option value="other">Other</option>
+                    {% if content_type_map.user %}
+                    <option value="{{ content_type_map.user }}">User</option>
+                    {% endif %}
+                    {% if content_type_map.community %}
+                    <option value="{{ content_type_map.community }}">Community</option>
+                    {% endif %}
+                    {% if content_type_map.post %}
+                    <option value="{{ content_type_map.post }}">Post</option>
+                    {% endif %}
+                    {% if content_type_map.teachingclass %}
+                    <option value="{{ content_type_map.teachingclass }}">Class</option>
+                    {% endif %}
                 </select>
             </div>
 
@@ -228,6 +236,18 @@
                     </select>
                 </div>
 
+                <!-- Post Selector -->
+                <div id="postSelector" class="object-selector" style="display: none;">
+                    <div class="quick-search">
+                        <input type="text" id="postSearch" placeholder="Search posts..." onkeyup="filterOptions('postSearch', 'postSelect')" autocomplete="off">
+                    </div>
+                    <select name="object_id" id="postSelect" size="10" style="width: 100%; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 8px;" ondblclick="fillSearchFromSelect('postSelect', 'postSearch')">
+                        {% for post in posts %}
+                        <option value="{{ post.id }}">{{ post.title }} by {{ post.author.username }} in {{ post.community.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <!-- Class Selector -->
                 <div id="classSelector" class="object-selector" style="display: none;">
                     <div class="quick-search">
@@ -238,11 +258,6 @@
                         <option value="{{ class.id }}">{{ class.title }} by {{ class.teacher.username }}</option>
                         {% endfor %}
                     </select>
-                </div>
-
-                <!-- Other -->
-                <div id="otherSelector" class="object-selector" style="display: none;">
-                    <textarea name="other_description" placeholder="Please describe what you're reporting..." rows="3" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;"></textarea>
                 </div>
             </div>
 
@@ -309,6 +324,14 @@
 </div>
 
 <script>
+// Content type IDs from server
+const contentTypeMap = {
+    user: {{ content_type_map.user|default:"null" }},
+    community: {{ content_type_map.community|default:"null" }},
+    post: {{ content_type_map.post|default:"null" }},
+    teachingclass: {{ content_type_map.teachingclass|default:"null" }}
+};
+
 function updateObjectSelector() {
     const contentType = document.getElementById('contentType').value;
     const objectSection = document.getElementById('objectSection');
@@ -317,22 +340,23 @@ function updateObjectSelector() {
     document.querySelectorAll('.object-selector').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.object-selector select').forEach(sel => sel.required = false);
     
-    // Show relevant selector
-    if (contentType === '11') { // User
+    // Show relevant selector based on content type ID
+    if (contentType == contentTypeMap.user) { // User
         objectSection.style.display = 'block';
         document.getElementById('userSelector').style.display = 'block';
         document.getElementById('userSelect').required = true;
-    } else if (contentType === '16') { // Community
+    } else if (contentType == contentTypeMap.community) { // Community
         objectSection.style.display = 'block';
         document.getElementById('communitySelector').style.display = 'block';
         document.getElementById('communitySelect').required = true;
-    } else if (contentType === '14') { // Class
+    } else if (contentType == contentTypeMap.post) { // Post
+        objectSection.style.display = 'block';
+        document.getElementById('postSelector').style.display = 'block';
+        document.getElementById('postSelect').required = true;
+    } else if (contentType == contentTypeMap.teachingclass) { // Class
         objectSection.style.display = 'block';
         document.getElementById('classSelector').style.display = 'block';
         document.getElementById('classSelect').required = true;
-    } else if (contentType === 'other') {
-        objectSection.style.display = 'block';
-        document.getElementById('otherSelector').style.display = 'block';
     } else {
         objectSection.style.display = 'none';
     }

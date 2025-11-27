@@ -163,7 +163,8 @@ def home(request):
         recommended_class_ids = set(whitelisted_class_ids) - set(enrolled_class_ids)
         recommended_classes = TeachingClass.objects.filter(
             id__in=recommended_class_ids,
-            is_published=True
+            is_published=True,
+            is_deleted=False
         ).select_related('teacher').prefetch_related('topics')[:6]
         
         # Recent Conversations (last 5)
@@ -182,7 +183,7 @@ def home(request):
             })
         
         # Teaching Stats (if user is a teacher)
-        teaching_classes = TeachingClass.objects.filter(teacher=user, is_published=True)
+        teaching_classes = TeachingClass.objects.filter(teacher=user, is_published=True, is_deleted=False)
         if teaching_classes.exists():
             teaching_stats = {
                 'total_classes': teaching_classes.count(),
@@ -211,13 +212,15 @@ def home(request):
         
         matched_classes = TeachingClass.objects.filter(
             id__in=whitelisted_class_ids,
-            is_published=True
+            is_published=True,
+            is_deleted=False
         ).select_related('teacher').prefetch_related('topics')
     
     # Trending Classes (most enrollments in last 30 days)
     thirty_days_ago = timezone.now() - timedelta(days=30)
     trending_classes = TeachingClass.objects.filter(
         is_published=True,
+        is_deleted=False,
         enrollments__created_at__gte=thirty_days_ago
     ).annotate(
         recent_enrollments=Count('enrollments', filter=Q(enrollments__created_at__gte=thirty_days_ago))
@@ -274,14 +277,15 @@ def search(request):
             teachers_count=Count('userskill', filter=Q(userskill__can_teach=True))
         )[:10]
     
-    # Search classes
+    # Search classes (exclude soft-deleted)
     class_results = []
     if q:
         classes = TeachingClass.objects.filter(
             Q(title__icontains=q) |
             Q(short_description__icontains=q) |
             Q(full_description__icontains=q),
-            is_published=True  # Only show published classes
+            is_published=True,  # Only show published classes
+            is_deleted=False  # Exclude soft-deleted
         ).select_related('teacher').order_by('-created_at')[:10]
         
         # Add formatted price to each class
@@ -290,8 +294,8 @@ def search(request):
         
         class_results = classes
     
-    # Search communities
-    community_results = Community.objects.filter(name__icontains=q)[:10] if q else []
+    # Search communities (exclude soft-deleted)
+    community_results = Community.objects.filter(name__icontains=q, is_deleted=False)[:10] if q else []
     
     # Calculate total results count
     total_results = len(user_results) + len(skill_results) + len(class_results) + len(community_results)
@@ -505,13 +509,18 @@ def report_content(request):
         try:
             content_type = ContentType.objects.get(id=content_type_id)
             
-            # Create the report
-            Report.objects.create(
+            # Verify the object exists
+            model_class = content_type.model_class()
+            reported_obj = get_object_or_404(model_class, id=object_id)
+            
+            # Create the report (pending admin review)
+            report = Report.objects.create(
                 reporter=request.user,
                 content_type=content_type,
                 object_id=object_id,
                 reason=reason,
-                description=description
+                description=description,
+                status='pending'  # Pending admin review
             )
             
             messages.success(request, 'Thank you for your report. Our team will review it shortly.')
@@ -522,23 +531,31 @@ def report_content(request):
             return redirect('core:report_content')
     
     # Get available content types for reporting
-    reportable_models = ['user', 'community', 'teachingclass', 'message']
+    reportable_models = ['user', 'community', 'teachingclass', 'post']
     content_types = ContentType.objects.filter(model__in=reportable_models)
     
-    # Get all users, communities, classes for selection
-    users = User.objects.exclude(id=request.user.id).order_by('username')[:100]
+    # Get content type IDs for template
+    content_type_map = {}
+    for ct in content_types:
+        content_type_map[ct.model] = ct.id
     
-    from communities.models import Community
-    communities = Community.objects.all().order_by('name')[:100]
+    # Get all users, communities, classes, posts for selection (exclude soft-deleted)
+    users = User.objects.exclude(id=request.user.id).filter(is_active=True).order_by('username')[:100]
+    
+    from communities.models import Community, Post
+    communities = Community.objects.filter(is_deleted=False).order_by('name')[:100]
+    posts = Post.objects.filter(is_deleted=False).order_by('-created_at')[:100]
     
     from skills.models import TeachingClass
-    classes = TeachingClass.objects.filter(is_published=True).order_by('title')[:100]
+    classes = TeachingClass.objects.filter(is_published=True, is_deleted=False).order_by('title')[:100]
     
     context = {
         'content_types': content_types,
+        'content_type_map': content_type_map,
         'users': users,
         'communities': communities,
         'classes': classes,
+        'posts': posts,
     }
     
     return render(request, 'core/report_content.html', context)
@@ -558,15 +575,21 @@ def quick_report(request, content_type, object_id):
         try:
             ct = ContentType.objects.get(model=content_type)
             
-            Report.objects.create(
+            # Verify the object exists
+            model_class = ct.model_class()
+            reported_obj = get_object_or_404(model_class, id=object_id)
+            
+            # Create the report (pending admin review)
+            report = Report.objects.create(
                 reporter=request.user,
                 content_type=ct,
                 object_id=object_id,
                 reason=reason,
-                description=description
+                description=description,
+                status='pending'  # Pending admin review
             )
             
-            messages.success(request, 'Report submitted successfully.')
+            messages.success(request, 'Report submitted successfully. Our team will review it shortly.')
             return redirect(request.META.get('HTTP_REFERER', 'core:home'))
             
         except Exception as e:
@@ -720,12 +743,33 @@ def admin_handle_report(request, report_id):
             report.status = 'resolved'
             report.action_taken = 'content_removed'
             
-            # Delete the reported content
+            # Soft delete the reported content (only when admin explicitly approves)
             try:
                 reported_obj = report.reported_object
                 if reported_obj:
-                    reported_obj.delete()
-                    messages.success(request, 'Content removed successfully.')
+                    if report.content_type.model == 'user':
+                        # For users, deactivate (soft delete) - only when admin approves removal
+                        if reported_obj.is_active:
+                            reported_obj.is_active = False
+                            reported_obj.save()
+                            messages.success(request, f'User {reported_obj.username} has been deactivated (can be restored).')
+                        else:
+                            messages.warning(request, f'User {reported_obj.username} is already deactivated.')
+                    else:
+                        # Soft delete for posts, communities, classes
+                        if hasattr(reported_obj, 'is_deleted'):
+                            if not reported_obj.is_deleted:
+                                reported_obj.is_deleted = True
+                                reported_obj.deleted_at = timezone.now()
+                                reported_obj.deleted_by = request.user
+                                reported_obj.save()
+                                messages.success(request, 'Content removed successfully (can be recovered).')
+                            else:
+                                messages.warning(request, 'Content is already deleted.')
+                        else:
+                            # Fallback to hard delete if model doesn't support soft delete
+                            reported_obj.delete()
+                            messages.success(request, 'Content removed successfully.')
             except Exception as e:
                 messages.error(request, f'Could not remove content: {str(e)}')
                 
@@ -749,4 +793,41 @@ def admin_handle_report(request, report_id):
         
     except Exception as e:
         messages.error(request, f'Error: {str(e)}')
+        return redirect('core:admin_reports')
+
+
+@login_required
+@require_http_methods(["POST"])
+def admin_restore_content(request, content_type, object_id):
+    """Admin action to restore soft-deleted content or reactivate users"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    try:
+        ct = ContentType.objects.get(model=content_type)
+        model_class = ct.model_class()
+        content_obj = get_object_or_404(model_class, id=object_id)
+        
+        if content_type == 'user':
+            # For users, reactivate them
+            if not content_obj.is_active:
+                content_obj.is_active = True
+                content_obj.save()
+                messages.success(request, f'User {content_obj.username} has been reactivated.')
+            else:
+                messages.warning(request, 'User is already active.')
+        elif hasattr(content_obj, 'is_deleted') and content_obj.is_deleted:
+            # For other content with soft delete
+            content_obj.is_deleted = False
+            content_obj.deleted_at = None
+            content_obj.deleted_by = None
+            content_obj.save()
+            messages.success(request, f'{content_type.title()} restored successfully.')
+        else:
+            messages.warning(request, 'Content is not deleted or cannot be restored.')
+        
+        return redirect('core:admin_reports')
+        
+    except Exception as e:
+        messages.error(request, f'Error restoring content: {str(e)}')
         return redirect('core:admin_reports')

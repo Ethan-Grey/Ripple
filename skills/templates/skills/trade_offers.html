@@ -374,9 +374,9 @@
 
             <div class="trade-actions">
               {% if offer.status == 'pending' %}
-                <form method="post" action="{% url 'skills:accept_trade' offer.id %}" style="display:inline;">
+                <form method="post" action="{% url 'skills:accept_trade' offer.id %}" id="accept-form-{{ offer.id }}" style="display:inline;">
                   {% csrf_token %}
-                  <button type="submit" class="btn-trade btn-accept" onclick="return confirm('Accept this trade? Both users will be enrolled in each other\'s classes.');">
+                  <button type="button" class="btn-trade btn-accept" onclick="openAcceptTradeModal({{ offer.id }}, '{{ offer.requested_class.title }}', '{{ offer.offered_class.title }}', '{{ offer.proposer.username }}')">
                     ✓ Accept Trade
                   </button>
                 </form>
@@ -544,6 +544,317 @@ function toggleShowAll() {
   }
   window.location.href = url.toString();
 }
+
+// Custom Accept Trade Modal
+function openAcceptTradeModal(offerId, requestedClassTitle, offeredClassTitle, proposerUsername) {
+  const modal = document.getElementById('acceptTradeModal');
+  const requestedClassEl = document.getElementById('modal-requested-class');
+  const offeredClassEl = document.getElementById('modal-offered-class');
+  const proposerEl = document.getElementById('modal-proposer');
+  const confirmBtn = document.getElementById('confirmAcceptBtn');
+  
+  requestedClassEl.textContent = requestedClassTitle;
+  offeredClassEl.textContent = offeredClassTitle;
+  proposerEl.textContent = proposerUsername;
+  
+  // Store the offer ID on the confirm button
+  confirmBtn.setAttribute('data-offer-id', offerId);
+  
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAcceptTradeModal() {
+  const modal = document.getElementById('acceptTradeModal');
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function confirmAcceptTrade() {
+  const confirmBtn = document.getElementById('confirmAcceptBtn');
+  const offerId = confirmBtn.getAttribute('data-offer-id');
+  const form = document.getElementById('accept-form-' + offerId);
+  
+  if (form) {
+    form.submit();
+  }
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('acceptTradeModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeAcceptTradeModal();
+      }
+    });
+  }
+  
+  // Close on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeAcceptTradeModal();
+    }
+  });
+});
 </script>
+
+<!-- Accept Trade Modal -->
+<div id="acceptTradeModal" class="accept-trade-modal" style="display: none;">
+  <div class="accept-trade-modal-content">
+    <div class="accept-trade-modal-header">
+      <h2>🎯 Accept Trade Offer</h2>
+      <button class="accept-trade-modal-close" onclick="closeAcceptTradeModal()">&times;</button>
+    </div>
+    <div class="accept-trade-modal-body">
+      <p class="accept-trade-modal-description">
+        Are you sure you want to accept this trade offer?
+      </p>
+      <div class="accept-trade-details">
+        <div class="trade-detail-item">
+          <span class="trade-detail-label">You will receive:</span>
+          <span class="trade-detail-value" id="modal-requested-class"></span>
+        </div>
+        <div class="trade-detail-item">
+          <span class="trade-detail-label">You will give:</span>
+          <span class="trade-detail-value" id="modal-offered-class"></span>
+        </div>
+        <div class="trade-detail-item">
+          <span class="trade-detail-label">From:</span>
+          <span class="trade-detail-value" id="modal-proposer"></span>
+        </div>
+      </div>
+      <div class="accept-trade-warning">
+        <p>⚠️ Once accepted, both users will be automatically enrolled in each other's classes.</p>
+      </div>
+    </div>
+    <div class="accept-trade-modal-footer">
+      <button class="accept-trade-btn-cancel" onclick="closeAcceptTradeModal()">Cancel</button>
+      <button class="accept-trade-btn-confirm" id="confirmAcceptBtn" onclick="confirmAcceptTrade()">Accept Trade</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.accept-trade-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.accept-trade-modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.accept-trade-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.accept-trade-modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.accept-trade-modal-close {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: white;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.accept-trade-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.accept-trade-modal-body {
+  padding: 24px;
+}
+
+.accept-trade-modal-description {
+  font-size: 16px;
+  color: #374151;
+  margin: 0 0 20px 0;
+  line-height: 1.6;
+}
+
+.accept-trade-details {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.trade-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.trade-detail-item:last-child {
+  border-bottom: none;
+}
+
+.trade-detail-label {
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.trade-detail-value {
+  font-weight: 700;
+  color: #111827;
+  font-size: 15px;
+  text-align: right;
+  max-width: 60%;
+  word-wrap: break-word;
+}
+
+.accept-trade-warning {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.accept-trade-warning p {
+  margin: 0;
+  color: #92400e;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.accept-trade-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 24px;
+  border-top: 1px solid #e5e7eb;
+  justify-content: flex-end;
+}
+
+.accept-trade-btn-cancel,
+.accept-trade-btn-confirm {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.accept-trade-btn-cancel {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.accept-trade-btn-cancel:hover {
+  background: #e5e7eb;
+}
+
+.accept-trade-btn-confirm {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.accept-trade-btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.accept-trade-btn-confirm:active {
+  transform: translateY(0);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .accept-trade-modal-content {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .accept-trade-modal-description {
+    color: #d1d5db;
+  }
+  
+  .accept-trade-details {
+    background: #111827;
+  }
+  
+  .trade-detail-label {
+    color: #9ca3af;
+  }
+  
+  .trade-detail-value {
+    color: #f9fafb;
+  }
+  
+  .accept-trade-modal-footer {
+    border-top-color: #374151;
+  }
+  
+  .accept-trade-btn-cancel {
+    background: #374151;
+    color: #f9fafb;
+  }
+  
+  .accept-trade-btn-cancel:hover {
+    background: #4b5563;
+  }
+}
+</style>
 {% endblock %}
 

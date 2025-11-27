@@ -12,6 +12,9 @@ class Community(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_communities')
     is_approved = models.BooleanField(default=True)  # For admin approval system
+    is_deleted = models.BooleanField(default=False)  # Soft delete flag
+    deleted_at = models.DateTimeField(null=True, blank=True)  # When it was deleted
+    deleted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='deleted_communities')
 
     class Meta:
         verbose_name_plural = 'Communities'
@@ -71,6 +74,9 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_pinned = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)  # Soft delete flag
+    deleted_at = models.DateTimeField(null=True, blank=True)  # When it was deleted
+    deleted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='deleted_posts')
     
     class Meta:
         ordering = ['-is_pinned', '-created_at']

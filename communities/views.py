@@ -20,9 +20,10 @@ def communities_page(request):
         # Split by comma and filter out empty strings
         selected_skills = [s.strip() for s in skill_param.split(',') if s.strip()]
     
-    # Get approved communities
+    # Get approved communities (exclude soft-deleted)
     communities = Community.objects.filter(
-        is_approved=True
+        is_approved=True,
+        is_deleted=False
     ).select_related(
         'skill', 'creator'
     ).prefetch_related(
@@ -56,11 +57,14 @@ def community_detail(request, pk):
     community = get_object_or_404(
         Community.objects.select_related('skill', 'creator').prefetch_related('members'),
         pk=pk,
-        is_approved=True
+        is_approved=True,
+        is_deleted=False
     )
     
-    # Get posts with comments count
-    posts = community.posts.select_related(
+    # Get posts with comments count (exclude soft-deleted)
+    posts = community.posts.filter(
+        is_deleted=False
+    ).select_related(
         'author', 'author__profile'
     ).prefetch_related(
         'upvotes', 'downvotes'
@@ -145,7 +149,8 @@ def post_detail(request, community_pk, post_pk):
         Post.objects.select_related('community', 'author', 'author__profile'),
         pk=post_pk,
         community__pk=community_pk,
-        community__is_approved=True
+        community__is_approved=True,
+        is_deleted=False
     )
     
     # Get top-level comments (no parent) with their replies

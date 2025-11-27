@@ -28,7 +28,7 @@ class ClassListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        qs = TeachingClass.objects.filter(is_published=True).select_related('teacher').prefetch_related('topics')
+        qs = TeachingClass.objects.filter(is_published=True, is_deleted=False).select_related('teacher').prefetch_related('topics')
         
         # Search query
         q = self.request.GET.get('q')
@@ -380,6 +380,19 @@ class TeacherApplicationCreateView(LoginRequiredMixin, CreateView):
         'title', 'bio', 'intro_video', 'thumbnail', 'difficulty', 'duration_minutes', 'is_tradeable', 'portfolio_links', 'expertise_topics'
     ]
     template_name = 'skills/teacher_apply.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        """Check if user is verified before allowing class creation"""
+        from users.models import Profile
+        try:
+            profile = Profile.objects.get(user=request.user)
+            if profile.verification_status != 'verified':
+                messages.error(request, 'You must verify your identity before creating a class. Please complete identity verification first.')
+                return redirect('users:verify_identity')
+        except Profile.DoesNotExist:
+            messages.error(request, 'Profile not found. Please complete your profile setup first.')
+            return redirect('users:profile')
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         form.instance.applicant = self.request.user

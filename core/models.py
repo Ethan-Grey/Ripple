@@ -78,12 +78,47 @@ class Report(models.Model):
     
     def get_reported_object_display(self):
         """Get a human-readable description of what was reported"""
+        # Check if the object still exists (might be deleted)
+        try:
+            reported_obj = self.reported_object
+            if reported_obj is None:
+                # Object was deleted
+                if self.content_type.model == 'user':
+                    return f"User: [Deleted] (ID: {self.object_id})"
+                elif self.content_type.model == 'community':
+                    return f"Community: [Deleted] (ID: {self.object_id})"
+                elif self.content_type.model == 'teachingclass':
+                    return f"Class: [Deleted] (ID: {self.object_id})"
+                elif self.content_type.model == 'post':
+                    return f"Post: [Deleted] (ID: {self.object_id})"
+                elif self.content_type.model == 'message':
+                    return f"Message: [Deleted] (ID: {self.object_id})"
+                else:
+                    return f"{self.content_type.model.title()}: [Deleted] (ID: {self.object_id})"
+        except Exception:
+            # Object doesn't exist anymore
+            if self.content_type.model == 'user':
+                return f"User: [Deleted] (ID: {self.object_id})"
+            elif self.content_type.model == 'community':
+                return f"Community: [Deleted] (ID: {self.object_id})"
+            elif self.content_type.model == 'teachingclass':
+                return f"Class: [Deleted] (ID: {self.object_id})"
+            elif self.content_type.model == 'post':
+                return f"Post: [Deleted] (ID: {self.object_id})"
+            elif self.content_type.model == 'message':
+                return f"Message: [Deleted] (ID: {self.object_id})"
+            else:
+                return f"{self.content_type.model.title()}: [Deleted] (ID: {self.object_id})"
+        
+        # Object exists, return normal display
         if self.content_type.model == 'user':
-            return f"User: {self.reported_object.username}"
+            return f"User: {reported_obj.username}"
         elif self.content_type.model == 'community':
-            return f"Community: {self.reported_object.name}"
+            return f"Community: {reported_obj.name}"
         elif self.content_type.model == 'teachingclass':
-            return f"Class: {self.reported_object.title}"
+            return f"Class: {reported_obj.title}"
+        elif self.content_type.model == 'post':
+            return f"Post: {reported_obj.title}"
         elif self.content_type.model == 'message':
             return f"Message in conversation"
         else:

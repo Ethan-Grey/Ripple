@@ -459,6 +459,22 @@
                     </button>
                     {% endif %}
                 </div>
+                {% elif report.action_taken == 'content_removed' %}
+                <div class="report-actions">
+                    <button class="action-btn btn-restore" onclick="restoreContent('{{ report.content_type.model }}', {{ report.object_id }})" style="background: #10b981;">
+                        {% if report.content_type.model == 'user' %}
+                            Reactivate User
+                        {% else %}
+                            Restore Content
+                        {% endif %}
+                    </button>
+                </div>
+                {% elif report.action_taken == 'user_suspended' %}
+                <div class="report-actions">
+                    <button class="action-btn btn-restore" onclick="restoreContent('{{ report.content_type.model }}', {{ report.object_id }})" style="background: #10b981;">
+                        Reactivate User
+                    </button>
+                </div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -519,7 +535,7 @@ function openActionModal(reportId, action) {
         },
         'remove_content': {
             title: 'Remove Content',
-            description: 'This will permanently delete the reported content. This action cannot be undone.'
+            description: 'This will remove the reported content. It can be recovered later if needed.'
         },
         'suspend_user': {
             title: 'Suspend User',
@@ -574,6 +590,25 @@ function submitAction() {
 function viewReportedContent(reportId) {
     // This would open the reported content in a new tab
     alert('View content functionality - redirect to appropriate page');
+}
+
+function restoreContent(contentType, objectId) {
+    if (!confirm('Are you sure you want to restore this content? It will be visible to users again.')) {
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin-restore/${contentType}/${objectId}/`;
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = '{{ csrf_token }}';
+    form.appendChild(csrfInput);
+    
+    document.body.appendChild(form);
+    form.submit();
 }
 
 // Close modal when clicking outside

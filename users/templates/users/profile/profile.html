@@ -409,7 +409,15 @@
                             </svg>
                             <h3>No classes yet</h3>
                             <p>Create your first class and start teaching on Ripple</p>
-                            <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary">Create Your First Class</a>
+                            {% if user.profile.verification_status == 'verified' %}
+                                <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary">Create Your First Class</a>
+                            {% else %}
+                                <div style="text-align: center;">
+                                    <p style="color: #ef4444; margin-bottom: 12px; font-weight: 600;">⚠️ Verification Required</p>
+                                    <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">You must verify your identity before creating a class.</p>
+                                    <a href="{% url 'users:verify_identity' %}" class="btn btn-primary">Verify Identity</a>
+                                </div>
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
@@ -424,28 +432,37 @@
                         {% if enrolled_classes %}
                         <div class="classes-grid">
                             {% for enrollment in enrolled_classes %}
-                            <a href="{% url 'skills:class_detail' enrollment.teaching_class.slug %}" class="class-card enrolled-card">
-                                <div class="class-status enrolled-status">
-                                    <svg fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Enrolled
-                                </div>
-                                <div class="class-content">
-                                    <h3 class="class-title">{{ enrollment.teaching_class.title }}</h3>
-                                    <div class="class-meta">
-                                        <span class="meta-item">By {{ enrollment.teaching_class.teacher.username }}</span>
-                                        <span class="meta-dot">•</span>
-                                        <span class="meta-item">{{ enrollment.teaching_class.get_difficulty_display }}</span>
-                                        <span class="meta-dot">•</span>
-                                        <span class="meta-item">{{ enrollment.teaching_class.duration_minutes }}m</span>
+                            <div class="class-card-new">
+                                <div class="class-card-top">
+                                    <div class="class-card-header">
+                                        <h3 class="class-card-title">{{ enrollment.teaching_class.title }}</h3>
+                                        <span class="class-card-status enrolled-badge">Enrolled</span>
                                     </div>
-                                    <div class="class-actions">
-                                        <span class="btn btn-primary btn-small">View Class</span>
-                                        <a href="{% url 'skills:view_schedule' enrollment.teaching_class.slug %}" class="btn btn-outline btn-small" onclick="event.stopPropagation();">Book Session</a>
+                                    <div class="class-card-info">
+                                        <div class="class-info-item">
+                                            <span class="class-info-label">Teacher</span>
+                                            <span class="class-info-value">{{ enrollment.teaching_class.teacher.username }}</span>
+                                        </div>
+                                        <div class="class-info-item">
+                                            <span class="class-info-label">Level</span>
+                                            <span class="class-info-value">{{ enrollment.teaching_class.get_difficulty_display }}</span>
+                                        </div>
+                                        <div class="class-info-item">
+                                            <span class="class-info-label">Duration</span>
+                                            <span class="class-info-value">{{ enrollment.teaching_class.duration_minutes }}m</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </a>
+                                <div class="class-card-footer">
+                                    <a href="{% url 'skills:class_detail' enrollment.teaching_class.slug %}" class="class-card-btn primary-btn">View Class</a>
+                                    <a href="{% url 'skills:view_schedule' enrollment.teaching_class.slug %}" class="class-card-btn secondary-btn">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Book Session
+                                    </a>
+                                </div>
+                            </div>
                             {% endfor %}
                         </div>
                         {% else %}
@@ -568,7 +585,11 @@
                         </div>
                     {% endif %}
                     <div class="teach-card-actions">
-                        <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary btn-small">Apply to Teach</a>
+                        {% if user.profile.verification_status == 'verified' %}
+                            <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary btn-small">Apply to Teach</a>
+                        {% else %}
+                            <a href="{% url 'users:verify_identity' %}" class="btn btn-primary btn-small">Verify to Teach</a>
+                        {% endif %}
                         <a href="{% url 'skills:class_list' %}" class="btn btn-outline btn-small">Browse Classes</a>
                     </div>
                 </div>
@@ -615,6 +636,7 @@
 
 .profile-avatar-wrapper {
     position: relative;
+    z-index: 1;
 }
 
 .profile-avatar {
@@ -624,6 +646,7 @@
     border: 5px solid white;
     overflow: hidden;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    position: relative;
 }
 
 .avatar-image {
@@ -659,6 +682,7 @@
     justify-content: center;
     color: white;
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    z-index: 10;
 }
 
 .verified-badge-overlay svg {
@@ -1073,6 +1097,11 @@
 .draft-badge {
     background: #fef3c7;
     color: #92400e;
+}
+
+.enrolled-badge {
+    background: #dbeafe;
+    color: #1e40af;
 }
 
 .class-card-info {

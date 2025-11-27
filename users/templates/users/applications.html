@@ -429,9 +429,15 @@
                         <i class="bi bi-arrow-right"></i> View Classes
                     </a>
                 {% elif application.status == 'rejected' %}
-                    <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary btn-sm">
-                        <i class="bi bi-plus-circle"></i> Submit New Application
-                    </a>
+                    {% if user.profile.verification_status == 'verified' %}
+                        <a href="{% url 'skills:teacher_apply' %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-circle"></i> Submit New Application
+                        </a>
+                    {% else %}
+                        <a href="{% url 'users:verify_identity' %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-shield-check"></i> Verify to Apply
+                        </a>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -453,9 +459,15 @@
                 <a href="{% url 'communities:request_community' %}" class="btn btn-secondary">
                     <i class="bi bi-people"></i> Request Community
                 </a>
-                <a href="{% url 'skills:teacher_apply' %}" class="btn btn-secondary">
-                    <i class="bi bi-book"></i> Apply to Teach a Class
-                </a>
+                {% if user.profile.verification_status == 'verified' %}
+                    <a href="{% url 'skills:teacher_apply' %}" class="btn btn-secondary">
+                        <i class="bi bi-book"></i> Apply to Teach a Class
+                    </a>
+                {% else %}
+                    <a href="{% url 'users:verify_identity' %}" class="btn btn-secondary">
+                        <i class="bi bi-shield-check"></i> Verify to Teach
+                    </a>
+                {% endif %}
             </div>
         </div>
         {% endif %}
