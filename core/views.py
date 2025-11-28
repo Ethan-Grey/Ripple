@@ -163,8 +163,7 @@ def home(request):
         recommended_class_ids = set(whitelisted_class_ids) - set(enrolled_class_ids)
         recommended_classes = TeachingClass.objects.filter(
             id__in=recommended_class_ids,
-            is_published=True,
-            is_deleted=False
+            is_published=True
         ).select_related('teacher').prefetch_related('topics')[:6]
         
         # Recent Conversations (last 5)
@@ -183,7 +182,7 @@ def home(request):
             })
         
         # Teaching Stats (if user is a teacher)
-        teaching_classes = TeachingClass.objects.filter(teacher=user, is_published=True, is_deleted=False)
+        teaching_classes = TeachingClass.objects.filter(teacher=user, is_published=True)
         if teaching_classes.exists():
             teaching_stats = {
                 'total_classes': teaching_classes.count(),
@@ -212,15 +211,13 @@ def home(request):
         
         matched_classes = TeachingClass.objects.filter(
             id__in=whitelisted_class_ids,
-            is_published=True,
-            is_deleted=False
+            is_published=True
         ).select_related('teacher').prefetch_related('topics')
     
     # Trending Classes (most enrollments in last 30 days)
     thirty_days_ago = timezone.now() - timedelta(days=30)
     trending_classes = TeachingClass.objects.filter(
         is_published=True,
-        is_deleted=False,
         enrollments__created_at__gte=thirty_days_ago
     ).annotate(
         recent_enrollments=Count('enrollments', filter=Q(enrollments__created_at__gte=thirty_days_ago))
@@ -284,8 +281,7 @@ def search(request):
             Q(title__icontains=q) |
             Q(short_description__icontains=q) |
             Q(full_description__icontains=q),
-            is_published=True,  # Only show published classes
-            is_deleted=False  # Exclude soft-deleted
+            is_published=True  # Only show published classes
         ).select_related('teacher').order_by('-created_at')[:10]
         
         # Add formatted price to each class
@@ -294,8 +290,8 @@ def search(request):
         
         class_results = classes
     
-    # Search communities (exclude soft-deleted)
-    community_results = Community.objects.filter(name__icontains=q, is_deleted=False)[:10] if q else []
+    # Search communities
+    community_results = Community.objects.filter(name__icontains=q)[:10] if q else []
     
     # Calculate total results count
     total_results = len(user_results) + len(skill_results) + len(class_results) + len(community_results)
@@ -543,11 +539,11 @@ def report_content(request):
     users = User.objects.exclude(id=request.user.id).filter(is_active=True).order_by('username')[:100]
     
     from communities.models import Community, Post
-    communities = Community.objects.filter(is_deleted=False).order_by('name')[:100]
-    posts = Post.objects.filter(is_deleted=False).order_by('-created_at')[:100]
+    communities = Community.objects.all().order_by('name')[:100]
+    posts = Post.objects.all().order_by('-created_at')[:100]
     
     from skills.models import TeachingClass
-    classes = TeachingClass.objects.filter(is_published=True, is_deleted=False).order_by('title')[:100]
+    classes = TeachingClass.objects.filter(is_published=True).order_by('title')[:100]
     
     context = {
         'content_types': content_types,
@@ -756,20 +752,9 @@ def admin_handle_report(request, report_id):
                         else:
                             messages.warning(request, f'User {reported_obj.username} is already deactivated.')
                     else:
-                        # Soft delete for posts, communities, classes
-                        if hasattr(reported_obj, 'is_deleted'):
-                            if not reported_obj.is_deleted:
-                                reported_obj.is_deleted = True
-                                reported_obj.deleted_at = timezone.now()
-                                reported_obj.deleted_by = request.user
-                                reported_obj.save()
-                                messages.success(request, 'Content removed successfully (can be recovered).')
-                            else:
-                                messages.warning(request, 'Content is already deleted.')
-                        else:
-                            # Fallback to hard delete if model doesn't support soft delete
-                            reported_obj.delete()
-                            messages.success(request, 'Content removed successfully.')
+                        # Hard delete for posts, communities, classes
+                        reported_obj.delete()
+                        messages.success(request, 'Content removed successfully.')
             except Exception as e:
                 messages.error(request, f'Could not remove content: {str(e)}')
                 
@@ -816,15 +801,8 @@ def admin_restore_content(request, content_type, object_id):
                 messages.success(request, f'User {content_obj.username} has been reactivated.')
             else:
                 messages.warning(request, 'User is already active.')
-        elif hasattr(content_obj, 'is_deleted') and content_obj.is_deleted:
-            # For other content with soft delete
-            content_obj.is_deleted = False
-            content_obj.deleted_at = None
-            content_obj.deleted_by = None
-            content_obj.save()
-            messages.success(request, f'{content_type.title()} restored successfully.')
         else:
-            messages.warning(request, 'Content is not deleted or cannot be restored.')
+            messages.warning(request, 'Content restoration is not available for this content type.')
         
         return redirect('core:admin_reports')
         

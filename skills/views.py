@@ -28,7 +28,7 @@ class ClassListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        qs = TeachingClass.objects.filter(is_published=True, is_deleted=False).select_related('teacher').prefetch_related('topics')
+        qs = TeachingClass.objects.filter(is_published=True).select_related('teacher').prefetch_related('topics')
         
         # Search query
         q = self.request.GET.get('q')
