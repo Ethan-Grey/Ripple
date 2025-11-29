@@ -847,14 +847,39 @@ class StripeWebhookView(View):
     Comprehensive Stripe webhook handler for all payment events
     Handles: successful payments, failed payments, refunds, and cancellations
     """
+    def get(self, request):
+        """Test endpoint to verify webhook URL is accessible"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("Webhook endpoint accessed via GET (test)")
+        
+        return JsonResponse({
+            'status': 'ok',
+            'message': 'Webhook endpoint is accessible',
+            'webhook_secret_configured': bool(getattr(settings, 'STRIPE_WEBHOOK_SECRET', None)),
+            'stripe_secret_configured': bool(getattr(settings, 'STRIPE_SECRET_KEY', None)),
+        })
+    
     def post(self, request):
         import json
         import logging
+        import traceback
         
         logger = logging.getLogger(__name__)
         
+        # Log webhook attempt
+        logger.info("=" * 60)
+        logger.info("STRIPE WEBHOOK RECEIVED")
+        logger.info(f"Method: {request.method}")
+        logger.info(f"Content-Type: {request.content_type}")
+        logger.info(f"Has STRIPE_WEBHOOK_SECRET: {bool(getattr(settings, 'STRIPE_WEBHOOK_SECRET', None))}")
+        
         try:
             import stripe
+            stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', None)
+            if not stripe.api_key:
+                logger.error("STRIPE_SECRET_KEY not configured!")
+                return HttpResponse(status=500)
         except ImportError:
             logger.error("Stripe library not installed")
             return HttpResponse(status=400)
@@ -863,45 +888,69 @@ class StripeWebhookView(View):
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
         endpoint_secret = getattr(settings, 'STRIPE_WEBHOOK_SECRET', None)
         
+        logger.info(f"Payload length: {len(payload)} bytes")
+        logger.info(f"Signature header present: {bool(sig_header)}")
+        logger.info(f"Endpoint secret present: {bool(endpoint_secret)}")
+        
         try:
             if endpoint_secret:
+                logger.info("Verifying webhook signature...")
                 event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+                logger.info("✓ Webhook signature verified successfully")
             else:
+                logger.warning("⚠ No webhook secret configured - skipping signature verification (development mode)")
                 # For development/testing without webhook secret
                 event = stripe.Event.construct_from(json.loads(payload.decode('utf-8')), stripe.api_key)
         except ValueError as e:
-            logger.error(f"Invalid payload: {e}")
+            logger.error(f"❌ Invalid payload: {e}")
+            logger.error(f"Payload preview: {payload[:200] if len(payload) > 0 else 'Empty'}")
             return HttpResponse(status=400)
         except stripe.error.SignatureVerificationError as e:
-            logger.error(f"Invalid signature: {e}")
+            logger.error(f"❌ Invalid signature: {e}")
+            logger.error(f"Expected secret: {endpoint_secret[:10]}..." if endpoint_secret else "No secret configured")
             return HttpResponse(status=400)
         except Exception as e:
-            logger.error(f"Webhook error: {e}")
+            logger.error(f"❌ Webhook error: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return HttpResponse(status=400)
 
         event_type = event['type']
-        logger.info(f"Received Stripe webhook: {event_type}")
+        event_id = event.get('id', 'unknown')
+        logger.info(f"✓ Received Stripe webhook: {event_type} (ID: {event_id})")
 
         # Handle checkout session completed (successful payment)
         if event_type == 'checkout.session.completed':
-            self._handle_checkout_completed(event)
+            logger.info("Processing checkout.session.completed event...")
+            try:
+                self._handle_checkout_completed(event)
+                logger.info("✓ Successfully processed checkout.session.completed")
+            except Exception as e:
+                logger.error(f"❌ Error processing checkout.session.completed: {e}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
         
         # Handle payment intent succeeded (additional confirmation)
         elif event_type == 'payment_intent.succeeded':
+            logger.info("Processing payment_intent.succeeded event...")
             self._handle_payment_succeeded(event)
         
         # Handle payment intent failed
         elif event_type == 'payment_intent.payment_failed':
+            logger.info("Processing payment_intent.payment_failed event...")
             self._handle_payment_failed(event)
         
         # Handle refunds
         elif event_type == 'charge.refunded':
+            logger.info("Processing charge.refunded event...")
             self._handle_refund(event)
         
         # Handle payment disputes
         elif event_type == 'charge.dispute.created':
+            logger.info("Processing charge.dispute.created event...")
             self._handle_dispute(event)
+        else:
+            logger.info(f"Unhandled event type: {event_type}")
 
+        logger.info("=" * 60)
         return HttpResponse(status=200)
 
     def _handle_checkout_completed(self, event):
@@ -911,15 +960,23 @@ class StripeWebhookView(View):
         
         try:
             session = event['data']['object']
+            session_id = session.get('id', 'unknown')
+            logger.info(f"Processing checkout session: {session_id}")
+            
             metadata = session.get('metadata', {})
+            logger.info(f"Session metadata: {metadata}")
+            
             class_id = metadata.get('class_id')
             user_id = metadata.get('user_id')
             time_slot_id = metadata.get('time_slot_id')
             booking_notes = metadata.get('booking_notes', '')
             
             if not class_id or not user_id:
-                logger.warning(f"Missing metadata in checkout session: {session.get('id')}")
+                logger.warning(f"❌ Missing metadata in checkout session: {session_id}")
+                logger.warning(f"Metadata received: {metadata}")
                 return
+            
+            logger.info(f"Processing enrollment - Class ID: {class_id}, User ID: {user_id}, Time Slot ID: {time_slot_id}")
             
             try:
                 cls = TeachingClass.objects.get(id=class_id)
