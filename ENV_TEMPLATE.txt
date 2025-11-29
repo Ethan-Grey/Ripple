@@ -20,6 +20,10 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 #Stripe Settings
 STRIPE_SECRET_KEY=sk_test_51SO4lJB1IprhiClbPy0faLzsKhQaCIakVPWi0lrKcyIXzMJe8TAvOe0eunC1GUxzTm0TtP1W2t13zmMb2YOOcqsF003CdDOsYK
 STRIPE_PUBLISHABLE_KEY=pk_test_51SO4JBl1prhiclbuyMvX2fo3E0hVOyRun5XaZC8E868iFR7oauRywgBW5i14PegCg8jh99kgMmxWK3KYq3LhB8000Zcfbr4Qe
+# IMPORTANT: Get this from Stripe Dashboard → Developers → Webhooks → Your endpoint → Signing secret
+# For local development, you can leave this empty (webhook verification will be skipped)
+# For production (Railway), you MUST set this to verify webhook signatures
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_signing_secret_here
 
 USE_CONSOLE_EMAIL = False
 

@@ -331,6 +331,7 @@ PASSWORD_RESET_TIMEOUT = 86400  # 24 hours
 
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', None)  # Webhook signing secret from Stripe Dashboard
 
 # Site ID for allauth (required for social accounts)
 SITE_ID = 1
