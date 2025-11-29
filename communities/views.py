@@ -5,50 +5,63 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Count, Q, Prefetch
 from django.utils import timezone
+from django.views.generic import ListView
 from .models import Community, CommunityRequest, Post, Comment
 from skills.models import Skill
 
 
-def communities_page(request):
-    """List all approved communities with filtering"""
-    skill_param = request.GET.get('skill', '')
-    filter_type = request.GET.get('filter', 'all')  # 'all' or 'my'
+class CommunitiesListView(ListView):
+    """List all approved communities with filtering and pagination"""
+    template_name = 'communities/communities.html'
+    context_object_name = 'communities'
+    paginate_by = 12
     
-    # Handle comma-separated skill IDs
-    selected_skills = []
-    if skill_param and skill_param != 'all':
-        # Split by comma and filter out empty strings
-        selected_skills = [s.strip() for s in skill_param.split(',') if s.strip()]
+    def get_queryset(self):
+        skill_param = self.request.GET.get('skill', '')
+        filter_type = self.request.GET.get('filter', 'all')  # 'all' or 'my'
+        
+        # Get approved communities
+        communities = Community.objects.filter(
+            is_approved=True
+        ).select_related(
+            'skill', 'creator'
+        ).prefetch_related(
+            'members'
+        )
+        
+        # Apply skill filter - handle multiple skills
+        if skill_param and skill_param != 'all':
+            # Split by comma and filter out empty strings
+            selected_skills = [s.strip() for s in skill_param.split(',') if s.strip()]
+            if selected_skills:
+                communities = communities.filter(skill__id__in=selected_skills)
+        
+        # Apply "My Communities" filter
+        if filter_type == 'my' and self.request.user.is_authenticated:
+            communities = communities.filter(members=self.request.user)
+        
+        # Order by newest first
+        communities = communities.order_by('-created_at')
+        
+        return communities
     
-    # Get approved communities
-    communities = Community.objects.filter(
-        is_approved=True
-    ).select_related(
-        'skill', 'creator'
-    ).prefetch_related(
-        'members'
-    )
-    
-    # Apply skill filter - handle multiple skills
-    if selected_skills:
-        communities = communities.filter(skill__id__in=selected_skills)
-    
-    # Apply "My Communities" filter
-    if filter_type == 'my' and request.user.is_authenticated:
-        communities = communities.filter(members=request.user)
-    
-    # Order by newest first
-    communities = communities.order_by('-created_at')
-    
-    # Get all skills for filter dropdown
-    skills = Skill.objects.all().order_by('name')
-    
-    return render(request, 'communities/communities.html', {
-        'communities': communities,
-        'skills': skills,
-        'selected_skills': selected_skills,
-        'filter_type': filter_type,
-    })
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        skill_param = self.request.GET.get('skill', '')
+        filter_type = self.request.GET.get('filter', 'all')
+        
+        # Handle comma-separated skill IDs
+        selected_skills = []
+        if skill_param and skill_param != 'all':
+            selected_skills = [s.strip() for s in skill_param.split(',') if s.strip()]
+        
+        # Get all skills for filter dropdown
+        context['skills'] = Skill.objects.all().order_by('name')
+        context['selected_skills'] = selected_skills
+        context['filter_type'] = filter_type
+        
+        return context
 
 
 def community_detail(request, pk):

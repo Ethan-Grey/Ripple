@@ -1,0 +1,414 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Policy · Ripple</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            color: #1a1a1a;
+            overflow-x: hidden;
+            background: #f9fafb;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #5a5a5a;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn {
+            border: 2px solid transparent;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            border: 2px solid transparent;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b3fa0 100%);
+            color: #ffffff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-secondary {
+            border: 2px solid #667eea;
+            color: #667eea !important;
+            background: #ffffff;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: #ffffff !important;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            margin-bottom: 32px;
+        }
+
+        .back-btn:hover {
+            background: #f9fafb;
+            border-color: #667eea;
+            transform: translateX(-3px);
+        }
+
+        .policy-page {
+            padding: 140px 40px 80px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .policy-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .policy-header h1 {
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .policy-header .last-updated {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .policy-content {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            padding: 48px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .policy-section {
+            margin-bottom: 40px;
+        }
+
+        .policy-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .policy-section h2 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .policy-section h5 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        .policy-section p {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #6b7280;
+            margin-bottom: 16px;
+        }
+
+        .policy-section ul {
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        .policy-section li {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .policy-section table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+
+        .policy-section th,
+        .policy-section td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .policy-section th {
+            font-weight: 700;
+            color: #111827;
+            background: #f9fafb;
+        }
+
+        .policy-section td {
+            color: #6b7280;
+        }
+
+        .policy-section a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .policy-section a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .policy-page {
+                padding: 120px 20px 60px;
+            }
+
+            .policy-header h1 {
+                font-size: 36px;
+            }
+
+            .policy-content {
+                padding: 32px 24px;
+            }
+
+            .policy-section h2 {
+                font-size: 24px;
+            }
+
+            .policy-section table {
+                font-size: 14px;
+            }
+
+            .policy-section th,
+            .policy-section td {
+                padding: 8px;
+            }
+
+            .nav-links a:not(.btn) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="{% url 'core:landing' %}" class="logo">Ripple</a>
+            <div class="nav-links">
+                <a href="{% url 'core:landing' %}#features">Features</a>
+                <a href="{% url 'core:landing' %}#how-it-works">How It Works</a>
+                <a href="{% url 'core:about' %}">About</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'core:home' %}" class="btn btn-primary">Dashboard</a>
+                {% else %}
+                    <a href="{% url 'users:register' %}" class="btn btn-primary">Get Started</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="policy-page">
+        <div class="policy-content">
+            <a href="javascript:history.back()" class="back-btn">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Back
+            </a>
+
+            <div class="policy-header">
+                <h1>Cookie Policy</h1>
+                <p class="last-updated">Last updated: {% now "F d, Y" %}</p>
+            </div>
+
+            <div class="policy-section">
+                <h2>1. What Are Cookies?</h2>
+                <p>Cookies are small text files that are placed on your device when you visit a website. They are widely used to make websites work more efficiently and provide information to website owners.</p>
+            </div>
+
+            <div class="policy-section">
+                <h2>2. How We Use Cookies</h2>
+                <p>We use cookies for the following purposes:</p>
+
+                <h5>2.1 Essential Cookies</h5>
+                <p>These cookies are necessary for the website to function properly. They enable core functionality such as security, network management, and accessibility.</p>
+                <ul>
+                    <li>Session management</li>
+                    <li>Authentication</li>
+                    <li>Security features</li>
+                </ul>
+
+                <h5>2.2 Functional Cookies</h5>
+                <p>These cookies allow the website to remember choices you make and provide enhanced, personalized features.</p>
+                <ul>
+                    <li>Language preferences</li>
+                    <li>Theme preferences (dark/light mode)</li>
+                    <li>Layout preferences</li>
+                </ul>
+
+                <h5>2.3 Analytics Cookies</h5>
+                <p>These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously.</p>
+                <ul>
+                    <li>Page views</li>
+                    <li>User behavior</li>
+                    <li>Performance metrics</li>
+                </ul>
+            </div>
+
+            <div class="policy-section">
+                <h2>3. Third-Party Cookies</h2>
+                <p>We may also use third-party cookies from trusted partners for:</p>
+                <ul>
+                    <li>Analytics services</li>
+                    <li>Payment processing</li>
+                    <li>Social media integration</li>
+                </ul>
+            </div>
+
+            <div class="policy-section">
+                <h2>4. Managing Cookies</h2>
+                <p>You can control and manage cookies in several ways:</p>
+
+                <h5>4.1 Browser Settings</h5>
+                <p>Most browsers allow you to refuse or accept cookies. You can also delete cookies that have already been set. However, blocking cookies may impact your experience on our website.</p>
+
+                <h5>4.2 Cookie Preferences</h5>
+                <p>You can manage your cookie preferences through your account settings on Ripple.</p>
+            </div>
+
+            <div class="policy-section">
+                <h2>5. Types of Cookies We Use</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cookie Name</th>
+                            <th>Purpose</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>sessionid</td>
+                            <td>Maintains your login session</td>
+                            <td>Session</td>
+                        </tr>
+                        <tr>
+                            <td>csrftoken</td>
+                            <td>Security token for form submissions</td>
+                            <td>1 year</td>
+                        </tr>
+                        <tr>
+                            <td>theme</td>
+                            <td>Stores your theme preference</td>
+                            <td>1 year</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="policy-section">
+                <h2>6. Updates to This Policy</h2>
+                <p>We may update this cookie policy from time to time. We will notify you of any changes by posting the new policy on this page.</p>
+            </div>
+
+            <div class="policy-section">
+                <h2>7. Contact Us</h2>
+                <p>If you have questions about our use of cookies, please contact us at:</p>
+                <p>
+                    <strong>Email:</strong> privacy@ripple.com<br>
+                    <strong>Address:</strong> [Your Company Address]
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

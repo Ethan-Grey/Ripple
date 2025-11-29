@@ -14,7 +14,11 @@ urlpatterns = [
     path('skill/<int:skill_id>/', views.skill_detail, name='skill_detail'),
     path('', views.landing, name='landing'),
     path('about/', views.about, name='about'),     
-    path('contact/', views.contact, name='contact'),  
+    path('contact/', views.contact, name='contact'),
+    path('help/', views.help_center, name='help_center'),
+    path('privacy/', views.privacy_policy, name='privacy_policy'),
+    path('terms/', views.terms_of_service, name='terms_of_service'),
+    path('cookies/', views.cookie_policy, name='cookie_policy'),  
       
      # Report system
     path('report/', views.report_content, name='report_content'),

@@ -3,11 +3,18 @@
 
 {% block extra_head %}
 <style>
+    /* Prevent horizontal overflow */
+    body {
+        overflow-x: hidden;
+    }
+
     .communities-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 24px;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .communities-header h2 {
@@ -303,6 +310,8 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 20px;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .communities-list {
@@ -327,6 +336,8 @@
         text-decoration: none;
         display: block;
         border: 1px solid #e6e8ee;
+        overflow: hidden;
+        box-sizing: border-box;
     }
 
     .community-card.list-view {
@@ -419,6 +430,7 @@
     .community-info {
         flex: 1;
         min-width: 0;
+        overflow: hidden;
     }
 
     .community-name {
@@ -429,6 +441,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        max-width: 100%;
     }
 
     .community-card:hover .community-name {
@@ -454,6 +467,8 @@
         font-size: 14px;
         line-height: 1.5;
         margin-bottom: 12px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     .community-skill-tag {
@@ -465,6 +480,9 @@
         font-size: 12px;
         font-weight: 600;
         margin-bottom: 12px;
+        max-width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     .community-footer {
@@ -538,6 +556,45 @@
         margin-bottom: 24px;
     }
 
+    /* Pagination */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 24px;
+        padding: 40px 0 20px;
+    }
+
+    .pagination-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 24px;
+        background: white;
+        color: #111827;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 15px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .pagination-btn:hover {
+        background: var(--brand);
+        color: white;
+        border-color: var(--brand);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(74, 103, 255, 0.3);
+    }
+
+    .pagination-info {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--muted);
+    }
+
     @media (max-width: 768px) {
         .communities-header {
             flex-direction: column;
@@ -549,8 +606,71 @@
             flex-direction: column;
         }
 
+        /* Hide layout toggle on mobile */
+        .layout-toggle {
+            display: none;
+        }
+
         .communities-grid {
             grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .community-card {
+            padding: 16px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .community-header {
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .community-avatar {
+            width: 48px;
+            height: 48px;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .community-info {
+            min-width: 0;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .community-name {
+            font-size: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .community-description {
+            font-size: 13px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .community-skill-tag {
+            font-size: 11px;
+            padding: 4px 10px;
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            display: inline-block;
+        }
+
+        .community-footer {
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .skill-filter-dropdown {
@@ -679,8 +799,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Set initial layout
-    setLayout(currentLayout);
+    // Set initial layout (only on desktop - mobile always shows grid/cards)
+    if (window.innerWidth > 768) {
+        setLayout(currentLayout);
+    } else {
+        // On mobile, always use grid/card view
+        setLayout('grid');
+    }
     
     // Layout button event listeners
     gridBtn.addEventListener('click', function() {
@@ -832,6 +957,29 @@ document.addEventListener('DOMContentLoaded', function() {
         </a>
         {% endfor %}
     </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination-wrapper">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}" class="pagination-btn">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Previous
+        </a>
+      {% endif %}
+      <span class="pagination-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}" class="pagination-btn">
+          Next
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
 {% else %}
     <!-- Empty State -->
     <div class="empty-state">

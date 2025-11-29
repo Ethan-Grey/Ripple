@@ -5,7 +5,7 @@ app_name = 'communities'
 
 urlpatterns = [
     # Community browsing
-    path('', views.communities_page, name='communities'),
+    path('', views.CommunitiesListView.as_view(), name='communities'),
     path('<int:pk>/', views.community_detail, name='community_detail'),
     
     # Join/Leave

@@ -29,6 +29,22 @@ def about(request):
 def contact(request):
     """Contact Us page"""
     return render(request, 'core/contact.html')
+
+def help_center(request):
+    """Help Center page"""
+    return render(request, 'core/help_center.html')
+
+def privacy_policy(request):
+    """Privacy Policy page"""
+    return render(request, 'core/privacy_policy.html')
+
+def terms_of_service(request):
+    """Terms of Service page"""
+    return render(request, 'core/terms_of_service.html')
+
+def cookie_policy(request):
+    """Cookie Policy page"""
+    return render(request, 'core/cookie_policy.html')
     
 def home(request):
     user = request.user if request.user.is_authenticated else None
