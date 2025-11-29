@@ -20,6 +20,7 @@ from chat.views import get_or_create_conversation
 from chat.models import Message
 from decimal import Decimal, InvalidOperation
 import json
+import traceback
 
 
 class ClassListView(ListView):
@@ -751,12 +752,21 @@ class ClassDeleteView(LoginRequiredMixin, View):
 
 class ClassCheckoutView(LoginRequiredMixin, View):
     def post(self, request, slug):
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
             import stripe  # lazy import
-        except Exception:
+        except Exception as e:
+            logger.error(f"Stripe library not installed: {e}")
             return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]) + '?error=stripe_not_installed')
 
-        cls = get_object_or_404(TeachingClass, slug=slug, is_published=True)
+        try:
+            cls = get_object_or_404(TeachingClass, slug=slug, is_published=True)
+        except Exception as e:
+            logger.error(f"Class not found: {e}")
+            messages.error(request, 'Class not found.')
+            return HttpResponseRedirect(reverse('skills:class_list'))
         # Check for active enrollment
         existing_enrollment = ClassEnrollment.objects.filter(
             user=request.user, 
@@ -806,39 +816,62 @@ class ClassCheckoutView(LoginRequiredMixin, View):
             return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]) + '?error=stripe_not_configured')
 
         stripe.api_key = secret
-        # Redirect to book a session page after successful payment
-        success_url = request.build_absolute_uri(reverse('skills:view_schedule', args=[slug])) + '?paid=1&session_id={CHECKOUT_SESSION_ID}'
-        cancel_url = request.build_absolute_uri(reverse('skills:class_detail', args=[slug])) + '?cancel=1'
+        
+        try:
+            # Redirect to book a session page after successful payment
+            success_url = request.build_absolute_uri(reverse('skills:view_schedule', args=[slug])) + '?paid=1&session_id={CHECKOUT_SESSION_ID}'
+            cancel_url = request.build_absolute_uri(reverse('skills:class_detail', args=[slug])) + '?cancel=1'
+            
+            logger.info(f"Creating Stripe checkout session for class {cls.id}, user {request.user.id}")
+            logger.info(f"Success URL: {success_url}")
+            logger.info(f"Cancel URL: {cancel_url}")
 
-        # Build metadata with booking info
-        metadata = {
-            'class_id': str(cls.id),
-            'user_id': str(request.user.id),
-        }
-        if time_slot_id:
-            metadata['time_slot_id'] = str(time_slot_id)
-        if booking_notes:
-            metadata['booking_notes'] = booking_notes[:500]  # Limit length
+            # Build metadata with booking info
+            metadata = {
+                'class_id': str(cls.id),
+                'user_id': str(request.user.id),
+            }
+            if time_slot_id:
+                metadata['time_slot_id'] = str(time_slot_id)
+            if booking_notes:
+                metadata['booking_notes'] = booking_notes[:500]  # Limit length
 
-        session = stripe.checkout.Session.create(
-            mode='payment',
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'unit_amount': int(cls.price_cents),
-                    'product_data': {'name': cls.title},
+            logger.info(f"Checkout metadata: {metadata}")
+
+            session = stripe.checkout.Session.create(
+                mode='payment',
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'unit_amount': int(cls.price_cents),
+                        'product_data': {'name': cls.title},
+                    },
+                    'quantity': 1,
+                }],
+                success_url=success_url,
+                cancel_url=cancel_url,
+                metadata=metadata,
+                payment_intent_data={
+                    'metadata': metadata,  # Also add metadata to payment intent for payment_intent events
                 },
-                'quantity': 1,
-            }],
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata=metadata,
-            payment_intent_data={
-                'metadata': metadata,  # Also add metadata to payment intent for payment_intent events
-            },
-            customer_email=request.user.email if request.user.email else None,
-        )
-        return HttpResponseRedirect(session.url)
+                customer_email=request.user.email if request.user.email else None,
+            )
+            
+            logger.info(f"✓ Stripe checkout session created: {session.id}")
+            logger.info(f"Redirecting to: {session.url}")
+            
+            return HttpResponseRedirect(session.url)
+            
+        except stripe.error.StripeError as e:
+            logger.error(f"❌ Stripe API error: {e}")
+            logger.error(f"Stripe error type: {type(e).__name__}")
+            messages.error(request, f'Payment processing error: {str(e)}')
+            return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]) + '?error=stripe_error')
+        except Exception as e:
+            logger.error(f"❌ Unexpected error creating checkout session: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            messages.error(request, 'An error occurred while processing your payment. Please try again.')
+            return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]) + '?error=checkout_error')
 
 
 @method_decorator(csrf_exempt, name='dispatch')
