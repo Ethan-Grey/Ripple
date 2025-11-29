@@ -26,6 +26,8 @@ urlpatterns = [
     path("schedule/slot/<int:slot_id>/delete/", views.delete_time_slot, name="delete_time_slot"),
     path("schedule/slot/<int:slot_id>/book/", views.book_time_slot, name="book_time_slot"),
     path("schedule/booking/<int:booking_id>/cancel/", views.cancel_booking, name="cancel_booking"),
+    path("schedule/booking/<int:booking_id>/complete/", views.complete_booking, name="complete_booking"),
+    path("schedule/booking/<int:booking_id>/confirm-completion/", views.confirm_booking_completion, name="confirm_booking_completion"),
     path("my-bookings/", views.my_bookings, name="my_bookings"),
     # Favorites
     path("<slug:slug>/favorite/", views.toggle_favorite, name="toggle_favorite"),

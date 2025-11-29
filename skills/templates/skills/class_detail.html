@@ -35,6 +35,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
           </svg>
           <span>{{ cls.get_difficulty_display }}</span>
+          {% if is_enrolled and is_completed %}
+          <div class="completion-badge-inline">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Completed</span>
+          </div>
+          {% endif %}
         </div>
         
         <h1 class="hero-title">{{ cls.title }}</h1>
@@ -91,12 +99,21 @@
             </button>
           {% endif %}
           {% if is_enrolled %}
-            <a href="{% url 'skills:view_schedule' cls.slug %}" class="btn btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-              </svg>
-              Book a Session
-            </a>
+            {% if is_completed %}
+              <button type="button" class="btn btn-primary" onclick="openBookingModal('{{ cls.slug }}')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Re-Enroll for More Sessions
+              </button>
+            {% else %}
+              <a href="{% url 'skills:view_schedule' cls.slug %}" class="btn btn-primary">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Book a Session
+              </a>
+            {% endif %}
           {% elif not is_enrolled and cls.price_cents and cls.price_cents > 0 %}
             <button type="button" class="btn btn-primary" onclick="openBookingModal('{{ cls.slug }}')">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -405,6 +422,7 @@
 }
 
 .hero-content {
+  position: relative;
   padding-top: 8px;
 }
 
@@ -589,6 +607,62 @@
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(74, 103, 255, 0.4);
+}
+
+.completion-notice {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+  border-radius: 10px;
+  border: 2px solid #10b981;
+}
+
+.notice-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #065f46;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.notice-content svg {
+  width: 20px;
+  height: 20px;
+  color: #10b981;
+}
+
+.progress-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.completion-badge-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
+.completion-badge-inline svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .btn-secondary {

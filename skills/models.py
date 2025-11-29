@@ -327,6 +327,49 @@ class ClassEnrollment(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.teaching_class.title} ({self.status})"
+    
+    def is_active(self):
+        """Check if enrollment is active and allows booking"""
+        return self.status == self.ACTIVE
+    
+    def can_book_sessions(self):
+        """Check if student can book new sessions with this enrollment"""
+        if not self.is_active():
+            return False
+        # Check if all sessions are completed and confirmed (should be revoked)
+        return not self.is_fully_completed()
+    
+    def is_fully_completed(self):
+        """Check if all sessions are completed and confirmed by both parties"""
+        bookings = self.bookings.exclude(status=ClassBooking.CANCELLED)
+        if not bookings.exists():
+            return False
+        
+        # All bookings must be completed by teacher AND confirmed by student
+        for booking in bookings:
+            if booking.status != ClassBooking.COMPLETED:
+                return False
+            if not booking.is_student_confirmed():
+                return False
+        return True
+    
+    def check_and_revoke_if_complete(self):
+        """Check if enrollment should be revoked and revoke it if so"""
+        if self.is_fully_completed() and self.status == self.ACTIVE:
+            self.status = self.REVOKED
+            self.save(update_fields=['status'])
+            return True
+        return False
+    
+    def get_active_bookings(self):
+        """Get all active (non-cancelled, non-completed) bookings"""
+        return self.bookings.exclude(
+            status__in=[ClassBooking.CANCELLED, ClassBooking.COMPLETED]
+        )
+    
+    def get_completed_bookings(self):
+        """Get all completed bookings"""
+        return self.bookings.filter(status=ClassBooking.COMPLETED)
 
 
 class ClassTradeOffer(models.Model):
@@ -384,12 +427,46 @@ class ClassTimeSlot(models.Model):
     
     def get_available_spots(self):
         """Get number of available spots remaining"""
-        booked_count = self.bookings.filter(status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING]).count()
+        booked_count = self.bookings.filter(
+            status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING]
+        ).count()
         return max(0, self.max_students - booked_count)
     
     def is_fully_booked(self):
         """Check if this slot is fully booked"""
         return self.get_available_spots() == 0
+    
+    def can_be_booked_by(self, user):
+        """Check if a user can book this time slot"""
+        from django.utils import timezone
+        
+        # Slot must be active
+        if not self.is_active:
+            return False, "This time slot is not available."
+        
+        # Slot must be in the future
+        if self.start_time <= timezone.now():
+            return False, "Cannot book time slots in the past."
+        
+        # Slot must have available spots
+        if self.is_fully_booked():
+            return False, "This time slot is fully booked."
+        
+        # User must not already have a booking for this slot
+        if self.bookings.filter(student=user).exclude(status=ClassBooking.CANCELLED).exists():
+            return False, "You already have a booking for this time slot."
+        
+        return True, None
+    
+    def is_past(self):
+        """Check if this time slot is in the past"""
+        from django.utils import timezone
+        return self.start_time < timezone.now()
+    
+    def is_upcoming(self):
+        """Check if this time slot is upcoming"""
+        from django.utils import timezone
+        return self.start_time >= timezone.now()
 
 
 class ClassBooking(models.Model):
@@ -433,6 +510,56 @@ class ClassBooking(models.Model):
     def __str__(self):
         return f"{self.student.username} - {self.time_slot.teaching_class.title} - {self.time_slot.start_time.strftime('%Y-%m-%d %H:%M')}"
     
+    def is_active(self):
+        """Check if booking is active (not cancelled or completed)"""
+        return self.status in [self.CONFIRMED, self.PENDING]
+    
+    def is_completed(self):
+        """Check if booking is completed"""
+        return self.status == self.COMPLETED
+    
+    def is_student_confirmed(self):
+        """Check if student has confirmed completion"""
+        return 'STUDENT_CONFIRMED' in (self.teacher_notes or '')
+    
     def can_be_cancelled(self):
-        """Check if booking can be cancelled"""
-        return self.status in [ClassBooking.CONFIRMED, ClassBooking.PENDING] and self.time_slot.start_time > timezone.now()
+        """Check if booking can be cancelled by student"""
+        from django.utils import timezone
+        return (
+            self.status in [self.CONFIRMED, self.PENDING] and 
+            self.time_slot.start_time > timezone.now()
+        )
+    
+    def can_be_marked_complete(self):
+        """Check if booking can be marked as completed by teacher"""
+        # Teacher can mark complete anytime as long as it's not already completed or cancelled
+        return (
+            self.status != self.COMPLETED and
+            self.status != self.CANCELLED
+        )
+    
+    def can_be_confirmed_by_student(self):
+        """Check if student can confirm this booking is complete"""
+        # Student can confirm if teacher marked it complete but student hasn't
+        return (
+            self.status == self.COMPLETED and
+            not self.is_student_confirmed()
+        )
+    
+    def mark_student_confirmed(self):
+        """Mark that student has confirmed completion"""
+        if not self.teacher_notes:
+            self.teacher_notes = 'STUDENT_CONFIRMED'
+        elif 'STUDENT_CONFIRMED' not in self.teacher_notes:
+            self.teacher_notes = f"{self.teacher_notes} | STUDENT_CONFIRMED"
+        self.save(update_fields=['teacher_notes'])
+    
+    def is_past(self):
+        """Check if this booking is for a past time slot"""
+        from django.utils import timezone
+        return self.time_slot.start_time < timezone.now()
+    
+    def is_upcoming(self):
+        """Check if this booking is for an upcoming time slot"""
+        from django.utils import timezone
+        return self.time_slot.start_time >= timezone.now()

@@ -114,18 +114,216 @@ class ClassDetailView(DetailView):
     slug_url_kwarg = 'slug'
     queryset = TeachingClass.objects.select_related('teacher').prefetch_related('topics', 'reviews__reviewer')
 
+    def get(self, request, *args, **kwargs):
+        """Handle payment success redirect before rendering"""
+        self.object = self.get_object()
+        user = request.user
+        
+        # Handle payment success - redirect to book session page immediately
+        if request.GET.get('paid') == '1' and user.is_authenticated:
+            cls = self.object
+            session_id = request.GET.get('session_id')
+            
+            # Check if we've already processed this payment (prevent duplicate messages)
+            session_key = f'payment_processed_{session_id}' if session_id else f'payment_processed_{cls.id}'
+            if not request.session.get(session_key):
+                # Verify payment and enroll if webhook didn't fire
+                enrollment = ClassEnrollment.objects.filter(
+                    user=user,
+                    teaching_class=cls,
+                    status=ClassEnrollment.ACTIVE
+                ).first()
+                
+                if not enrollment:
+                    try:
+                        # Delete any revoked enrollments first (for re-enrollment)
+                        ClassEnrollment.objects.filter(
+                            user=user,
+                            teaching_class=cls,
+                            status=ClassEnrollment.REVOKED
+                        ).delete()
+                        
+                        # Verify and create enrollment
+                        self._verify_and_enroll_from_payment(user, cls)
+                        
+                        # Check again after verification
+                        enrollment = ClassEnrollment.objects.filter(
+                            user=user,
+                            teaching_class=cls,
+                            status=ClassEnrollment.ACTIVE
+                        ).first()
+                    except Exception as e:
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.error(f"Error verifying payment: {e}")
+                
+                # Only redirect if enrollment exists
+                if enrollment:
+                    messages.success(request, f'Payment successful! You are now enrolled in "{cls.title}". You can now book your sessions.')
+                    # Mark as processed to prevent duplicate messages
+                    request.session[session_key] = True
+                    # Redirect to clean URL without parameters
+                    return HttpResponseRedirect(reverse('skills:view_schedule', args=[cls.slug]))
+                else:
+                    # Enrollment not ready yet, show message and stay on page
+                    messages.warning(request, 'Payment received! Your enrollment is being processed. Please wait a moment and refresh the page.')
+            else:
+                # Already processed, redirect to clean URL
+                return HttpResponseRedirect(reverse('skills:view_schedule', args=[cls.slug]))
+        
+        # Continue with normal rendering
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         cls = self.object
         is_enrolled = False
+        enrollment = None
+        is_completed = False
         is_favorited = False
+        
         if user.is_authenticated:
-            is_enrolled = ClassEnrollment.objects.filter(user=user, teaching_class=cls, status=ClassEnrollment.ACTIVE).exists()
+            # Check for active enrollment
+            enrollment = ClassEnrollment.objects.filter(
+                user=user, 
+                teaching_class=cls, 
+                status=ClassEnrollment.ACTIVE
+            ).first()
+            is_enrolled = enrollment is not None
+            
+            # Check if enrollment should be revoked (all sessions completed)
+            if enrollment:
+                # Check and revoke if all sessions are completed
+                enrollment.check_and_revoke_if_complete()
+                # Re-fetch to get updated status
+                enrollment.refresh_from_db()
+                is_enrolled = enrollment.is_active()
+                is_completed = not is_enrolled and enrollment.status == ClassEnrollment.REVOKED
+            else:
+                # Check if there's a revoked enrollment (completed class)
+                revoked_enrollment = ClassEnrollment.objects.filter(
+                    user=user,
+                    teaching_class=cls,
+                    status=ClassEnrollment.REVOKED
+                ).first()
+                if revoked_enrollment:
+                    is_completed = True
+                    is_enrolled = False
+            
             is_favorited = ClassFavorite.objects.filter(user=user, teaching_class=cls).exists()
+        
+        # Handle payment cancellation and errors
+        if self.request.GET.get('cancel') == '1':
+            messages.info(self.request, 'Payment was cancelled. You can try again anytime.')
+        elif self.request.GET.get('error') == 'stripe_not_configured':
+            messages.error(self.request, 'Payment system is not configured. Please contact support.')
+        elif self.request.GET.get('error') == 'stripe_not_installed':
+            messages.error(self.request, 'Payment system is not available. Please contact support.')
+        elif self.request.GET.get('error') == 'pricing_required':
+            messages.error(self.request, 'This class requires payment to enroll.')
+        
         context['is_enrolled'] = is_enrolled
+        context['enrollment'] = enrollment
+        context['is_completed'] = is_completed
         context['is_favorited'] = is_favorited
         return context
+    
+    def _verify_and_enroll_from_payment(self, user, cls):
+        """Fallback: Verify payment and enroll user if payment was successful but webhook didn't fire"""
+        try:
+            import stripe
+            secret = getattr(settings, 'STRIPE_SECRET_KEY', None)
+            if not secret:
+                return
+            
+            stripe.api_key = secret
+            
+            # Try to get session_id from URL first (more reliable)
+            session_id = self.request.GET.get('session_id')
+            
+            if session_id:
+                # Verify the specific session
+                try:
+                    session = stripe.checkout.Session.retrieve(session_id)
+                    
+                    # Verify it's for this user and class
+                    metadata = session.get('metadata', {})
+                    class_id = metadata.get('class_id')
+                    user_id = metadata.get('user_id')
+                    
+                    if (class_id and str(cls.id) == class_id and 
+                        user_id and str(user.id) == user_id and
+                        session.get('payment_status') == 'paid'):
+                        
+                        # Payment was successful, create enrollment
+                        self._create_enrollment_from_session(user, cls, session, metadata)
+                        return
+                except stripe.error.StripeError:
+                    pass
+            
+            # Fallback: Search recent sessions if session_id not available
+            from datetime import datetime, timedelta
+            sessions = stripe.checkout.Session.list(
+                limit=10,
+                created={'gte': int((datetime.now() - timedelta(hours=1)).timestamp())},
+            )
+            
+            for session in sessions.data:
+                metadata = session.get('metadata', {})
+                class_id = metadata.get('class_id')
+                user_id = metadata.get('user_id')
+                
+                # Check if this session matches our class and user
+                if (class_id and str(cls.id) == class_id and 
+                    user_id and str(user.id) == user_id and
+                    session.get('payment_status') == 'paid'):
+                    
+                    self._create_enrollment_from_session(user, cls, session, metadata)
+                    break
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in payment verification fallback: {e}")
+    
+    def _create_enrollment_from_session(self, user, cls, session, metadata):
+        """Helper method to create enrollment from a Stripe session"""
+        try:
+            # Payment was successful, create enrollment
+            enrollment, created = ClassEnrollment.objects.update_or_create(
+                user=user,
+                teaching_class=cls,
+                defaults={
+                    'status': ClassEnrollment.ACTIVE,
+                    'granted_via': ClassEnrollment.PURCHASE,
+                    'purchase_id': session.get('payment_intent') or session.get('id')
+                },
+            )
+            
+            # Create booking if time_slot_id was provided
+            time_slot_id = metadata.get('time_slot_id')
+            booking_notes = metadata.get('booking_notes', '')
+            
+            if time_slot_id and enrollment:
+                try:
+                    time_slot = ClassTimeSlot.objects.get(id=time_slot_id, teaching_class=cls)
+                    if not time_slot.is_fully_booked() and time_slot.start_time > timezone.now():
+                        ClassBooking.objects.get_or_create(
+                            time_slot=time_slot,
+                            student=user,
+                            enrollment=enrollment,
+                            defaults={
+                                'status': ClassBooking.CONFIRMED,
+                                'notes': booking_notes,
+                            }
+                        )
+                except ClassTimeSlot.DoesNotExist:
+                    pass
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating enrollment from session: {e}")
 
 
 class ClassReviewCreateView(LoginRequiredMixin, View):
@@ -559,8 +757,28 @@ class ClassCheckoutView(LoginRequiredMixin, View):
             return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]) + '?error=stripe_not_installed')
 
         cls = get_object_or_404(TeachingClass, slug=slug, is_published=True)
-        if ClassEnrollment.objects.filter(user=request.user, teaching_class=cls, status=ClassEnrollment.ACTIVE).exists():
+        # Check for active enrollment
+        existing_enrollment = ClassEnrollment.objects.filter(
+            user=request.user, 
+            teaching_class=cls, 
+            status=ClassEnrollment.ACTIVE
+        ).first()
+        
+        if existing_enrollment:
+            # Already enrolled and active - can't enroll again
             return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]))
+        
+        # Check if there's a revoked enrollment (completed and unenrolled)
+        revoked_enrollment = ClassEnrollment.objects.filter(
+            user=request.user,
+            teaching_class=cls,
+            status=ClassEnrollment.REVOKED
+        ).first()
+        
+        if revoked_enrollment:
+            # Delete the old revoked enrollment to allow fresh re-enrollment
+            revoked_enrollment.delete()
+            messages.info(request, 'Welcome back! Starting fresh enrollment.')
         if (cls.price_cents or 0) <= 0:
             # Free enrollment disabled: require payment or trade
             return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]) + '?error=pricing_required')
@@ -588,7 +806,8 @@ class ClassCheckoutView(LoginRequiredMixin, View):
             return HttpResponseRedirect(reverse('skills:class_detail', args=[slug]) + '?error=stripe_not_configured')
 
         stripe.api_key = secret
-        success_url = request.build_absolute_uri(reverse('skills:class_detail', args=[slug])) + '?paid=1'
+        # Redirect to book a session page after successful payment
+        success_url = request.build_absolute_uri(reverse('skills:view_schedule', args=[slug])) + '?paid=1&session_id={CHECKOUT_SESSION_ID}'
         cancel_url = request.build_absolute_uri(reverse('skills:class_detail', args=[slug])) + '?cancel=1'
 
         # Build metadata with booking info
@@ -614,6 +833,9 @@ class ClassCheckoutView(LoginRequiredMixin, View):
             success_url=success_url,
             cancel_url=cancel_url,
             metadata=metadata,
+            payment_intent_data={
+                'metadata': metadata,  # Also add metadata to payment intent for payment_intent events
+            },
             customer_email=request.user.email if request.user.email else None,
         )
         return HttpResponseRedirect(session.url)
@@ -621,24 +843,73 @@ class ClassCheckoutView(LoginRequiredMixin, View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class StripeWebhookView(View):
+    """
+    Comprehensive Stripe webhook handler for all payment events
+    Handles: successful payments, failed payments, refunds, and cancellations
+    """
     def post(self, request):
+        import json
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
         try:
             import stripe
-        except Exception:
+        except ImportError:
+            logger.error("Stripe library not installed")
             return HttpResponse(status=400)
 
         payload = request.body
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
         endpoint_secret = getattr(settings, 'STRIPE_WEBHOOK_SECRET', None)
+        
         try:
             if endpoint_secret:
                 event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
             else:
+                # For development/testing without webhook secret
                 event = stripe.Event.construct_from(json.loads(payload.decode('utf-8')), stripe.api_key)
-        except Exception:
+        except ValueError as e:
+            logger.error(f"Invalid payload: {e}")
+            return HttpResponse(status=400)
+        except stripe.error.SignatureVerificationError as e:
+            logger.error(f"Invalid signature: {e}")
+            return HttpResponse(status=400)
+        except Exception as e:
+            logger.error(f"Webhook error: {e}")
             return HttpResponse(status=400)
 
-        if event['type'] == 'checkout.session.completed':
+        event_type = event['type']
+        logger.info(f"Received Stripe webhook: {event_type}")
+
+        # Handle checkout session completed (successful payment)
+        if event_type == 'checkout.session.completed':
+            self._handle_checkout_completed(event)
+        
+        # Handle payment intent succeeded (additional confirmation)
+        elif event_type == 'payment_intent.succeeded':
+            self._handle_payment_succeeded(event)
+        
+        # Handle payment intent failed
+        elif event_type == 'payment_intent.payment_failed':
+            self._handle_payment_failed(event)
+        
+        # Handle refunds
+        elif event_type == 'charge.refunded':
+            self._handle_refund(event)
+        
+        # Handle payment disputes
+        elif event_type == 'charge.dispute.created':
+            self._handle_dispute(event)
+
+        return HttpResponse(status=200)
+
+    def _handle_checkout_completed(self, event):
+        """Handle successful checkout session completion"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
             session = event['data']['object']
             metadata = session.get('metadata', {})
             class_id = metadata.get('class_id')
@@ -646,41 +917,216 @@ class StripeWebhookView(View):
             time_slot_id = metadata.get('time_slot_id')
             booking_notes = metadata.get('booking_notes', '')
             
-            if class_id and user_id:
-                try:
-                    cls = TeachingClass.objects.get(id=class_id)
-                    user_id_int = int(user_id)
-                    
-                    # Create enrollment
-                    enrollment, created = ClassEnrollment.objects.update_or_create(
+            if not class_id or not user_id:
+                logger.warning(f"Missing metadata in checkout session: {session.get('id')}")
+                return
+            
+            try:
+                cls = TeachingClass.objects.get(id=class_id)
+                user_id_int = int(user_id)
+                
+                # Delete any existing revoked enrollment first (for fresh re-enrollment)
+                ClassEnrollment.objects.filter(
+                    user_id=user_id_int,
+                    teaching_class=cls,
+                    status=ClassEnrollment.REVOKED
+                ).delete()
+                
+                # Check if there's an existing active enrollment (shouldn't happen, but handle it)
+                existing_active = ClassEnrollment.objects.filter(
+                    user_id=user_id_int,
+                    teaching_class=cls,
+                    status=ClassEnrollment.ACTIVE
+                ).first()
+                
+                if existing_active:
+                    # Update existing active enrollment with new payment info
+                    existing_active.granted_via = ClassEnrollment.PURCHASE
+                    existing_active.purchase_id = session.get('payment_intent') or session.get('id')
+                    existing_active.save()
+                    enrollment = existing_active
+                    created = False
+                else:
+                    # Create new enrollment (fresh start after revocation)
+                    enrollment = ClassEnrollment.objects.create(
                         user_id=user_id_int,
                         teaching_class=cls,
-                        defaults={
-                            'status': ClassEnrollment.ACTIVE,
-                            'granted_via': ClassEnrollment.PURCHASE,
-                            'purchase_id': session.get('payment_intent') or session.get('id')
-                        },
+                        status=ClassEnrollment.ACTIVE,
+                        granted_via=ClassEnrollment.PURCHASE,
+                        purchase_id=session.get('payment_intent') or session.get('id')
                     )
-                    
-                    # Create booking if time_slot_id was provided
-                    if time_slot_id and enrollment:
-                        try:
-                            time_slot = ClassTimeSlot.objects.get(id=time_slot_id, teaching_class=cls)
-                            # Double-check slot is still available
-                            if not time_slot.is_fully_booked() and time_slot.start_time > timezone.now():
-                                ClassBooking.objects.create(
-                                    time_slot=time_slot,
-                                    student_id=user_id_int,
-                                    enrollment=enrollment,
-                                    status=ClassBooking.CONFIRMED,
-                                    notes=booking_notes,
-                                )
-                        except (ClassTimeSlot.DoesNotExist, Exception) as e:
-                            # Log error but don't fail the enrollment
-                            pass
-                except Exception:
-                    pass
-        return HttpResponse(status=200)
+                    created = True
+                
+                if created:
+                    logger.info(f"Created enrollment for user {user_id_int} in class {class_id}")
+                else:
+                    logger.info(f"Updated enrollment for user {user_id_int} in class {class_id}")
+                
+                # Create booking if time slot was specified during checkout
+                if time_slot_id and enrollment:
+                    self._create_booking_from_checkout(enrollment, user_id_int, time_slot_id, booking_notes, logger)
+                        
+            except TeachingClass.DoesNotExist:
+                logger.error(f"Class {class_id} not found")
+            except ValueError:
+                logger.error(f"Invalid user_id: {user_id}")
+            except Exception as e:
+                logger.error(f"Error processing checkout completion: {e}")
+                
+        except Exception as e:
+            logger.error(f"Unexpected error in _handle_checkout_completed: {e}")
+    
+    def _create_booking_from_checkout(self, enrollment, user_id, time_slot_id, booking_notes, logger):
+        """Helper to create booking from checkout metadata with proper validation"""
+        try:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            
+            # Get user object
+            user = User.objects.get(pk=user_id)
+            
+            time_slot = ClassTimeSlot.objects.get(
+                id=time_slot_id, 
+                teaching_class=enrollment.teaching_class
+            )
+            
+            # Validate slot can be booked using model method
+            can_book, error_msg = time_slot.can_be_booked_by(user)
+            if not can_book:
+                logger.warning(f"Cannot create booking for slot {time_slot_id}: {error_msg}")
+                return
+            
+            # Check if there's an existing cancelled booking for this slot
+            existing_booking = ClassBooking.objects.filter(
+                time_slot=time_slot,
+                student=user,
+                status=ClassBooking.CANCELLED
+            ).first()
+            
+            if existing_booking:
+                # Reactivate the cancelled booking
+                existing_booking.status = ClassBooking.CONFIRMED
+                existing_booking.notes = booking_notes[:1000] if booking_notes else ''
+                existing_booking.cancelled_at = None
+                existing_booking.enrollment = enrollment
+                existing_booking.save()
+                booking = existing_booking
+                created = False
+                logger.info(f"Reactivated cancelled booking {booking.id} for enrollment {enrollment.id}")
+            else:
+                # Create new booking
+                booking, created = ClassBooking.objects.get_or_create(
+                    time_slot=time_slot,
+                    student=user,
+                    enrollment=enrollment,
+                    defaults={
+                        'status': ClassBooking.CONFIRMED,
+                        'notes': booking_notes[:1000] if booking_notes else '',  # Limit length
+                    }
+                )
+                
+                if created:
+                    logger.info(f"Created booking {booking.id} for enrollment {enrollment.id}")
+                else:
+                    logger.info(f"Booking already exists for slot {time_slot_id} and user {user_id}")
+                
+        except ClassTimeSlot.DoesNotExist:
+            logger.warning(f"Time slot {time_slot_id} not found")
+        except User.DoesNotExist:
+            logger.error(f"User {user_id} not found")
+        except Exception as e:
+            logger.error(f"Error creating booking from checkout: {e}", exc_info=True)
+
+    def _handle_payment_succeeded(self, event):
+        """Handle payment intent succeeded (additional confirmation)"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            payment_intent = event['data']['object']
+            # Payment intent succeeded is usually handled by checkout.session.completed
+            # This is just for additional logging/confirmation
+            logger.info(f"Payment intent succeeded: {payment_intent.get('id')}")
+        except Exception as e:
+            logger.error(f"Error handling payment succeeded: {e}")
+
+    def _handle_payment_failed(self, event):
+        """Handle failed payment attempts"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            payment_intent = event['data']['object']
+            metadata = payment_intent.get('metadata', {})
+            class_id = metadata.get('class_id')
+            user_id = metadata.get('user_id')
+            
+            logger.warning(f"Payment failed for user {user_id}, class {class_id}: {payment_intent.get('last_payment_error', {}).get('message', 'Unknown error')}")
+            
+            # Optionally update enrollment status to pending or create a failed payment record
+            if class_id and user_id:
+                try:
+                    enrollment = ClassEnrollment.objects.filter(
+                        user_id=int(user_id),
+                        teaching_class_id=int(class_id),
+                        purchase_id=payment_intent.get('id')
+                    ).first()
+                    if enrollment and enrollment.status == ClassEnrollment.PENDING:
+                        # Keep as pending or mark for retry
+                        logger.info(f"Payment failed, enrollment remains pending for user {user_id}")
+                except Exception as e:
+                    logger.error(f"Error handling failed payment: {e}")
+        except Exception as e:
+            logger.error(f"Error in _handle_payment_failed: {e}")
+
+    def _handle_refund(self, event):
+        """Handle refunds - update enrollment status"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            charge = event['data']['object']
+            payment_intent_id = charge.get('payment_intent')
+            
+            if not payment_intent_id:
+                return
+            
+            # Find enrollment by purchase_id
+            enrollments = ClassEnrollment.objects.filter(
+                purchase_id=payment_intent_id,
+                status=ClassEnrollment.ACTIVE
+            )
+            
+            for enrollment in enrollments:
+                enrollment.status = ClassEnrollment.REFUNDED
+                enrollment.save()
+                
+                # Cancel any associated bookings
+                bookings = ClassBooking.objects.filter(
+                    enrollment=enrollment,
+                    status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING]
+                )
+                for booking in bookings:
+                    booking.status = ClassBooking.CANCELLED
+                    booking.save()
+                
+                logger.info(f"Refunded enrollment {enrollment.id} for user {enrollment.user_id}")
+                
+        except Exception as e:
+            logger.error(f"Error handling refund: {e}")
+
+    def _handle_dispute(self, event):
+        """Handle payment disputes"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            dispute = event['data']['object']
+            charge_id = dispute.get('charge')
+            logger.warning(f"Payment dispute created for charge {charge_id}")
+            # You may want to mark enrollment as disputed or notify admin
+        except Exception as e:
+            logger.error(f"Error handling dispute: {e}")
 
 
 # ============ SCHEDULING VIEWS ============
@@ -816,7 +1262,71 @@ def view_class_schedule(request, slug):
     """Student view to see available time slots and book them"""
     teaching_class = get_object_or_404(TeachingClass, slug=slug, is_published=True)
     
-    # Check if user is enrolled
+    # Handle payment success - verify enrollment if webhook didn't fire
+    if request.GET.get('paid') == '1':
+        session_id = request.GET.get('session_id')
+        session_key = f'payment_processed_{session_id}' if session_id else f'payment_processed_{teaching_class.id}'
+        
+        # Only process if we haven't shown the message for this payment yet
+        if not request.session.get(session_key):
+            # Delete any revoked enrollments first (for re-enrollment)
+            ClassEnrollment.objects.filter(
+                user=request.user,
+                teaching_class=teaching_class,
+                status=ClassEnrollment.REVOKED
+            ).delete()
+            
+            # Try to verify and create enrollment if webhook didn't fire
+            enrollment = ClassEnrollment.objects.filter(
+                user=request.user,
+                teaching_class=teaching_class,
+                status=ClassEnrollment.ACTIVE
+            ).first()
+            
+            if not enrollment:
+                try:
+                    import stripe
+                    secret = getattr(settings, 'STRIPE_SECRET_KEY', None)
+                    if secret:
+                        stripe.api_key = secret
+                        if session_id:
+                            try:
+                                session = stripe.checkout.Session.retrieve(session_id)
+                                metadata = session.get('metadata', {})
+                                if (session.get('payment_status') == 'paid' and 
+                                    metadata.get('class_id') == str(teaching_class.id) and
+                                    metadata.get('user_id') == str(request.user.id)):
+                                    # Create enrollment from session
+                                    from skills.views import ClassDetailView
+                                    detail_view = ClassDetailView()
+                                    detail_view.request = request
+                                    detail_view._create_enrollment_from_session(request.user, teaching_class, session, metadata)
+                                    # Refresh enrollment check
+                                    enrollment = ClassEnrollment.objects.filter(
+                                        user=request.user,
+                                        teaching_class=teaching_class,
+                                        status=ClassEnrollment.ACTIVE
+                                    ).first()
+                            except Exception as e:
+                                import logging
+                                logger = logging.getLogger(__name__)
+                                logger.error(f"Error verifying payment in view_schedule: {e}")
+                except Exception:
+                    pass
+            
+            if enrollment:
+                messages.success(request, f'Payment successful! You are now enrolled in "{teaching_class.title}". You can now book your sessions.')
+                # Mark as processed to prevent duplicate messages
+                request.session[session_key] = True
+            else:
+                messages.warning(request, 'Payment received! Your enrollment is being processed. Please wait a moment and refresh the page.')
+                return redirect('skills:class_detail', slug=slug)
+        
+        # Redirect to clean URL without parameters to prevent message on refresh
+        if request.GET.get('paid') == '1':
+            return redirect('skills:view_schedule', slug=slug)
+    
+    # Check if user is enrolled - must be ACTIVE (not REVOKED)
     enrollment = ClassEnrollment.objects.filter(
         user=request.user,
         teaching_class=teaching_class,
@@ -824,7 +1334,17 @@ def view_class_schedule(request, slug):
     ).first()
     
     if not enrollment:
-        messages.error(request, 'You must be enrolled in this class to book sessions.')
+        # Check if there's a revoked enrollment
+        revoked_enrollment = ClassEnrollment.objects.filter(
+            user=request.user,
+            teaching_class=teaching_class,
+            status=ClassEnrollment.REVOKED
+        ).first()
+        
+        if revoked_enrollment:
+            messages.info(request, 'You have completed this class. Please re-enroll through payment to book new sessions.')
+        else:
+            messages.error(request, 'You must be enrolled in this class to book sessions.')
         return redirect('skills:class_detail', slug=slug)
     
     # Get available time slots (upcoming, active, not fully booked)
@@ -838,17 +1358,34 @@ def view_class_schedule(request, slug):
     # Filter out fully booked slots
     available_slots = [slot for slot in available_slots if not slot.is_fully_booked()]
     
-    # Get user's existing bookings for this class
-    user_bookings = ClassBooking.objects.filter(
+    # Get user's existing bookings for this class - separate active and completed
+    all_user_bookings = ClassBooking.objects.filter(
         student=request.user,
         time_slot__teaching_class=teaching_class
-    ).select_related('time_slot').order_by('time_slot__start_time')
+    ).select_related('time_slot').order_by('-time_slot__start_time')  # Most recent first
+    
+    # Separate bookings into active and completed using model methods
+    user_bookings = [b for b in all_user_bookings if b.is_active() or (b.is_completed() and not b.is_student_confirmed())]
+    completed_bookings = [b for b in all_user_bookings if b.is_completed() and b.is_student_confirmed()]
+    
+    # Sort them
+    user_bookings = sorted(user_bookings, key=lambda b: b.time_slot.start_time)
+    completed_bookings = sorted(completed_bookings, key=lambda b: b.time_slot.start_time, reverse=True)
+    
+    # Check and revoke enrollment if all sessions are completed
+    enrollment.check_and_revoke_if_complete()
+    enrollment.refresh_from_db()
+    is_completed = enrollment.status == ClassEnrollment.REVOKED
     
     context = {
         'teaching_class': teaching_class,
         'enrollment': enrollment,
+        'is_enrolled': True,  # User is enrolled if they reached this view
+        'is_completed': is_completed,
         'available_slots': available_slots,
         'user_bookings': user_bookings,
+        'completed_bookings': completed_bookings,
+        'now': now,  # Pass current time to template
     }
     return render(request, 'skills/view_schedule.html', context)
 
@@ -856,46 +1393,71 @@ def view_class_schedule(request, slug):
 @login_required
 @require_http_methods(["POST"])
 def book_time_slot(request, slot_id):
-    """Book a time slot"""
+    """Book a time slot with proper validation"""
     time_slot = get_object_or_404(ClassTimeSlot, id=slot_id, is_active=True)
     
-    # Check if user is enrolled
+    # Get active enrollment
     enrollment = ClassEnrollment.objects.filter(
         user=request.user,
         teaching_class=time_slot.teaching_class,
         status=ClassEnrollment.ACTIVE
     ).first()
     
+    # Validate enrollment
     if not enrollment:
-        messages.error(request, 'You must be enrolled in this class to book sessions.')
+        revoked_enrollment = ClassEnrollment.objects.filter(
+            user=request.user,
+            teaching_class=time_slot.teaching_class,
+            status=ClassEnrollment.REVOKED
+        ).first()
+        
+        if revoked_enrollment:
+            messages.info(request, 'You have completed this class. Please re-enroll through payment to book new sessions.')
+        else:
+            messages.error(request, 'You must be enrolled in this class to book sessions.')
         return redirect('skills:class_detail', slug=time_slot.teaching_class.slug)
     
-    # Check if slot is available
-    if time_slot.is_fully_booked():
-        messages.error(request, 'This time slot is fully booked.')
+    # Check if enrollment can book sessions
+    if not enrollment.can_book_sessions():
+        enrollment.check_and_revoke_if_complete()
+        messages.info(request, 'You have completed this class. Please re-enroll through payment to book new sessions.')
+        return redirect('skills:class_detail', slug=time_slot.teaching_class.slug)
+    
+    # Validate slot can be booked using model method
+    can_book, error_msg = time_slot.can_be_booked_by(request.user)
+    if not can_book:
+        messages.error(request, error_msg or 'This time slot cannot be booked.')
         return redirect('skills:view_schedule', slug=time_slot.teaching_class.slug)
     
-    # Check if user already has a booking for this slot
-    if ClassBooking.objects.filter(time_slot=time_slot, student=request.user).exists():
-        messages.error(request, 'You already have a booking for this time slot.')
-        return redirect('skills:view_schedule', slug=time_slot.teaching_class.slug)
-    
-    # Check if slot is in the past
-    if time_slot.start_time <= timezone.now():
-        messages.error(request, 'Cannot book a time slot in the past.')
-        return redirect('skills:view_schedule', slug=time_slot.teaching_class.slug)
-    
-    # Create booking
-    notes = request.POST.get('notes', '')
-    ClassBooking.objects.create(
+    # Check if there's an existing cancelled booking for this slot
+    existing_booking = ClassBooking.objects.filter(
         time_slot=time_slot,
         student=request.user,
-        enrollment=enrollment,
-        notes=notes,
-        status=ClassBooking.CONFIRMED,  # Auto-confirm for now
-    )
+        status=ClassBooking.CANCELLED
+    ).first()
     
-    messages.success(request, f'Successfully booked session for {time_slot.start_time.strftime("%B %d, %Y at %I:%M %p")}!')
+    notes = request.POST.get('notes', '').strip()[:1000]  # Limit length
+    
+    if existing_booking:
+        # Reactivate the cancelled booking
+        existing_booking.status = ClassBooking.CONFIRMED
+        existing_booking.notes = notes
+        existing_booking.cancelled_at = None
+        existing_booking.enrollment = enrollment  # Update enrollment in case it changed
+        existing_booking.save()
+        booking = existing_booking
+        messages.success(request, f'Successfully re-booked session for {time_slot.start_time.strftime("%B %d, %Y at %I:%M %p")}!')
+    else:
+        # Create new booking
+        booking = ClassBooking.objects.create(
+            time_slot=time_slot,
+            student=request.user,
+            enrollment=enrollment,
+            notes=notes,
+            status=ClassBooking.CONFIRMED,
+        )
+        messages.success(request, f'Successfully booked session for {time_slot.start_time.strftime("%B %d, %Y at %I:%M %p")}!')
+    
     return redirect('skills:view_schedule', slug=time_slot.teaching_class.slug)
 
 
@@ -974,5 +1536,78 @@ def my_favorites(request):
         'classes': classes,
     }
     return render(request, 'skills/my_favorites.html', context)
+
+
+# ============ COMPLETION VIEWS ============
+
+@login_required
+@require_http_methods(["POST"])
+def complete_booking(request, booking_id):
+    """Teacher marks a booking/session as completed"""
+    booking = get_object_or_404(ClassBooking, id=booking_id)
+    teaching_class = booking.time_slot.teaching_class
+    
+    # Check if user is the teacher
+    if teaching_class.teacher != request.user and not request.user.is_staff:
+        messages.error(request, 'Only the teacher can mark sessions as completed.')
+        return redirect('skills:manage_schedule', slug=teaching_class.slug)
+    
+    # Validate booking can be marked complete
+    if not booking.can_be_marked_complete():
+        if booking.is_completed():
+            messages.info(request, 'This session is already marked as completed.')
+        else:
+            messages.error(request, 'This session cannot be marked as completed yet.')
+        return redirect('skills:manage_schedule', slug=teaching_class.slug)
+    
+    # Mark as completed
+    booking.status = ClassBooking.COMPLETED
+    booking.save()
+    
+    # Check if student has already confirmed
+    enrollment = booking.enrollment
+    if booking.is_student_confirmed():
+        # Both teacher and student confirmed - check if enrollment should be revoked
+        if enrollment.check_and_revoke_if_complete():
+            messages.success(request, f'Session completed and confirmed! {booking.student.username} has been unenrolled. They can re-enroll anytime.')
+        else:
+            messages.success(request, f'Session marked as completed. Waiting for student confirmation on remaining sessions.')
+    else:
+        messages.success(request, f'Session marked as completed. Waiting for student confirmation.')
+    
+    return redirect('skills:manage_schedule', slug=teaching_class.slug)
+
+
+@login_required
+@require_http_methods(["POST"])
+def confirm_booking_completion(request, booking_id):
+    """Student confirms that a session was completed"""
+    booking = get_object_or_404(ClassBooking, id=booking_id, student=request.user)
+    teaching_class = booking.time_slot.teaching_class
+    enrollment = booking.enrollment
+    
+    # Validate student can confirm
+    if not booking.can_be_confirmed_by_student():
+        if booking.is_student_confirmed():
+            messages.info(request, 'You have already confirmed this session.')
+        else:
+            messages.error(request, 'This session cannot be confirmed yet.')
+        return redirect('skills:view_schedule', slug=teaching_class.slug)
+    
+    # Mark student confirmation
+    booking.mark_student_confirmed()
+    
+    # Check if teacher has also marked it as completed
+    if booking.is_completed():
+        # Both teacher and student confirmed - check if enrollment should be revoked
+        if enrollment.check_and_revoke_if_complete():
+            messages.success(request, f'Thank you for confirming! You have completed all sessions for "{teaching_class.title}". You have been unenrolled and can re-enroll anytime for a fresh start.')
+        else:
+            messages.success(request, 'Thank you for confirming! Your session completion has been recorded.')
+    else:
+        # Student confirmed but teacher hasn't marked it complete yet
+        messages.success(request, 'Your confirmation has been recorded. Waiting for teacher to mark the session as completed.')
+    
+    return redirect('skills:view_schedule', slug=teaching_class.slug)
 
 

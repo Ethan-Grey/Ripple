@@ -1,321 +1,1329 @@
 {% extends 'base.html' %}
+{% load user_tags %}
+{% load tz %}
 {% block title %} · Schedule - {{ teaching_class.title }}{% endblock %}
 
 {% block content %}
-<div class="schedule-container">
-    <div class="page-header">
-        <h1>{{ teaching_class.title }} - Schedule</h1>
-        <p class="subtitle">Book available time slots for your class sessions</p>
-        <a href="{% url 'skills:class_detail' teaching_class.slug %}" class="btn btn-secondary">← Back to Class</a>
-    </div>
-
-    <!-- My Bookings Section -->
-    {% if user_bookings %}
-    <div class="card my-bookings-section">
-        <h2>My Bookings</h2>
-        <div class="bookings-list">
-            {% for booking in user_bookings %}
-            <div class="booking-card {% if booking.status == 'cancelled' %}cancelled{% endif %}">
-                <div class="booking-header">
-                    <div class="booking-time">
-                        <strong>{{ booking.time_slot.start_time|date:"M d, Y" }}</strong>
-                        <span>{{ booking.time_slot.start_time|time:"g:i A" }} - {{ booking.time_slot.end_time|time:"g:i A" }}</span>
-                    </div>
-                    <div class="booking-status status-{{ booking.status }}">
-                        {{ booking.get_status_display }}
-                    </div>
-                </div>
-                {% if booking.notes %}
-                <div class="booking-notes">
-                    <strong>Notes:</strong> {{ booking.notes }}
-                </div>
-                {% endif %}
-                {% if booking.can_be_cancelled %}
-                <div class="booking-actions">
-                    <form method="post" action="{% url 'skills:cancel_booking' booking.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Cancel this booking?');">Cancel Booking</button>
-                    </form>
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
+<div class="book-schedule-page">
+    <div class="schedule-header">
+        <div class="header-content">
+            <a href="{% url 'skills:class_detail' teaching_class.slug %}" class="back-link">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Class
+            </a>
+            <h1>Book a Session</h1>
+            <p class="header-subtitle">{{ teaching_class.title }}</p>
         </div>
     </div>
-    {% endif %}
 
-    <!-- Available Time Slots -->
-    <div class="card available-slots-section">
-        <h2>Available Time Slots</h2>
-        {% if available_slots %}
-        <div class="slots-list">
-            {% for slot in available_slots %}
-            <div class="slot-card available">
-                <div class="slot-header">
-                    <div class="slot-time">
-                        <strong>{{ slot.start_time|date:"l, M d, Y" }}</strong>
-                        <span>{{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}</span>
+    <div class="schedule-content">
+        <!-- Completion Status Banner -->
+        {% if is_enrolled %}
+            {% if is_completed %}
+            <div class="completion-banner completed">
+                <div class="banner-content">
+                    <div class="banner-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                        </svg>
                     </div>
-                    <div class="slot-availability">
-                        <span class="availability-badge">
-                            {{ slot.get_available_spots }} spot{{ slot.get_available_spots|pluralize }} available
-                        </span>
+                    <div class="banner-text">
+                        <h3>Congratulations! You've completed this class!</h3>
+                        <p>You've finished all sessions. Want to take it again or book additional sessions?</p>
                     </div>
+                    <a href="{% url 'skills:class_detail' teaching_class.slug %}" class="btn-re-enroll">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Re-Enroll for More Sessions
+                    </a>
                 </div>
-                {% if slot.notes %}
-                <div class="slot-notes">
-                    <p>{{ slot.notes }}</p>
-                </div>
-                {% endif %}
-                <div class="slot-actions">
-                    <form method="post" action="{% url 'skills:book_time_slot' slot.id %}" class="booking-form">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label for="notes-{{ slot.id }}">Add a note (optional):</label>
-                            <textarea id="notes-{{ slot.id }}" name="notes" rows="2" placeholder="Any special requests or questions..."></textarea>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        <!-- My Bookings Section -->
+        {% if user_bookings %}
+        <div class="schedule-section">
+            <div class="section-header">
+                <h2>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    My Bookings
+                </h2>
+                <span class="section-count">{{ user_bookings|length }}</span>
+            </div>
+            <div class="bookings-grid">
+                {% for booking in user_bookings %}
+                <div class="booking-card status-{{ booking.status }}">
+                    <div class="booking-card-header">
+                        <div class="booking-time-info">
+                            <div class="booking-date">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                {{ booking.time_slot.start_time|date:"M d, Y" }}
+                            </div>
+                            <div class="booking-time-range">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                {{ booking.time_slot.start_time|time:"g:i A" }} - {{ booking.time_slot.end_time|time:"g:i A" }}
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary" {% if slot.get_available_spots == 0 %}disabled{% endif %}>
-                            {% if slot.get_available_spots == 0 %}Fully Booked{% else %}Book This Slot{% endif %}
-                        </button>
-                    </form>
+                        <div class="booking-status-badge status-{{ booking.status }}">
+                            {{ booking.get_status_display }}
+                        </div>
+                    </div>
+                    
+                    {% if booking.notes %}
+                    <div class="booking-notes">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10m-7 4h7"></path>
+                        </svg>
+                        <span>{{ booking.notes }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="booking-card-footer">
+                        {% if booking.status == 'completed' and 'STUDENT_CONFIRMED' not in booking.teacher_notes|default:'' %}
+                            {# Teacher marked as completed, waiting for student confirmation #}
+                            <div class="completion-prompt-card">
+                                <div class="completion-prompt-header">
+                                    <div class="completion-icon-wrapper">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="completion-text-content">
+                                        <h3>Ready to Confirm</h3>
+                                        <p>Your teacher has marked this session as completed. Please confirm to finalize.</p>
+                                    </div>
+                                </div>
+                                <form method="post" action="{% url 'skills:confirm_booking_completion' booking.id %}" class="completion-action">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-confirm-primary">
+                                        <span class="btn-icon">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                        </span>
+                                        <span class="btn-text">Confirm Completion</span>
+                                    </button>
+                                </form>
+                            </div>
+                        {% elif booking.status != 'completed' and booking.time_slot.start_time < now %}
+                            {# Past session that hasn't been marked complete by teacher yet #}
+                            <div class="completion-message waiting">
+                                <div class="waiting-icon">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <strong>Waiting for Teacher</strong>
+                                    <p>This past session is waiting for the teacher to mark it as completed</p>
+                                </div>
+                            </div>
+                        {% elif booking.can_be_cancelled %}
+                            {# Upcoming session that can be cancelled #}
+                            <form method="post" action="{% url 'skills:cancel_booking' booking.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger" onclick="return confirm('Are you sure you want to cancel this booking?');">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Cancel Booking
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>No available time slots at the moment. Check back later or contact the teacher!</p>
         </div>
         {% endif %}
+
+        <!-- Completed Sessions Section -->
+        {% if completed_bookings %}
+        <div class="schedule-section">
+            <div class="section-header">
+                <h2>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                    </svg>
+                    Completed Sessions
+                </h2>
+                <span class="section-count">{{ completed_bookings|length }}</span>
+            </div>
+            <div class="bookings-grid">
+                {% for booking in completed_bookings %}
+                <div class="booking-card status-completed completed-session">
+                    <div class="booking-card-header">
+                        <div class="booking-time-info">
+                            <div class="booking-date">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                {{ booking.time_slot.start_time|date:"M d, Y" }}
+                            </div>
+                            <div class="booking-time-range">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                {{ booking.time_slot.start_time|time:"g:i A" }} - {{ booking.time_slot.end_time|time:"g:i A" }}
+                            </div>
+                        </div>
+                        <div class="booking-status-badge status-completed">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Completed
+                        </div>
+                    </div>
+                    
+                    {% if booking.notes %}
+                    <div class="booking-notes">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10m-7 4h7"></path>
+                        </svg>
+                        <span>{{ booking.notes }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="booking-card-footer">
+                        <div class="completion-actions">
+                            {% if booking.status == 'completed' %}
+                                {% if 'STUDENT_CONFIRMED' in booking.teacher_notes|default:'' %}
+                                    <div class="completion-message confirmed">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span>Both you and teacher confirmed - Session complete!</span>
+                                    </div>
+                                {% else %}
+                                    <div class="completion-message">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span>Teacher marked as completed - Please confirm</span>
+                                    </div>
+                                    <form method="post" action="{% url 'skills:confirm_booking_completion' booking.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-confirm-completion">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            Confirm Completion
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% elif booking.time_slot.start_time < now %}
+                                <div class="completion-message waiting">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span>Past session - Waiting for teacher to mark as completed</span>
+                                </div>
+                            {% else %}
+                                <div class="completion-message waiting">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span>Upcoming session</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Available Time Slots -->
+        <div class="schedule-section">
+            <div class="section-header">
+                <h2>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    Available Time Slots
+                </h2>
+                <span class="section-count">{{ available_slots|length }}</span>
+            </div>
+            {% if is_completed %}
+            <div class="info-message">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p>You've completed this class. <a href="{% url 'skills:class_detail' teaching_class.slug %}">Re-enroll</a> to book new sessions.</p>
+            </div>
+            {% elif available_slots %}
+            <div class="slots-grid">
+                {% for slot in available_slots %}
+                <div class="slot-card available">
+                    <div class="slot-card-header">
+                        <div class="slot-time-info">
+                            <div class="slot-date">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                {{ slot.start_time|date:"l, M d, Y" }}
+                            </div>
+                            <div class="slot-time-range">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                {{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}
+                            </div>
+                        </div>
+                        <div class="slot-availability-badge {% if slot.get_available_spots == 0 %}full{% else %}available{% endif %}">
+                            {% if slot.get_available_spots == 0 %}
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Fully Booked
+                            {% else %}
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                {{ slot.get_available_spots }} spot{{ slot.get_available_spots|pluralize }} available
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if slot.notes %}
+                    <div class="slot-notes">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        {{ slot.notes }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="slot-booking-form">
+                        <form method="post" action="{% url 'skills:book_time_slot' slot.id %}" class="booking-form">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="notes-{{ slot.id }}">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Add a note (optional)
+                                </label>
+                                <textarea id="notes-{{ slot.id }}" name="notes" rows="3" placeholder="Any special requests or questions for the teacher..."></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary-gradient" {% if slot.get_available_spots == 0 %}disabled{% endif %}>
+                                {% if slot.get_available_spots == 0 %}
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Fully Booked
+                                {% else %}
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Book This Slot
+                                {% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <p>No available time slots at the moment.</p>
+                <p class="empty-subtitle">Check back later or contact the teacher!</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
 <style>
-.schedule-container {
-    max-width: 1000px;
+.book-schedule-page {
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 2rem 1.5rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.page-header {
+.schedule-header {
+    margin-bottom: 2.5rem;
+}
+
+.header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    width: fit-content;
+}
+
+.back-link:hover {
+    color: #764ba2;
+    transform: translateX(-3px);
+}
+
+.back-link svg {
+    width: 18px;
+    height: 18px;
+}
+
+.schedule-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+}
+
+.header-subtitle {
+    color: #6b7280;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.schedule-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.schedule-section {
     margin-bottom: 2rem;
 }
 
-.page-header h1 {
-    font-size: 2rem;
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.section-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
     font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.section-header h2 svg {
+    width: 24px;
+    height: 24px;
+    color: #667eea;
+}
+
+.section-count {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.375rem 0.875rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.bookings-grid,
+.slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1.5rem;
+}
+
+.booking-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.booking-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent 0%, currentColor 50%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.booking-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-4px);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.booking-card:hover::before {
+    opacity: 0.3;
+}
+
+.booking-card.status-confirmed {
+    border-left: 4px solid #10b981;
+}
+
+.booking-card.status-pending {
+    border-left: 4px solid #f59e0b;
+}
+
+.booking-card.status-completed {
+    border-left: 4px solid #667eea;
+}
+
+.booking-card.status-cancelled {
+    border-left: 4px solid #9ca3af;
+    opacity: 0.7;
+}
+
+.booking-card.status-completed {
+    border-left: 4px solid #10b981;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(16, 185, 129, 0.02) 100%);
+}
+
+.booking-card.completed-session {
+    opacity: 0.95;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%);
+}
+
+.booking-card.completed-session:hover {
+    opacity: 1;
+}
+
+.booking-status-badge.status-completed {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.booking-status-badge.status-completed svg {
+    width: 16px;
+    height: 16px;
+}
+
+.booking-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.booking-time-info {
+    flex: 1;
+}
+
+.booking-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
     margin-bottom: 0.5rem;
 }
 
-.subtitle {
+.booking-date svg {
+    width: 18px;
+    height: 18px;
+    color: #667eea;
+}
+
+.booking-time-range {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     color: #6b7280;
-    margin-bottom: 1rem;
+    font-size: 0.95rem;
 }
 
-.card {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
+.booking-time-range svg {
+    width: 16px;
+    height: 16px;
 }
 
-.card h2 {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    font-size: 1.5rem;
-}
-
-.btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-decoration: none;
-    display: inline-block;
-}
-
-.btn-primary {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: #2563eb;
-}
-
-.btn-primary:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-}
-
-.btn-secondary {
-    background: #e5e7eb;
-    color: #374151;
-}
-
-.btn-secondary:hover {
-    background: #d1d5db;
-}
-
-.btn-danger {
-    background: #ef4444;
-    color: white;
-}
-
-.btn-danger:hover {
-    background: #dc2626;
-}
-
-.btn-sm {
+.booking-status-badge {
     padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.booking-status-badge.status-confirmed {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+.booking-status-badge.status-pending {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+}
+
+.booking-status-badge.status-completed {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+}
+
+.booking-status-badge.status-cancelled {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+}
+
+.booking-notes {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-radius: 10px;
+    border-left: 3px solid #667eea;
+    color: #6b7280;
     font-size: 0.9rem;
 }
 
-.bookings-list,
-.slots-list {
+.booking-notes svg {
+    width: 18px;
+    height: 18px;
+    color: #667eea;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.booking-card-footer {
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.completion-prompt-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 2px solid #86efac;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.completion-prompt-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.completion-icon-wrapper {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 14px;
+    color: white;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+    position: relative;
+}
+
+.completion-icon-wrapper::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    padding: 2px;
+    background: linear-gradient(135deg, #10b981, #34d399);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.5;
+}
+
+.completion-icon-wrapper svg {
+    width: 28px;
+    height: 28px;
+    position: relative;
+    z-index: 1;
+}
+
+.completion-text-content {
+    flex: 1;
+    padding-top: 0.25rem;
+}
+
+.completion-text-content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #065f46;
+    letter-spacing: -0.01em;
+}
+
+.completion-text-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #047857;
+    line-height: 1.5;
+}
+
+.completion-action {
+    width: 100%;
+}
+
+.btn-confirm-primary {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-confirm-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-confirm-primary:hover::before {
+    left: 100%;
+}
+
+.btn-confirm-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.btn-confirm-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+}
+
+.btn-confirm-primary .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-confirm-primary .btn-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.btn-confirm-primary .btn-text {
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.slot-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 2px solid #e5e7eb;
+    transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
-.booking-card,
-.slot-card {
-    background: #f9fafb;
-    border-radius: 8px;
-    padding: 1.5rem;
-    border-left: 4px solid #3b82f6;
+.slot-card:hover {
+    box-shadow: 0 8px 12px -2px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
 }
 
-.booking-card.cancelled {
-    opacity: 0.6;
-    border-left-color: #9ca3af;
+.slot-card.available {
+    border-left: 4px solid #667eea;
 }
 
-.booking-header,
-.slot-header {
+.slot-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: start;
-    margin-bottom: 1rem;
+    align-items: flex-start;
+    gap: 1rem;
 }
 
-.booking-time strong,
-.slot-time strong {
-    display: block;
+.slot-time-info {
+    flex: 1;
+}
+
+.slot-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 1.1rem;
-    margin-bottom: 0.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
 }
 
-.booking-time span,
-.slot-time span {
+.slot-date svg {
+    width: 18px;
+    height: 18px;
+    color: #667eea;
+}
+
+.slot-time-range {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     color: #6b7280;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
-.booking-status,
-.availability-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
+.slot-time-range svg {
+    width: 16px;
+    height: 16px;
 }
 
-.booking-status.status-confirmed {
-    background: #d1fae5;
+.slot-availability-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.slot-availability-badge.available {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
     color: #065f46;
 }
 
-.booking-status.status-pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.booking-status.status-cancelled {
-    background: #fee2e2;
+.slot-availability-badge.full {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
     color: #991b1b;
 }
 
-.booking-status.status-completed {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.availability-badge {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.booking-notes {
-    margin: 1rem 0;
-    padding: 0.75rem;
-    background: white;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    color: #6b7280;
+.slot-availability-badge svg {
+    width: 16px;
+    height: 16px;
 }
 
 .slot-notes {
-    margin: 1rem 0;
-    padding: 0.75rem;
-    background: white;
-    border-radius: 6px;
-    font-size: 0.9rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 10px;
+    border-left: 3px solid #667eea;
     color: #6b7280;
-    font-style: italic;
+    font-size: 0.9rem;
 }
 
-.booking-actions,
-.slot-actions {
-    margin-top: 1rem;
+.slot-notes svg {
+    width: 18px;
+    height: 18px;
+    color: #667eea;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.slot-booking-form {
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
 }
 
 .booking-form {
-    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .form-group {
-    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .form-group label {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
     color: #374151;
+    font-size: 0.95rem;
+}
+
+.form-group label svg {
+    width: 18px;
+    height: 18px;
+    color: #667eea;
 }
 
 .form-group textarea {
-    width: 100%;
-    padding: 0.75rem;
+    padding: 0.875rem 1rem;
     border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 0.9rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
     font-family: inherit;
     resize: vertical;
+    min-height: 80px;
+    transition: all 0.2s ease;
 }
 
 .form-group textarea:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-primary-gradient {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary-gradient:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px -1px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary-gradient:disabled {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-primary-gradient svg {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger svg {
+    width: 18px;
+    height: 18px;
 }
 
 .empty-state {
     text-align: center;
-    padding: 3rem;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);
+    border-radius: 16px;
+    border: 2px dashed #d1d5db;
+}
+
+.empty-state svg {
+    width: 64px;
+    height: 64px;
+    color: #9ca3af;
+    margin: 0 auto 1rem;
+    opacity: 0.5;
+}
+
+.empty-state p {
     color: #6b7280;
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
+}
+
+.empty-subtitle {
+    color: #9ca3af !important;
+    font-size: 0.95rem !important;
+}
+
+.completion-banner {
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 2px solid;
+}
+
+.completion-banner.completed {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+    border-color: #10b981;
+}
+
+.completion-banner.progress {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-color: #667eea;
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.banner-icon {
+    flex-shrink: 0;
+}
+
+.banner-icon svg {
+    width: 48px;
+    height: 48px;
+}
+
+.completion-banner.completed .banner-icon svg {
+    color: #10b981;
+}
+
+.completion-banner.progress .banner-icon svg {
+    color: #667eea;
+}
+
+.banner-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.banner-text h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: #111827;
+}
+
+.banner-text p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.btn-re-enroll {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3);
+    white-space: nowrap;
+}
+
+.btn-re-enroll:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px -1px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.btn-re-enroll svg {
+    width: 20px;
+    height: 20px;
+}
+
+.completion-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.completion-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #10b981;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.completion-message svg {
+    width: 20px;
+    height: 20px;
+}
+
+.completion-message.waiting {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-radius: 10px;
+    border-left: 3px solid #667eea;
+    color: #4b5563;
+}
+
+.completion-message.waiting strong {
+    display: block;
+    color: #374151;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.completion-message.waiting p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 400;
+}
+
+.waiting-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 10px;
+    color: #667eea;
+}
+
+.waiting-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-confirm-completion {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    white-space: nowrap;
+}
+
+.btn-confirm-completion:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.btn-confirm-completion:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-confirm-completion svg {
+    width: 20px;
+    height: 20px;
+}
+
+.info-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+    margin-bottom: 1.5rem;
+}
+
+.info-message svg {
+    width: 24px;
+    height: 24px;
+    color: #667eea;
+    flex-shrink: 0;
+}
+
+.info-message p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.info-message a {
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.info-message a:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {
-    .booking-header,
-    .slot-header {
+    .completion-prompt-card {
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+    
+    .completion-prompt-header {
         flex-direction: column;
-        gap: 0.5rem;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .completion-icon-wrapper {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+    }
+    
+    .completion-icon-wrapper svg {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .completion-text-content {
+        padding-top: 0;
+    }
+    
+    .completion-text-content h3 {
+        font-size: 1.05rem;
+    }
+    
+    .completion-text-content p {
+        font-size: 0.875rem;
+    }
+    
+    .btn-confirm-primary {
+        padding: 0.875rem 1.25rem;
+        font-size: 0.95rem;
+    }
+    
+    .book-schedule-page {
+        padding: 1.5rem 1rem;
+    }
+    
+    .schedule-header h1 {
+        font-size: 2rem;
+    }
+    
+    .bookings-grid,
+    .slots-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .booking-card-header,
+    .slot-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .completion-prompt-card {
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+    
+    .completion-prompt-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .completion-icon-wrapper {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+    }
+    
+    .completion-icon-wrapper svg {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .completion-text-content {
+        padding-top: 0;
+    }
+    
+    .completion-text-content h3 {
+        font-size: 1.05rem;
+    }
+    
+    .completion-text-content p {
+        font-size: 0.875rem;
+    }
+    
+    .btn-confirm-primary {
+        padding: 0.875rem 1.25rem;
+        font-size: 0.95rem;
     }
 }
 </style>
 {% endblock %}
-
