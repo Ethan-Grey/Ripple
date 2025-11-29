@@ -4,9 +4,10 @@
 <style>
 /* Page Layout */
 .classes-page {
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 120px);
   background: var(--background, #f9fafb);
   padding: 40px 24px;
+  padding-bottom: 100px;
 }
 
 .classes-container {
@@ -514,6 +515,20 @@
 
 .class-card-wrapper {
   position: relative;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: none;
+}
+
+.class-card-wrapper.animate-in {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .favorite-heart-btn {
@@ -750,13 +765,13 @@
 <div class="classes-page">
   <div class="classes-container">
     <!-- Page Header -->
-    <div class="page-header">
+    <div class="page-header" data-aos="fade-down">
       <h1 class="page-title">Explore Classes</h1>
       <p class="page-subtitle">Discover and learn from expert-led courses across various topics</p>
     </div>
 
     <!-- Action Buttons -->
-    <div class="action-buttons">
+    <div class="action-buttons" data-aos="fade-up" data-aos-delay="100">
       <div class="buttons-left">
         <button class="action-btn my-classes-btn" id="my-classes-filter">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -854,7 +869,7 @@
     </div>
 
     <!-- Classes Grid -->
-    <div id="react-class-grid"></div>
+    <div id="react-class-grid" data-aos="fade-up" data-aos-delay="200"></div>
     
     <script id="classes-data" type="application/json">
     [
@@ -940,7 +955,10 @@ function Card({c}) {
   };
   
   const href = `/classes/${c.slug}/`;
-  return e('div', {className: 'class-card-wrapper'}, [
+  return e('div', {
+    className: 'class-card-wrapper',
+    'data-index': (c.index || 0).toString()
+  }, [
     e('a', {href, className: 'class-card', key: 'card'}, [
       e('div', {className: 'thumb-wrap', key: 'img'}, [
         c.thumb 
@@ -1050,7 +1068,7 @@ function Grid() {
       : 'Try adjusting your filters to find what you\'re looking for.';
     const title = showMyClasses ? 'No enrolled classes' : 'No classes found';
     
-    return e('div', {className: 'empty-state'}, [
+    return e('div', {className: 'empty-state', 'data-aos': 'zoom-in'}, [
       e('div', {className: 'empty-icon', key: 'icon'}, '📚'),
       e('h3', {className: 'empty-title', key: 'title'}, title),
       e('p', {className: 'empty-text', key: 'text'}, message)
@@ -1061,7 +1079,7 @@ function Grid() {
   const containerClass = viewMode === 'grid' ? 'classes-grid' : 'classes-list';
   
   return e('div', {className: containerClass}, 
-    items.map((c, i) => e(Card, {c, key: i}))
+    items.map((c, i) => e(Card, {c: {...c, index: i}, key: i}))
   );
 }
 
@@ -1070,6 +1088,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (mount) {
     const root = ReactDOM.createRoot(mount);
     root.render(e(Grid));
+    
+    // Add animation classes after React renders
+    setTimeout(() => {
+      const cardWrappers = mount.querySelectorAll('.class-card-wrapper');
+      cardWrappers.forEach((wrapper, index) => {
+        const delay = index * 50;
+        wrapper.style.animationDelay = `${delay}ms`;
+        wrapper.classList.add('animate-in');
+      });
+    }, 100);
   }
 });
 </script>

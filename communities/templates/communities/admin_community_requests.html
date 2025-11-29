@@ -1,6 +1,12 @@
 {% extends 'base.html' %}
 {% block title %} · Review Community Requests{% endblock %}
 {% block content %}
+<style>
+.container[style*="max-width:1280px"] {
+    min-height: calc(100vh - 120px);
+    padding-bottom: 100px;
+}
+</style>
 <div class="container" style="max-width:1280px;">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
         <h2 class="h4 m-0">Community Requests Review</h2>

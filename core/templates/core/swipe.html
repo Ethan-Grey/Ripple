@@ -696,6 +696,7 @@
   class="swipe-stats{% if not has_swiped %} hidden{% endif %}"
   role="region"
   aria-label="Swipe statistics"
+  data-aos="fade-down"
 >
   <a href="{% url 'core:blacklist' %}" class="stat-card blacklist" aria-label="Not Interested">
     <span class="stat-number" id="blacklist-count" aria-live="polite">{{ blacklist_count|default:0 }}</span>
@@ -716,7 +717,7 @@
 </div>
 
     <!-- Card Container -->
-    <div class="card-container">
+    <div class="card-container" data-aos="zoom-in" data-aos-delay="200">
         {% if card_class %}
         <div class="swipe-indicator left">✕</div>
         <div class="swipe-indicator right">❤</div>
@@ -760,7 +761,7 @@
             </div>
         </div>
         {% else %}
-        <div class="no-more-skills">
+        <div class="no-more-skills" data-aos="zoom-in">
             <h3>🎉 You've seen all classes!</h3>
             <p>Check out your whitelist and blacklist below.</p>
         </div>
@@ -769,7 +770,7 @@
 
     <!-- Swipe Buttons -->
     {% if card_class %}
-    <div class="swipe-buttons">
+    <div class="swipe-buttons" data-aos="fade-up" data-aos-delay="300">
         <button class="swipe-btn dislike" onclick="swipe('left')" aria-label="Not interested">
             ✕
         </button>
@@ -783,13 +784,13 @@
         </button>
     </div>
     
-    <div class="keyboard-hint">
+    <div class="keyboard-hint" data-aos="fade-up" data-aos-delay="400">
         💡 Use ← and → arrow keys or swipe the card
     </div>
     {% endif %}
 
     <!-- View Lists -->
-    <div class="view-lists">
+    <div class="view-lists" data-aos="fade-up" data-aos-delay="500">
         <a href="{% url 'core:blacklist' %}" class="blacklist-link">
             View Not Interested Classes
         </a>

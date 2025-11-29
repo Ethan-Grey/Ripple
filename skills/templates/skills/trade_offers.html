@@ -3,10 +3,13 @@
 
 {% block content %}
 <style>
+/* Ensure page fills viewport and footer doesn't show until scroll */
 .trade-offers-page {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  min-height: calc(100vh - 120px);
+  padding-bottom: 100px;
 }
 
 .page-header {
@@ -316,12 +319,12 @@
 </style>
 
 <div class="trade-offers-page">
-  <div class="page-header">
+  <div class="page-header" data-aos="fade-down">
     <h1>Trade Offers</h1>
     <p>Manage your class trade offers - receive offers from others or track offers you've sent</p>
   </div>
 
-  <div class="tabs">
+  <div class="tabs" data-aos="fade-up" data-aos-delay="100">
     <button class="tab active" onclick="showTab('received')">Received Offers</button>
     <button class="tab" onclick="showTab('sent')">Sent Offers</button>
     <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
@@ -337,7 +340,7 @@
     {% if received_offers %}
       <div class="trade-offers-list">
         {% for offer in received_offers %}
-          <div class="trade-offer-card">
+          <div class="trade-offer-card" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 100 %}">
             <div class="trade-offer-header">
               <div class="trade-offer-info">
                 <div class="trade-offer-title">
@@ -405,7 +408,7 @@
         {% endfor %}
       </div>
     {% else %}
-      <div class="empty-state">
+      <div class="empty-state" data-aos="zoom-in">
         <div class="empty-state-icon">📬</div>
         <h3>No received offers</h3>
         <p>You haven't received any trade offers yet.</p>
@@ -418,7 +421,7 @@
     {% if sent_offers %}
       <div class="trade-offers-list">
         {% for offer in sent_offers %}
-          <div class="trade-offer-card">
+          <div class="trade-offer-card" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 100 %}">
             <div class="trade-offer-header">
               <div class="trade-offer-info">
                 <div class="trade-offer-title">
@@ -483,7 +486,7 @@
         {% endfor %}
       </div>
     {% else %}
-      <div class="empty-state">
+      <div class="empty-state" data-aos="zoom-in">
         <div class="empty-state-icon">📤</div>
         <h3>No sent offers</h3>
         <p>You haven't sent any trade offers yet. Visit a tradeable class to propose a trade!</p>

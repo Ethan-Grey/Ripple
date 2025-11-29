@@ -7,6 +7,12 @@
     body {
         overflow-x: hidden;
     }
+    
+    /* Ensure page fills viewport */
+    .page-body {
+        min-height: calc(100vh - 120px);
+        padding-bottom: 100px;
+    }
 
     .communities-header {
         display: flex;
@@ -824,7 +830,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {% block content %}
 <!-- Communities Header -->
-<div class="communities-header">
+<div class="communities-header" data-aos="fade-down">
     <h2>Communities</h2>
     <div class="header-actions">
         {% if user.is_authenticated %}
@@ -852,7 +858,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </button>
         </div>
         
-        <form method="get" id="filterForm" style="display: flex; gap: 12px; align-items: center;">
+        <form method="get" id="filterForm" style="display: flex; gap: 12px; align-items: center;" data-aos="fade-left" data-aos-delay="100">
             <!-- Filter Tabs - TOGGLEABLE -->
             {% if user.is_authenticated %}
             <div class="filter-tabs">
@@ -864,7 +870,7 @@ document.addEventListener('DOMContentLoaded', function() {
             {% endif %}
             
             <!-- Skill Filter with Checkboxes -->
-            <div class="skill-filter-wrapper">
+            <div class="skill-filter-wrapper" data-aos="fade-right" data-aos-delay="200">
                 <button type="button" id="skillFilterButton" class="skill-filter-button">
                     <span>Filter by Skills</span>
                     <span id="filterCount" class="selected-filters-count" style="display: none;">0</span>
@@ -909,9 +915,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Communities Grid -->
 {% if communities %}
-    <div id="communitiesContainer" class="communities-grid layout-grid">
+    <div id="communitiesContainer" class="communities-grid layout-grid" data-aos="fade-up" data-aos-delay="300">
         {% for c in communities %}
-        <a href="{% url 'communities:community_detail' c.pk %}" class="community-card">
+        <a href="{% url 'communities:community_detail' c.pk %}" class="community-card" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 50 %}">
             <div class="community-header">
                 <div class="community-avatar">
                     {{ c.name|first|upper }}
@@ -960,7 +966,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     <!-- Pagination -->
     {% if is_paginated %}
-    <div class="pagination-wrapper">
+    <div class="pagination-wrapper" data-aos="fade-up">
       {% if page_obj.has_previous %}
         <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}{% if request.GET.skill %}&skill={{ request.GET.skill }}{% endif %}" class="pagination-btn">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -982,7 +988,7 @@ document.addEventListener('DOMContentLoaded', function() {
     {% endif %}
 {% else %}
     <!-- Empty State -->
-    <div class="empty-state">
+    <div class="empty-state" data-aos="zoom-in">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
         </svg>

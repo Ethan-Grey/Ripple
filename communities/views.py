@@ -14,7 +14,7 @@ class CommunitiesListView(ListView):
     """List all approved communities with filtering and pagination"""
     template_name = 'communities/communities.html'
     context_object_name = 'communities'
-    paginate_by = 12
+    paginate_by = 24
     
     def get_queryset(self):
         skill_param = self.request.GET.get('skill', '')

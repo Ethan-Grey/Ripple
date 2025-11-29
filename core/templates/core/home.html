@@ -936,7 +936,7 @@
 {% if user.is_authenticated %}
 <div class="dashboard-grid">
     <!-- Featured Skills Carousel -->
-    <div class="featured-card">
+    <div class="featured-card" data-aos="fade-up">
         <div class="carousel-container">
             {% if featured_skills %}
                 <!-- Previous Button -->
@@ -979,12 +979,12 @@
     <!-- Sidebar Cards -->
     <div class="sidebar-cards">
         <!-- Communities Card -->
-        <div class="info-card">
+        <div class="info-card" data-aos="fade-left" data-aos-delay="100">
             <h3>Your Communities</h3>
             {% if user_communities %}
                 <div class="community-list">
                     {% for community in user_communities|slice:":2" %}
-                        <a href="/communities/" class="community-item">
+                        <a href="/communities/" class="community-item" data-aos="fade-right" data-aos-delay="{{ forloop.counter0|add:'0'|add:'0'|floatformat:0 }}">
                             <div class="community-icon">{{ community.name|first|upper }}</div>
                             {{ community.name }}
                         </a>
@@ -1001,12 +1001,12 @@
         </div>
 
         <!-- Recent Matches & Matched Classes Card -->
-        <div class="info-card">
+        <div class="info-card" data-aos="fade-left" data-aos-delay="200">
             <h3>Recent Matches</h3>
             {% if recent_matches or matched_classes %}
                 <div class="match-grid">
                     {% for match in recent_matches|slice:":2" %}
-                        <div class="match-item">
+                        <div class="match-item" data-aos="fade-right" data-aos-delay="{{ forloop.counter0|add:'0'|add:'0'|floatformat:0 }}">
                             <div class="match-avatar">
                                 {% if match.user_a == user %}
                                     {% user_avatar match.user_b size='small' %}
@@ -1027,7 +1027,7 @@
                         </div>
                     {% endfor %}
                     {% for class in matched_classes|slice:":2" %}
-                        <a href="{% url 'skills:class_detail' class.slug %}" class="match-item match-class-item">
+                        <a href="{% url 'skills:class_detail' class.slug %}" class="match-item match-class-item" data-aos="fade-right" data-aos-delay="{{ forloop.counter0|add:'0'|add:'0'|floatformat:0 }}">
                             <div class="match-avatar" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                                 <i class="bi bi-book" style="font-size: 20px;"></i>
                             </div>
@@ -1052,7 +1052,7 @@
 
 <!-- Quick Stats Cards -->
 <div class="stats-cards-grid">
-    <div class="stat-card-dash">
+    <div class="stat-card-dash" data-aos="fade-up" data-aos-delay="100">
         <div class="stat-icon-dash">
             <i class="bi bi-book"></i>
         </div>
@@ -1063,7 +1063,7 @@
         <a href="{% url 'skills:class_list' %}" class="stat-link">View All</a>
     </div>
     
-    <div class="stat-card-dash">
+    <div class="stat-card-dash" data-aos="fade-up" data-aos-delay="200">
         <div class="stat-icon-dash">
             <i class="bi bi-calendar-check"></i>
         </div>
@@ -1074,7 +1074,7 @@
         <a href="{% url 'skills:my_bookings' %}" class="stat-link">View Bookings</a>
     </div>
     
-    <div class="stat-card-dash">
+    <div class="stat-card-dash" data-aos="fade-up" data-aos-delay="300">
         <div class="stat-icon-dash">
             <i class="bi bi-chat-dots"></i>
         </div>
@@ -1085,7 +1085,7 @@
         <a href="{% url 'chat:messages' %}" class="stat-link">Open Messages</a>
     </div>
     
-    <div class="stat-card-dash">
+    <div class="stat-card-dash" data-aos="fade-up" data-aos-delay="400">
         <div class="stat-icon-dash">
             <i class="bi bi-file-text"></i>
         </div>
@@ -1099,14 +1099,14 @@
 
 <!-- Upcoming Sessions Section -->
 {% if upcoming_sessions %}
-<div class="dashboard-section">
+<div class="dashboard-section" data-aos="fade-up">
     <div class="section-header-row">
         <h2 class="section-header"><i class="bi bi-calendar-event"></i> Upcoming Sessions</h2>
         <a href="{% url 'skills:my_bookings' %}" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="sessions-list">
         {% for booking in upcoming_sessions %}
-        <div class="session-card">
+        <div class="session-card" data-aos="fade-right" data-aos-delay="{{ forloop.counter0|add:'0'|add:'0'|floatformat:0 }}">
             <div class="session-date">
                 <div class="session-day">{{ booking.time_slot.start_time|date:"M d" }}</div>
                 <div class="session-time">{{ booking.time_slot.start_time|date:"H:i" }}</div>
@@ -1127,14 +1127,14 @@
 
 <!-- Recommended Classes Section -->
 {% if recommended_classes %}
-<div class="dashboard-section">
+<div class="dashboard-section" data-aos="fade-up">
     <div class="section-header-row">
         <h2 class="section-header"><i class="bi bi-star"></i> Recommended Classes</h2>
         <a href="{% url 'core:whitelist' %}" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="recommended-classes-grid">
         {% for class in recommended_classes %}
-        <a href="{% url 'skills:class_detail' class.slug %}" class="recommended-class-card">
+        <a href="{% url 'skills:class_detail' class.slug %}" class="recommended-class-card" data-aos="zoom-in" data-aos-delay="{{ forloop.counter0|add:'0'|add:'0'|floatformat:0 }}">
             <div class="class-card-header">
                 <h4>{{ class.title }}</h4>
                 <span class="class-difficulty difficulty-{{ class.difficulty }}">{{ class.get_difficulty_display }}</span>
@@ -1158,14 +1158,14 @@
 
 <!-- Recent Conversations Section -->
 {% if recent_conversations %}
-<div class="dashboard-section">
+<div class="dashboard-section" data-aos="fade-up">
     <div class="section-header-row">
         <h2 class="section-header"><i class="bi bi-chat-left-text"></i> Recent Conversations</h2>
         <a href="{% url 'chat:messages' %}" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="conversations-list-dash">
         {% for conv_data in recent_conversations %}
-        <a href="{% url 'chat:messages' %}?conversation={{ conv_data.conversation.id }}" class="conversation-item-dash">
+        <a href="{% url 'chat:messages' %}?conversation={{ conv_data.conversation.id }}" class="conversation-item-dash" data-aos="fade-left" data-aos-delay="{{ forloop.counter0|add:'0'|add:'0'|floatformat:0 }}">
             <div class="conv-avatar-dash">
                 {% if conv_data.other_user %}
                     {% user_avatar conv_data.other_user size='small' %}
@@ -1198,18 +1198,18 @@
 
 <!-- Teaching Stats Section (if user is a teacher) -->
 {% if teaching_stats %}
-<div class="dashboard-section">
+<div class="dashboard-section" data-aos="fade-up">
     <div class="section-header-row">
         <h2 class="section-header"><i class="bi bi-person-badge"></i> Teaching Dashboard</h2>
         <a href="{% url 'skills:class_list' %}" class="view-all-link">Manage Classes <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="teaching-stats-grid">
-        <div class="teaching-stat-card">
+        <div class="teaching-stat-card" data-aos="zoom-in" data-aos-delay="100">
             <i class="bi bi-book-fill"></i>
             <div class="teaching-stat-number">{{ teaching_stats.total_classes }}</div>
             <div class="teaching-stat-label">Classes Teaching</div>
         </div>
-        <div class="teaching-stat-card">
+        <div class="teaching-stat-card" data-aos="zoom-in" data-aos-delay="200">
             <i class="bi bi-people-fill"></i>
             <div class="teaching-stat-number">{{ teaching_stats.total_students }}</div>
             <div class="teaching-stat-label">Total Students</div>
@@ -1221,7 +1221,7 @@
         <h3 class="subsection-header">Upcoming Sessions to Teach</h3>
         <div class="sessions-list">
             {% for booking in teaching_stats.upcoming_teaching_sessions %}
-            <div class="session-card">
+            <div class="session-card" data-aos="fade-right" data-aos-delay="{{ forloop.counter0|add:'0'|add:'0'|floatformat:0 }}">
                 <div class="session-date">
                     <div class="session-day">{{ booking.time_slot.start_time|date:"M d" }}</div>
                     <div class="session-time">{{ booking.time_slot.start_time|date:"H:i" }}</div>

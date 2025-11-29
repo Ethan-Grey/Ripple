@@ -6,7 +6,7 @@
   <!-- Hero Section -->
   <section class="hero-section">
     <div class="hero-container">
-      <div class="hero-media">
+      <div class="hero-media" data-aos="fade-right" data-aos-delay="100">
         {% if cls.intro_video %}
           <video controls class="hero-video">
             <source src="{{ cls.intro_video.url }}" type="video/mp4">
@@ -28,7 +28,7 @@
         {% endif %}
       </div>
       
-      <div class="hero-content">
+      <div class="hero-content" data-aos="fade-left" data-aos-delay="200">
         <div class="breadcrumbs">
           <a href="/classes/">Classes</a>
           <svg class="breadcrumb-sep" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +51,7 @@
           <p class="hero-description">{{ cls.short_description }}</p>
         {% endif %}
         
-        <div class="hero-meta">
+        <div class="hero-meta" data-aos="fade-up" data-aos-delay="300">
           <span class="meta-badge level">{{ cls.get_difficulty_display }}</span>
           <span class="meta-badge">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,7 +81,7 @@
           </span>
         </div>
         
-        <div class="teacher-card">
+        <div class="teacher-card" data-aos="fade-up" data-aos-delay="400">
           <div class="teacher-avatar">
             {% user_avatar cls.teacher size='medium' %}
           </div>
@@ -91,7 +91,7 @@
           </div>
         </div>
         
-        <div class="hero-actions">
+        <div class="hero-actions" data-aos="fade-up" data-aos-delay="500">
           {% if user.is_authenticated %}
             <button type="button" class="btn btn-secondary favorite-btn" id="favoriteBtn" data-slug="{{ cls.slug }}" onclick="toggleFavorite('{{ cls.slug }}')">
               <i class="bi {% if is_favorited %}bi-heart-fill{% else %}bi-heart{% endif %}" id="favoriteIcon"></i>
@@ -171,7 +171,7 @@
   <!-- Features Banner -->
   <section class="features-banner">
     <div class="features-container">
-      <div class="feature-item">
+      <div class="feature-item" data-aos="fade-up" data-aos-delay="600">
         <div class="feature-icon">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -182,7 +182,7 @@
           <div class="feature-subtitle">New classes are added regularly</div>
         </div>
       </div>
-      <div class="feature-item">
+      <div class="feature-item" data-aos="fade-up" data-aos-delay="700">
         <div class="feature-icon">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -193,7 +193,7 @@
           <div class="feature-subtitle">Taught by creators and professionals</div>
         </div>
       </div>
-      <div class="feature-item">
+      <div class="feature-item" data-aos="fade-up" data-aos-delay="800">
         <div class="feature-icon">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -210,11 +210,11 @@
   <div class="content-wrapper">
     <!-- Topics Section -->
     {% if cls.topics.all %}
-    <section class="section">
+    <section class="section" data-aos="fade-up" data-aos-delay="900">
       <h2 class="section-title">Lessons & Topics</h2>
       <div class="topics-grid">
         {% for t in cls.topics.all %}
-          <span class="topic-pill">{{ t.name }}</span>
+          <span class="topic-pill" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 50 %}">{{ t.name }}</span>
         {% endfor %}
       </div>
     </section>
@@ -222,14 +222,14 @@
 
     <!-- About Section -->
     {% if cls.full_description %}
-    <section class="section">
+    <section class="section" data-aos="fade-up" data-aos-delay="1000">
       <h2 class="section-title">About This Class</h2>
       <div class="prose">{{ cls.full_description|linebreaks }}</div>
     </section>
     {% endif %}
 
     <!-- Teacher Section -->
-    <section class="section" id="teacher">
+    <section class="section" id="teacher" data-aos="fade-up" data-aos-delay="1100">
       <h2 class="section-title">Meet Your Teacher</h2>
       <div class="teacher-profile">
         <div class="teacher-avatar-lg">
@@ -249,7 +249,7 @@
     </section>
 
     <!-- Reviews Section -->
-    <section class="section" id="reviews">
+    <section class="section" id="reviews" data-aos="fade-up" data-aos-delay="1200">
       {% if request.GET.error %}
       <div class="error-banner">
         {% if request.GET.error == 'stripe_not_installed' %}
@@ -269,7 +269,7 @@
       
       <div class="reviews-list">
         {% for r in cls.reviews.all %}
-          <div class="review-card">
+          <div class="review-card" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 100 %}">
             <div class="review-header">
               <div class="reviewer-info">
                 <div class="reviewer-avatar">{% user_avatar r.reviewer size='small' %}</div>
@@ -280,7 +280,7 @@
             <div class="review-body">{{ r.comment|linebreaks }}</div>
           </div>
         {% empty %}
-          <div class="empty-reviews">
+          <div class="empty-reviews" data-aos="zoom-in">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
             </svg>
@@ -292,7 +292,7 @@
 
     <!-- Trade Section -->
     {% if cls.is_tradeable %}
-    <section class="section" id="trade">
+    <section class="section" id="trade" data-aos="fade-up" data-aos-delay="1300">
       <h2 class="section-title">Propose a Trade</h2>
       <div id="react-trade-form" data-action="{% url 'skills:class_trade_propose' cls.slug %}">
         <template id="trade-options">

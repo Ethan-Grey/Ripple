@@ -1008,7 +1008,7 @@
     <div class="messages-container">
         <!-- Conversations Sidebar -->
         <div class="conversations-sidebar">
-            <div class="conversations-header">
+            <div class="conversations-header" data-aos="fade-down">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <h2>Messages</h2>
                     <a href="?archived={% if view_archived %}false{% else %}true{% endif %}{% if selected_conversation %}&conversation={{ selected_conversation.id }}{% endif %}" 
@@ -1021,7 +1021,7 @@
             <div class="conversations-list">
                 {% if conversations %}
                     {% for conversation in conversations %}
-                    <div class="conversation-swipe-wrapper" data-conversation-id="{{ conversation.id }}">
+                    <div class="conversation-swipe-wrapper" data-conversation-id="{{ conversation.id }}" data-aos="fade-right" data-aos-delay="{% widthratio forloop.counter0 1 50 %}">
                         <a href="?conversation={{ conversation.id }}{% if view_archived %}&archived=true{% endif %}" 
                            class="conversation-item {% if selected_conversation.id == conversation.id %}active{% endif %}"
                            data-conversation-id="{{ conversation.id }}"
@@ -1078,7 +1078,7 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <div class="empty-state">
+                    <div class="empty-state" data-aos="zoom-in">
                         <div class="empty-state-icon"><i class="bi {% if view_archived %}bi-archive{% else %}bi-chat-dots{% endif %}"></i></div>
                         <p>{% if view_archived %}No archived conversations{% else %}No conversations yet{% endif %}</p>
                         <p style="font-size: 13px; margin-top: 8px; opacity: 0.7;">
@@ -1093,7 +1093,7 @@
         <div class="chat-area">
             {% if selected_conversation %}
                 <!-- Chat Header -->
-                <div class="chat-header">
+                <div class="chat-header" data-aos="fade-down">
                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                         <div class="chat-user-info" style="display: flex; align-items: center;">
                             <button class="mobile-back-btn" onclick="showConversationsList()" aria-label="Back to conversations">
@@ -1140,14 +1140,14 @@
                 <!-- Messages Area -->
                 <div class="messages-area" id="messagesArea">
                     {% for message in messages %}
-                    <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}">
+                    <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}" data-aos="{% if message.sender == request.user %}fade-left{% else %}fade-right{% endif %}" data-aos-delay="{% widthratio forloop.counter0 1 30 %}">
                         <div class="message-bubble">
                             <div class="message-content">{{ message.content }}</div>
                             <div class="message-time">{{ message.timestamp|date:"H:i" }}</div>
                         </div>
                     </div>
                     {% empty %}
-                    <div class="no-messages">
+                    <div class="no-messages" data-aos="zoom-in">
                         <div class="no-messages-icon"><i class="bi bi-chat-left-text"></i></div>
                         <p>No messages yet. Start the conversation!</p>
                     </div>
@@ -1155,7 +1155,7 @@
                 </div>
 
                 <!-- Message Input -->
-                <div class="message-input-area">
+                <div class="message-input-area" data-aos="fade-up">
                     <form method="post" action="{% url 'chat:send_message' selected_conversation.id %}" 
                           class="message-form" id="messageForm">
                         {% csrf_token %}
@@ -1175,7 +1175,7 @@
                 </div>
             {% else %}
                 <!-- Empty State -->
-                <div class="empty-chat">
+                <div class="empty-chat" data-aos="zoom-in">
                     <div class="empty-chat-icon"><i class="bi bi-chat-dots"></i></div>
                     <h3>Select a Conversation</h3>
                     <p>Choose a conversation from the sidebar to start messaging</p>
