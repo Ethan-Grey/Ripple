@@ -14,6 +14,8 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.urls import reverse_lazy
+from django.dispatch import receiver
+from django.contrib.auth.signals import user_login_failed
 import logging
 from .models import Profile, Evidence, IdentitySubmission
 from skills.models import UserSkill, Skill, SkillEvidence, TeachingClass, TeacherApplication, ClassEnrollment
@@ -24,6 +26,22 @@ from communities.models import CommunityRequest
 import requests  # For reCAPTCHA verification
 
 logger = logging.getLogger(__name__)
+
+# Signal to capture login attempts for inactive users
+@receiver(user_login_failed)
+def capture_inactive_login_attempt(sender, credentials, request, **kwargs):
+    """Capture login attempts for inactive users and store username in session"""
+    username = credentials.get('username') or credentials.get('email')
+    if username:
+        try:
+            from django.db.models import Q
+            user = User.objects.filter(Q(username=username) | Q(email=username)).first()
+            if user and not user.is_active:
+                # Store user info in session for suspended page
+                request.session['suspended_user_id'] = user.id
+                request.session['suspended_username'] = user.username
+        except Exception:
+            pass
 
 # Create your views here.
 
@@ -65,8 +83,52 @@ def custom_login(request):
         
         # Proceed with authentication if reCAPTCHA is valid
         form = AuthenticationForm(data=request.POST)
+        
+        # Check for inactive user before form validation
+        username = request.POST.get('username')
+        if username:
+            try:
+                # Try to find user by username or email
+                from django.db.models import Q
+                user = User.objects.filter(
+                    Q(username=username) | Q(email=username)
+                ).first()
+                
+                if user and not user.is_active:
+                    # Find the most recent suspension report
+                    from core.models import Report
+                    from django.contrib.contenttypes.models import ContentType
+                    
+                    user_content_type = ContentType.objects.get_for_model(user)
+                    suspension_report = Report.objects.filter(
+                        content_type=user_content_type,
+                        object_id=user.id,
+                        action_taken__in=['user_suspended', 'user_banned']
+                    ).order_by('-created_at').first()
+                    
+                    suspension_reason = None
+                    admin_notes = None
+                    
+                    if suspension_report:
+                        # Get the reason from the report
+                        suspension_reason = suspension_report.get_reason_display()
+                        if suspension_report.admin_notes:
+                            admin_notes = suspension_report.admin_notes
+                    
+                    # If no report found, use default message
+                    if not suspension_reason:
+                        suspension_reason = "Your account has been suspended for violating our community guidelines."
+                    
+                    return render(request, 'users/account_suspended.html', {
+                        'suspension_reason': suspension_reason,
+                        'admin_notes': admin_notes
+                    })
+            except (User.DoesNotExist, Exception):
+                pass  # Let form handle the error
+        
         if form.is_valid():
-            auth_login(request, form.get_user())
+            user = form.get_user()
+            auth_login(request, user)
             
             # Handle "remember me" checkbox
             if not request.POST.get('remember'):
@@ -79,6 +141,82 @@ def custom_login(request):
         form = AuthenticationForm()
     
     return render(request, 'users/login.html', {'form': form})
+
+
+def account_suspended(request):
+    """View for suspended account page"""
+    # Find the most recent suspension report for the user
+    from core.models import Report
+    from django.contrib.contenttypes.models import ContentType
+    from django.db.models import Q
+    
+    suspension_reason = None
+    admin_notes = None
+    user = None
+    
+    # Try to get user from various sources
+    # 1. From authenticated user (if somehow logged in but inactive)
+    if request.user.is_authenticated and not request.user.is_active:
+        user = request.user
+    # 2. From URL parameter (passed by adapter)
+    elif request.GET.get('user_id'):
+        try:
+            user = User.objects.get(id=request.GET.get('user_id'))
+        except (User.DoesNotExist, ValueError):
+            pass
+    # 3. Try to get from username/email in POST data (from login form)
+    elif request.method == 'POST' and 'login' in request.POST:
+        username = request.POST.get('login')
+        if username:
+            try:
+                user = User.objects.filter(Q(username=username) | Q(email=username)).first()
+            except User.DoesNotExist:
+                pass
+    # 4. Try to get from username in GET parameter
+    elif request.GET.get('username'):
+        try:
+            username = request.GET.get('username')
+            user = User.objects.filter(Q(username=username) | Q(email=username)).first()
+        except User.DoesNotExist:
+            pass
+    # 5. Try to get from suspended user info in session (set by adapter)
+    elif 'suspended_user_id' in request.session:
+        try:
+            user = User.objects.get(id=request.session.get('suspended_user_id'))
+            # Clear the session data after use
+            del request.session['suspended_user_id']
+            if 'suspended_username' in request.session:
+                del request.session['suspended_username']
+        except (User.DoesNotExist, ValueError):
+            pass
+    # 6. Try to get from username in session
+    elif 'username' in request.session:
+        try:
+            user = User.objects.get(username=request.session.get('username'))
+        except User.DoesNotExist:
+            pass
+    
+    if user and not user.is_active:
+        user_content_type = ContentType.objects.get_for_model(user)
+        suspension_report = Report.objects.filter(
+            content_type=user_content_type,
+            object_id=user.id,
+            action_taken__in=['user_suspended', 'user_banned']
+        ).order_by('-created_at').first()
+        
+        if suspension_report:
+            suspension_reason = suspension_report.get_reason_display()
+            if suspension_report.admin_notes:
+                admin_notes = suspension_report.admin_notes
+    
+    # If no report found, use default message
+    if not suspension_reason:
+        suspension_reason = "Your account has been suspended for violating our community guidelines."
+    
+    return render(request, 'users/account_suspended.html', {
+        'suspension_reason': suspension_reason,
+        'admin_notes': admin_notes
+    })
 
 
 def register(request):

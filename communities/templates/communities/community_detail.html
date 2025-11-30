@@ -515,7 +515,7 @@
         <div class="posts-list">
             {% if posts %}
                 {% for post in posts %}
-                    <div class="post-item" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 100 %}">
+                    <div class="post-item" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 100 %}" data-aos-duration="500">
                         <div style="display: flex; gap: 16px;">
                             <!-- Vote Section -->
                             <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 40px;">
@@ -595,7 +595,7 @@
         <h3 data-aos="fade-down" data-aos-delay="1000">Members ({{ community.member_count }})</h3>
         <div class="members-grid">
             {% for member in community.members.all|slice:":12" %}
-                <a href="{% url 'users:view_profile' member.username %}" class="member-card" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 50 %}">
+                <a href="{% url 'users:view_profile' member.username %}" class="member-card" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 50 %}" data-aos-duration="500">
                     {% if member.profile.avatar %}
                         <img src="{{ member.profile.avatar.url }}" alt="{{ member.username }}" class="member-avatar">
                     {% else %}

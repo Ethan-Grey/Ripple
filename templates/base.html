@@ -825,6 +825,47 @@
             padding: 8px;
             margin-top: 8px;
         }
+        
+        /* Profile dropdown should be above all other dropdowns */
+        .user-profile-dropdown {
+            position: relative;
+            z-index: 10010 !important;
+            isolation: isolate;
+        }
+        
+        .user-profile-dropdown .dropdown-menu,
+        .user-profile-dropdown .dropdown-menu.show {
+            z-index: 10008 !important; /* Behind profile picture */
+            position: absolute !important;
+            isolation: isolate;
+            transform: none !important;
+            right: 8px !important; /* Move left a bit */
+            left: auto !important;
+            top: calc(100% - 24px) !important; /* Position so corner is behind profile pic */
+            margin-top: 0 !important;
+        }
+        
+        /* Ensure profile picture button is above dropdown */
+        .user-profile-dropdown .user-pill,
+        .user-profile-dropdown #userDropdown {
+            position: relative;
+            z-index: 10010 !important;
+        }
+        
+        /* Alternative selector for user dropdown (Bootstrap) */
+        [aria-labelledby="userDropdown"],
+        .dropdown-menu[aria-labelledby="userDropdown"] {
+            z-index: 10010 !important;
+            position: absolute !important;
+            isolation: isolate;
+            transform: none !important;
+        }
+        
+        /* Ensure topbar doesn't clip the dropdown */
+        .topbar {
+            overflow: visible !important;
+            z-index: 10009 !important;
+        }
 
         .dropdown-item {
             border-radius: 8px;
@@ -1278,7 +1319,7 @@
                     <input type="text" name="q" id="search-input" placeholder="Search for skills, classes, or users..." value="{{ request.GET.q }}" aria-label="Search input" autocomplete="off"/>
                 </form>
                 {% if user.is_authenticated %}
-                <div class="dropdown">
+                <div class="dropdown user-profile-dropdown">
                     <button class="user-pill dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="User account menu for {{ user.username }}" aria-haspopup="true" style="border: none; background: var(--brand-gradient);">
                         {% user_avatar user size='small' css_class='user-avatar-img' %}
                         <span class="sr-only">Open user menu</span>
@@ -1646,10 +1687,10 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         AOS.init({
-            duration: 800,
-            easing: 'ease-in-out',
+            duration: 500,
+            easing: 'ease-out',
             once: true,
-            offset: 100,
+            offset: 50,
             delay: 0
         });
     </script>

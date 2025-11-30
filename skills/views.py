@@ -102,8 +102,16 @@ class ClassListView(ListView):
                 user=self.request.user
             ).values_list('teaching_class_id', flat=True)
             context['favorited_class_ids'] = set(favorited_ids)
+            
+            # Get enrolled class IDs (active enrollments only)
+            enrolled_ids = ClassEnrollment.objects.filter(
+                user=self.request.user,
+                status=ClassEnrollment.ACTIVE
+            ).values_list('teaching_class_id', flat=True)
+            context['enrolled_class_ids'] = set(enrolled_ids)
         else:
             context['favorited_class_ids'] = set()
+            context['enrolled_class_ids'] = set()
         
         return context
 
@@ -607,7 +615,10 @@ class TeacherApplicationCreateView(LoginRequiredMixin, CreateView):
         trade_val = self.request.POST.get('is_tradeable')
         if trade_val is not None:
             form.instance.is_tradeable = str(trade_val).lower() in ['true', '1', 'on', 'yes']
-        return super().form_valid(form)
+        
+        response = super().form_valid(form)
+        messages.success(self.request, 'Your teaching application has been submitted successfully! Our team will review it within 48 hours and notify you via email.')
+        return response
 
     def get_success_url(self):
         return reverse('skills:class_list')

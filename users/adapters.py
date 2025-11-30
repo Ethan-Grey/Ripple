@@ -93,4 +93,10 @@ class CustomAccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
         """Allow signups"""
         return True
+    
+    def is_active_for_authentication(self, user):
+        """Check if user is active - allauth will redirect to /accounts/inactive/ if False"""
+        # Return False to let allauth handle the redirect to /accounts/inactive/
+        # We've overridden that URL to point to our custom suspended page
+        return user.is_active
 

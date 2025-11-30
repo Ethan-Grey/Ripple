@@ -12,6 +12,7 @@ urlpatterns = [
     path('login/', views.custom_login, name='login'),
     path('logout/', views.logout_direct, name='logout'),
     path('register/', views.register, name='register'),
+    path('account-suspended/', views.account_suspended, name='account_suspended'),
     path('verify-email/<str:uidb64>/<str:token>/', views.verify_email, name='verify_email'),
     
     # Password reset URLs

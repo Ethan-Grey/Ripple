@@ -12,6 +12,15 @@ urlpatterns = [
     path("trades/<int:offer_id>/accept/", views.AcceptTradeOfferView.as_view(), name="accept_trade"),
     path("trades/<int:offer_id>/decline/", views.DeclineTradeOfferView.as_view(), name="decline_trade"),
     path("trades/<int:offer_id>/cancel/", views.CancelTradeOfferView.as_view(), name="cancel_trade"),
+    # Static paths that must come before slug patterns
+    path("my-bookings/", views.my_bookings, name="my_bookings"),
+    path("favorites/", views.my_favorites, name="my_favorites"),
+    path("schedule/slot/<int:slot_id>/delete/", views.delete_time_slot, name="delete_time_slot"),
+    path("schedule/slot/<int:slot_id>/book/", views.book_time_slot, name="book_time_slot"),
+    path("schedule/booking/<int:booking_id>/cancel/", views.cancel_booking, name="cancel_booking"),
+    path("schedule/booking/<int:booking_id>/complete/", views.complete_booking, name="complete_booking"),
+    path("schedule/booking/<int:booking_id>/confirm-completion/", views.confirm_booking_completion, name="confirm_booking_completion"),
+    # Slug-based patterns (must come after static paths)
     path("<slug:slug>/", views.ClassDetailView.as_view(), name="class_detail"),
     path("<slug:slug>/reviews/", views.ClassReviewCreateView.as_view(), name="class_review_create"),
     path("<slug:slug>/trade/propose/", views.ClassTradeProposeView.as_view(), name="class_trade_propose"),
@@ -23,15 +32,8 @@ urlpatterns = [
     path("<slug:slug>/schedule/", views.view_class_schedule, name="view_schedule"),
     path("<slug:slug>/schedule/manage/", views.manage_class_schedule, name="manage_schedule"),
     path("<slug:slug>/schedule/create-slot/", views.create_time_slot, name="create_time_slot"),
-    path("schedule/slot/<int:slot_id>/delete/", views.delete_time_slot, name="delete_time_slot"),
-    path("schedule/slot/<int:slot_id>/book/", views.book_time_slot, name="book_time_slot"),
-    path("schedule/booking/<int:booking_id>/cancel/", views.cancel_booking, name="cancel_booking"),
-    path("schedule/booking/<int:booking_id>/complete/", views.complete_booking, name="complete_booking"),
-    path("schedule/booking/<int:booking_id>/confirm-completion/", views.confirm_booking_completion, name="confirm_booking_completion"),
-    path("my-bookings/", views.my_bookings, name="my_bookings"),
     # Favorites
     path("<slug:slug>/favorite/", views.toggle_favorite, name="toggle_favorite"),
-    path("favorites/", views.my_favorites, name="my_favorites"),
 ]
 
 

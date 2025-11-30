@@ -48,6 +48,9 @@
   justify-content: space-between;
   margin-bottom: 32px;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 10003 !important;
+  isolation: isolate;
 }
 
 .buttons-left {
@@ -55,6 +58,8 @@
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 10003 !important;
 }
 
 .buttons-right {
@@ -62,6 +67,8 @@
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 10003 !important;
 }
 
 .action-btn {
@@ -157,11 +164,33 @@
 }
 
 /* Filter Dropdown */
+.dropdown {
+    position: relative;
+    z-index: 10001 !important;
+    isolation: isolate;
+}
+
+.dropdown-menu {
+    z-index: 10002 !important;
+    position: absolute !important;
+    isolation: isolate;
+    transform: none !important;
+}
+
 .filter-dropdown-menu {
     min-width: 280px;
     padding: 0;
     max-height: 500px;
     overflow-y: auto;
+    z-index: 10002 !important;
+    position: absolute !important;
+    isolation: isolate;
+    transform: none !important;
+}
+
+.dropdown-toggle {
+    z-index: 10001 !important;
+    position: relative;
 }
 
 .filter-dropdown-menu form {
@@ -293,6 +322,9 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 28px;
   margin-bottom: 48px;
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
 }
 
 /* Classes List - Single Column Layout */
@@ -301,6 +333,9 @@
   flex-direction: column;
   gap: 20px;
   margin-bottom: 48px;
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
 }
 
 .classes-list .class-card {
@@ -358,12 +393,16 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
   height: 100%;
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
 }
 
 .class-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
   border-color: #667eea;
+  z-index: 0;
 }
 
 /* Thumbnail */
@@ -518,6 +557,8 @@
   opacity: 0;
   transform: translateY(20px);
   transition: none;
+  z-index: 0;
+  isolation: isolate;
 }
 
 .class-card-wrapper.animate-in {
@@ -607,6 +648,14 @@
   align-items: center;
   gap: 24px;
   padding: 20px 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.pagination-wrapper.loaded {
+  opacity: 1;
+  visibility: visible;
 }
 
 .pagination-btn {
@@ -869,7 +918,7 @@
     </div>
 
     <!-- Classes Grid -->
-    <div id="react-class-grid" data-aos="fade-up" data-aos-delay="200"></div>
+    <div id="react-class-grid" data-aos="fade-up" data-aos-delay="200" style="position: relative; z-index: 0;"></div>
     
     <script id="classes-data" type="application/json">
     [
@@ -884,7 +933,7 @@
         "rating": {{ c.avg_rating|default:0 }},
         "reviews": {{ c.reviews_count|default:0 }},
         "topics": [{% for t in c.topics.all|slice:":3" %}"{{ t.name|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
-        "isEnrolled": {% if user.is_authenticated and c in user.enrolled_classes.all %}true{% else %}false{% endif %},
+        "isEnrolled": {% if user.is_authenticated %}{% if c.id in enrolled_class_ids %}true{% else %}false{% endif %}{% else %}false{% endif %},
         "isFavorited": {% if user.is_authenticated and c.id in favorited_class_ids %}true{% else %}false{% endif %}
       }{% if not forloop.last %}, {% endif %}
     {% empty %}
@@ -1007,27 +1056,49 @@ function Card({c}) {
 
 function Grid() {
   const dataEl = document.getElementById('classes-data');
-  const allItems = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+  // Parse once and store in state to ensure React tracks changes
+  const [allItems] = React.useState(() => {
+    const data = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+    return data;
+  });
   
   // State for filtering and view mode
   const [showMyClasses, setShowMyClasses] = React.useState(false);
   const [viewMode, setViewMode] = React.useState('grid');
+  const [forceUpdate, setForceUpdate] = React.useState(0);
   
   // Filter items based on state
   const items = React.useMemo(() => {
     if (showMyClasses) {
-      return allItems.filter(item => item.isEnrolled);
+      // Filter for enrolled classes - handle both boolean true and string "true"
+      const filtered = allItems.filter(item => {
+        const enrolled = item.isEnrolled === true || item.isEnrolled === "true" || item.isEnrolled === 1 || item.isEnrolled === "True";
+        return enrolled;
+      });
+      return filtered;
     }
     return allItems;
-  }, [showMyClasses, allItems]);
+  }, [showMyClasses, allItems, forceUpdate]);
   
   // Setup My Classes filter button click handler
   React.useEffect(() => {
     const myClassesBtn = document.getElementById('my-classes-filter');
     if (myClassesBtn) {
-      const handleClick = () => {
-        setShowMyClasses(prev => !prev);
-        myClassesBtn.classList.toggle('active');
+      const handleClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowMyClasses(prev => {
+          const newValue = !prev;
+          // Update button state
+          if (newValue) {
+            myClassesBtn.classList.add('active');
+          } else {
+            myClassesBtn.classList.remove('active');
+          }
+          // Force update to trigger re-render
+          setForceUpdate(prev => prev + 1);
+          return newValue;
+        });
       };
       myClassesBtn.addEventListener('click', handleClick);
       return () => myClassesBtn.removeEventListener('click', handleClick);
@@ -1078,26 +1149,92 @@ function Grid() {
   // Use different className based on view mode
   const containerClass = viewMode === 'grid' ? 'classes-grid' : 'classes-list';
   
-  return e('div', {className: containerClass}, 
-    items.map((c, i) => e(Card, {c: {...c, index: i}, key: i}))
+  // Use useEffect to trigger animation refresh after items change
+  React.useEffect(() => {
+    // Small delay to ensure DOM is updated
+    const timer = setTimeout(() => {
+      const mount = document.getElementById('react-class-grid');
+      if (mount) {
+        const cardWrappers = mount.querySelectorAll('.class-card-wrapper');
+        cardWrappers.forEach((wrapper, index) => {
+          // Remove existing animation classes first
+          wrapper.classList.remove('animate-in');
+          wrapper.style.animationDelay = '';
+          
+          // Force reflow
+          void wrapper.offsetHeight;
+          
+          // Re-add animation with delay
+          const delay = index * 50;
+          wrapper.style.animationDelay = `${delay}ms`;
+          wrapper.classList.add('animate-in');
+        });
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [items, viewMode, showMyClasses]);
+  
+  // Force React to re-render by using a key that changes with filter state
+  const containerKey = `grid-${viewMode}-${showMyClasses}-${items.length}`;
+  
+  return e('div', {className: containerClass, key: containerKey}, 
+    items.map((c, i) => e(Card, {c: {...c, index: i}, key: `${c.slug || c.id || i}-${showMyClasses}-${i}`}))
   );
 }
+
+// Store root globally so it can be re-rendered
+let classesGridRoot = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   const mount = document.getElementById('react-class-grid');
   if (mount) {
-    const root = ReactDOM.createRoot(mount);
-    root.render(e(Grid));
+    classesGridRoot = ReactDOM.createRoot(mount);
     
-    // Add animation classes after React renders
-    setTimeout(() => {
-      const cardWrappers = mount.querySelectorAll('.class-card-wrapper');
-      cardWrappers.forEach((wrapper, index) => {
-        const delay = index * 50;
-        wrapper.style.animationDelay = `${delay}ms`;
-        wrapper.classList.add('animate-in');
-      });
-    }, 100);
+    // Function to render and animate
+    const renderAndAnimate = () => {
+      if (classesGridRoot) {
+        classesGridRoot.render(e(Grid));
+        
+        // Add animation classes after React renders and show pagination
+        setTimeout(() => {
+          const cardWrappers = mount.querySelectorAll('.class-card-wrapper');
+          if (cardWrappers.length > 0) {
+            cardWrappers.forEach((wrapper, index) => {
+              // Remove existing animation classes first
+              wrapper.classList.remove('animate-in');
+              wrapper.style.animationDelay = '';
+              
+              // Force reflow
+              void wrapper.offsetHeight;
+              
+              // Add animation with delay
+              const delay = index * 50;
+              wrapper.style.animationDelay = `${delay}ms`;
+              wrapper.classList.add('animate-in');
+            });
+          }
+          
+          // Show pagination after React has rendered (whether there are classes or not)
+          const paginationWrapper = document.querySelector('.pagination-wrapper');
+          if (paginationWrapper) {
+            paginationWrapper.classList.add('loaded');
+          }
+        }, 100);
+      }
+    };
+    
+    // Initial render
+    renderAndAnimate();
+    
+    // Store render function globally so button click can trigger re-render
+    window.rerenderClassesGrid = renderAndAnimate;
+  } else {
+    // If React mount doesn't exist, show pagination immediately
+    const paginationWrapper = document.querySelector('.pagination-wrapper');
+    if (paginationWrapper) {
+      paginationWrapper.classList.add('loaded');
+    }
   }
 });
 </script>

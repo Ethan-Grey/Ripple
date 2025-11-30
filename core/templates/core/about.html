@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us - Ripple</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- AOS (Animate On Scroll) -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -419,48 +421,157 @@
         }
 
         footer {
-            background: #111827;
-            color: white;
-            padding: 60px 40px 40px;
+            background: var(--background, #ffffff);
+            color: var(--text, #1a1a1a);
+            margin-top: 120px;
+            border-top: 1px solid var(--border, #e5e7eb);
+            width: 100%;
+            padding: 60px 0 30px;
         }
 
         .footer-container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        .footer-content {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: 2fr 1fr 1fr 1fr;
             gap: 40px;
             margin-bottom: 40px;
         }
 
-        .footer-section h4 {
-            font-size: 18px;
+        .footer-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .footer-title {
+            font-size: 20px;
             font-weight: 800;
-            margin-bottom: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
         }
 
-        .footer-section p,
-        .footer-section a {
-            color: #9ca3af;
+        .footer-description {
+            color: var(--muted, #6b7280);
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .footer-heading {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text, #1a1a1a);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .footer-links li {
+            margin: 0;
+        }
+
+        .footer-links a {
+            color: var(--muted, #6b7280);
             text-decoration: none;
-            line-height: 2;
-            display: block;
+            font-size: 14px;
             font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            position: relative;
         }
 
-        .footer-section a:hover {
+        .footer-links a:hover {
+            color: var(--brand, #667eea);
+            padding-left: 8px;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .social-link {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--background-secondary, #f3f4f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted, #6b7280);
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .social-link:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            transform: translateY(-2px);
         }
 
         .footer-bottom {
-            text-align: center;
-            padding-top: 40px;
-            border-top: 1px solid #374151;
-            color: #6b7280;
-            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 30px;
+            border-top: 1px solid var(--border, #e5e7eb);
+        }
+
+        .footer-copyright {
+            color: var(--muted, #6b7280);
+            font-size: 14px;
+        }
+
+        .footer-legal {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .footer-legal a {
+            color: var(--muted, #6b7280);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s ease;
+        }
+
+        .footer-legal a:hover {
+            color: var(--brand, #667eea);
+        }
+
+        .footer-divider {
+            color: var(--muted, #6b7280);
         }
 
         @media (max-width: 768px) {
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
             .hero h1 {
                 font-size: 36px;
             }
@@ -519,65 +630,65 @@
         <div class="shape shape-2"></div>
         <div class="shape shape-3"></div>
         
-        <div class="hero-content">
-            <h1>Building a World Where Everyone Can Learn</h1>
-            <p>We believe that knowledge should be accessible to all. Ripple connects people to share skills, swap expertise, and grow together in a collaborative learning community.</p>
+        <div class="hero-content" data-aos="fade-up" data-aos-duration="500">
+            <h1 data-aos="fade-up" data-aos-delay="100" data-aos-duration="500">Building a World Where Everyone Can Learn</h1>
+            <p data-aos="fade-up" data-aos-delay="200" data-aos-duration="500">We believe that knowledge should be accessible to all. Ripple connects people to share skills, swap expertise, and grow together in a collaborative learning community.</p>
         </div>
     </section>
 
     <section class="mission">
-        <div class="mission-container">
-            <h2>Our Mission</h2>
-            <p>At Ripple, we're on a mission to democratize learning by creating a platform where anyone can teach what they know and learn what they need. We believe that every person has valuable skills to share, and that the best learning happens through genuine human connection.</p>
-            <p>By removing financial barriers and fostering skill exchange, we're building a more equitable world where knowledge flows freely and everyone has the opportunity to grow.</p>
+        <div class="mission-container" data-aos="fade-up" data-aos-duration="500">
+            <h2 data-aos="fade-up" data-aos-delay="50" data-aos-duration="500">Our Mission</h2>
+            <p data-aos="fade-up" data-aos-delay="100" data-aos-duration="500">At Ripple, we're on a mission to democratize learning by creating a platform where anyone can teach what they know and learn what they need. We believe that every person has valuable skills to share, and that the best learning happens through genuine human connection.</p>
+            <p data-aos="fade-up" data-aos-delay="150" data-aos-duration="500">By removing financial barriers and fostering skill exchange, we're building a more equitable world where knowledge flows freely and everyone has the opportunity to grow.</p>
         </div>
     </section>
 
     <section class="story">
-        <div class="story-container">
-            <h2>Our Story</h2>
-            <div class="story-content">
-                <p>Ripple was born from a simple observation: people everywhere have skills they'd love to teach, and things they're eager to learn, but traditional education is often too expensive or inaccessible.</p>
-                <p>Our founders experienced this firsthand—wanting to learn photography but unable to afford classes, yet being able to teach web development. What if there was a way to trade these skills directly?</p>
-                <p>From that question, Ripple emerged. We started with a vision of creating ripples of knowledge that spread outward, touching lives and empowering people to learn without barriers. Today, thousands of people use Ripple to connect, teach, and learn—proving that the best education comes from shared human experience.</p>
-                <p>We're just getting started, and we're excited to have you join us on this journey.</p>
+        <div class="story-container" data-aos="fade-up" data-aos-duration="500">
+            <h2 data-aos="fade-up" data-aos-delay="50" data-aos-duration="500">Our Story</h2>
+            <div class="story-content" data-aos="fade-up" data-aos-delay="100" data-aos-duration="500">
+                <p data-aos="fade-up" data-aos-delay="150" data-aos-duration="500">Ripple was born from a simple observation: people everywhere have skills they'd love to teach, and things they're eager to learn, but traditional education is often too expensive or inaccessible.</p>
+                <p data-aos="fade-up" data-aos-delay="200" data-aos-duration="500">Our founders experienced this firsthand—wanting to learn photography but unable to afford classes, yet being able to teach web development. What if there was a way to trade these skills directly?</p>
+                <p data-aos="fade-up" data-aos-delay="250" data-aos-duration="500">From that question, Ripple emerged. We started with a vision of creating ripples of knowledge that spread outward, touching lives and empowering people to learn without barriers. Today, thousands of people use Ripple to connect, teach, and learn—proving that the best education comes from shared human experience.</p>
+                <p data-aos="fade-up" data-aos-delay="300" data-aos-duration="500">We're just getting started, and we're excited to have you join us on this journey.</p>
             </div>
         </div>
     </section>
 
     <section class="values">
         <div class="values-container">
-            <div class="section-title">
+            <div class="section-title" data-aos="fade-up" data-aos-duration="500">
                 <h2>Our Values</h2>
                 <p>The principles that guide everything we do</p>
             </div>
             <div class="values-grid">
-                <div class="value-card">
+                <div class="value-card" data-aos="fade-up" data-aos-delay="50" data-aos-duration="500">
                     <div class="value-icon">🤝</div>
                     <h3>Community First</h3>
                     <p>We put our community at the heart of every decision. Ripple exists to serve learners and teachers, and we're committed to building features that truly help people connect and grow.</p>
                 </div>
-                <div class="value-card">
+                <div class="value-card" data-aos="fade-up" data-aos-delay="100" data-aos-duration="500">
                     <div class="value-icon">🌍</div>
                     <h3>Accessible to All</h3>
                     <p>Learning should never be limited by finances or geography. We're dedicated to keeping Ripple accessible, affordable, and open to everyone who wants to learn.</p>
                 </div>
-                <div class="value-card">
+                <div class="value-card" data-aos="fade-up" data-aos-delay="150" data-aos-duration="500">
                     <div class="value-icon">💡</div>
                     <h3>Knowledge Sharing</h3>
                     <p>Everyone has something valuable to teach. We celebrate the diversity of skills and experiences in our community, believing that peer-to-peer learning is powerful and transformative.</p>
                 </div>
-                <div class="value-card">
+                <div class="value-card" data-aos="fade-up" data-aos-delay="200" data-aos-duration="500">
                     <div class="value-icon">🚀</div>
                     <h3>Continuous Growth</h3>
                     <p>We're always learning and improving. Just like our users, we believe in the power of growth, feedback, and iterating to build something better every day.</p>
                 </div>
-                <div class="value-card">
+                <div class="value-card" data-aos="fade-up" data-aos-delay="250" data-aos-duration="500">
                     <div class="value-icon">✨</div>
                     <h3>Quality Connections</h3>
                     <p>We prioritize meaningful matches over quantity. Our goal is to facilitate genuine relationships where both parties benefit and grow from the exchange.</p>
                 </div>
-                <div class="value-card">
+                <div class="value-card" data-aos="fade-up" data-aos-delay="300" data-aos-duration="500">
                     <div class="value-icon">🔒</div>
                     <h3>Trust & Safety</h3>
                     <p>We're committed to creating a safe, respectful environment. Through verification, community guidelines, and responsive support, we protect our users and foster trust.</p>
@@ -588,24 +699,24 @@
 
     <section class="stats">
         <div class="stats-container">
-            <div class="section-title" style="color: white; margin-bottom: 60px;">
+            <div class="section-title" style="color: white; margin-bottom: 60px;" data-aos="fade-up" data-aos-duration="500">
                 <h2>Ripple by the Numbers</h2>
                 <p style="color: rgba(255, 255, 255, 0.9);">The impact we're making together</p>
             </div>
             <div class="stats-grid">
-                <div class="stat-item">
+                <div class="stat-item" data-aos="zoom-in" data-aos-delay="50" data-aos-duration="500">
                     <h3>0+</h3>
                     <p>Active Users</p>
                 </div>
-                <div class="stat-item">
+                <div class="stat-item" data-aos="zoom-in" data-aos-delay="100" data-aos-duration="500">
                     <h3>0+</h3>
                     <p>Different Skills</p>
                 </div>
-                <div class="stat-item">
+                <div class="stat-item" data-aos="zoom-in" data-aos-delay="150" data-aos-duration="500">
                     <h3>0+</h3>
                     <p>Skill Swaps</p>
                 </div>
-                <div class="stat-item">
+                <div class="stat-item" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="500">
                     <h3>0+</h3>
                     <p>Countries</p>
                 </div>
@@ -614,7 +725,7 @@
     </section>
 
     <section class="cta">
-        <div class="hero-content">
+        <div class="hero-content" data-aos="zoom-in" data-aos-duration="500">
             <h2>Join the Movement</h2>
             <p>Be part of a global community that's transforming how we learn and share knowledge</p>
             {% if user.is_authenticated %}
@@ -627,38 +738,85 @@
 
     <footer>
         <div class="footer-container">
-            <div class="footer-section">
-                <h4>Ripple</h4>
-                <p>A community-driven platform where people swap skills, share knowledge, and grow together.</p>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 class="footer-title">Ripple</h4>
+                    <p class="footer-description">Connect, learn, and share skills with a vibrant community of learners and teachers.</p>
+                    <div class="footer-social">
+                        <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Facebook">
+                            <svg fill="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </a>
+                        <a href="https://www.twitter.com" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Twitter">
+                            <svg fill="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                            </svg>
+                        </a>
+                        <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn">
+                            <svg fill="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h5 class="footer-heading">Platform</h5>
+                    <ul class="footer-links">
+                        <li><a href="{% if user.is_authenticated %}{% url 'core:home' %}{% else %}{% url 'users:login' %}?next={% url 'core:home' %}{% endif %}">Dashboard</a></li>
+                        <li><a href="{% if user.is_authenticated %}{% url 'skills:class_list' %}{% else %}{% url 'users:login' %}?next={% url 'skills:class_list' %}{% endif %}">Browse Classes</a></li>
+                        <li><a href="{% if user.is_authenticated %}{% url 'core:swipe' %}{% else %}{% url 'users:login' %}?next={% url 'core:swipe' %}{% endif %}">Discover Skills</a></li>
+                        <li><a href="{% if user.is_authenticated %}{% url 'communities:communities' %}{% else %}{% url 'users:login' %}?next={% url 'communities:communities' %}{% endif %}">Communities</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h5 class="footer-heading">For Teachers</h5>
+                    <ul class="footer-links">
+                        <li><a href="{% if user.is_authenticated %}{% url 'skills:teacher_apply' %}{% else %}{% url 'users:login' %}?next={% url 'skills:teacher_apply' %}{% endif %}">Apply to Teach</a></li>
+                        <li><a href="{% if user.is_authenticated %}{% url 'users:applications' %}{% else %}{% url 'users:login' %}?next={% url 'users:applications' %}{% endif %}">My Applications</a></li>
+                        <li><a href="{% if user.is_authenticated %}{% url 'skills:class_list' %}?my_classes=true{% else %}{% url 'users:login' %}?next={% url 'skills:class_list' %}%3Fmy_classes%3Dtrue{% endif %}">My Classes</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h5 class="footer-heading">Support</h5>
+                    <ul class="footer-links">
+                        <li><a href="{% url 'core:about' %}">About Us</a></li>
+                        <li><a href="{% url 'core:contact' %}">Contact</a></li>
+                        <li><a href="{% if user.is_authenticated %}{% url 'core:report_content' %}{% else %}{% url 'users:login' %}?next={% url 'core:report_content' %}{% endif %}">Report Content</a></li>
+                        <li><a href="{% url 'core:help_center' %}">Help Center</a></li>
+                    </ul>
+                </div>
             </div>
-            <div class="footer-section">
-                <h4>Product</h4>
-                <a href="{% url 'core:landing' %}#features">Features</a>
-                <a href="{% url 'core:landing' %}#how-it-works">How It Works</a>
-                <a href="/communities/">Communities</a>
+            
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    <p>&copy; {% now "Y" %} Ripple. All rights reserved.</p>
+                </div>
+                <div class="footer-legal">
+                    <a href="{% url 'core:privacy_policy' %}">Privacy Policy</a>
+                    <span class="footer-divider">•</span>
+                    <a href="{% url 'core:terms_of_service' %}">Terms of Service</a>
+                    <span class="footer-divider">•</span>
+                    <a href="{% url 'core:cookie_policy' %}">Cookie Policy</a>
+                </div>
             </div>
-            <div class="footer-section">
-                <h4>Company</h4>
-                <a href="{% url 'core:about' %}">About Us</a>
-                <a href="#">Contact</a>
-            </div>
-            <div class="footer-section">
-                <h4>Get Started</h4>
-                {% if user.is_authenticated %}
-                    <a href="/home/">Dashboard</a>
-                    <a href="/swipe/">Start Swiping</a>
-                {% else %}
-                    <a href="{% url 'users:register' %}">Sign Up</a>
-                    <a href="{% url 'users:login' %}">Log In</a>
-                {% endif %}
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2025 Ripple. All rights reserved.</p>
         </div>
     </footer>
 
+    <!-- AOS (Animate On Scroll) -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
+        AOS.init({
+            duration: 500,
+            easing: 'ease-out',
+            once: true,
+            offset: 50,
+            delay: 0
+        });
+        
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();

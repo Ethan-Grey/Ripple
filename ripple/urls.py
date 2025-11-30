@@ -10,6 +10,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('admin-panel/', include('skill_admin.urls')),
     
+    # Override allauth inactive account URL
+    path('accounts/inactive/', __import__('users.views', fromlist=['']).account_suspended, name='account_inactive'),
+    
     # Auth URLs
     path('accounts/', include('allauth.urls')),
     

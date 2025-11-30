@@ -1021,7 +1021,7 @@
             <div class="conversations-list">
                 {% if conversations %}
                     {% for conversation in conversations %}
-                    <div class="conversation-swipe-wrapper" data-conversation-id="{{ conversation.id }}" data-aos="fade-right" data-aos-delay="{% widthratio forloop.counter0 1 50 %}">
+                    <div class="conversation-swipe-wrapper" data-conversation-id="{{ conversation.id }}" data-aos="fade-right" data-aos-delay="{% widthratio forloop.counter0 1 50 %}" data-aos-duration="500">
                         <a href="?conversation={{ conversation.id }}{% if view_archived %}&archived=true{% endif %}" 
                            class="conversation-item {% if selected_conversation.id == conversation.id %}active{% endif %}"
                            data-conversation-id="{{ conversation.id }}"
@@ -1140,7 +1140,7 @@
                 <!-- Messages Area -->
                 <div class="messages-area" id="messagesArea">
                     {% for message in messages %}
-                    <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}" data-aos="{% if message.sender == request.user %}fade-left{% else %}fade-right{% endif %}" data-aos-delay="{% widthratio forloop.counter0 1 30 %}">
+                    <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}" data-aos="{% if message.sender == request.user %}fade-left{% else %}fade-right{% endif %}" data-aos-delay="{% widthratio forloop.counter0 1 30 %}" data-aos-duration="500">
                         <div class="message-bubble">
                             <div class="message-content">{{ message.content }}</div>
                             <div class="message-time">{{ message.timestamp|date:"H:i" }}</div>

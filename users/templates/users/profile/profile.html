@@ -250,7 +250,7 @@
                         {% if learning_skills %}
                             <div class="skills-grid">
                                 {% for user_skill in learning_skills %}
-                                <div class="skill-card" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 100 %}">
+                                <div class="skill-card" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 100 %}" data-aos-duration="500">
                                     <div class="skill-header">
                                         <div class="skill-icon-large">
                                             {% if 'guitar' in user_skill.skill.name|lower %}
@@ -302,7 +302,7 @@
                         {% if favorite_classes %}
                         <div class="classes-grid">
                             {% for cls in favorite_classes %}
-                            <a href="{% url 'skills:class_detail' cls.slug %}" class="class-card" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 100 %}">
+                            <a href="{% url 'skills:class_detail' cls.slug %}" class="class-card" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 100 %}" data-aos-duration="500">
                                 <div class="class-content">
                                     <h3 class="class-title">{{ cls.title }}</h3>
                                     <p class="class-teacher">By {{ cls.teacher.username }}</p>
@@ -342,7 +342,7 @@
                         {% if my_classes_published or my_classes_drafts %}
                         <div class="classes-grid">
                             {% for cls in my_classes_published %}
-                            <div class="class-card-new" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 100 %}">
+                            <div class="class-card-new" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 100 %}" data-aos-duration="500">
                                 <div class="class-card-top">
                                     <div class="class-card-header">
                                         <h3 class="class-card-title">{{ cls.title }}</h3>
@@ -375,7 +375,7 @@
                             </div>
                             {% endfor %}
                             {% for cls in my_classes_drafts %}
-                            <div class="class-card-new draft-card" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0|add:my_classes_published|length 1 100 %}">
+                            <div class="class-card-new draft-card" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0|add:my_classes_published|length 1 100 %}" data-aos-duration="500">
                                 <div class="class-card-top">
                                     <div class="class-card-header">
                                         <h3 class="class-card-title">{{ cls.title }}</h3>
@@ -432,7 +432,7 @@
                         {% if enrolled_classes %}
                         <div class="classes-grid">
                             {% for enrollment in enrolled_classes %}
-                            <div class="class-card-new" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 100 %}">
+                            <div class="class-card-new" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 100 %}" data-aos-duration="500">
                                 <div class="class-card-top">
                                     <div class="class-card-header">
                                         <h3 class="class-card-title">{{ enrollment.teaching_class.title }}</h3>

@@ -4,23 +4,23 @@
 
 {% block content %}
 <div class="manage-schedule-page">
-    <div class="schedule-header">
+    <div class="schedule-header" data-aos="fade-down" data-aos-duration="500">
         <div class="header-content">
-            <a href="{% url 'skills:class_detail' teaching_class.slug %}" class="back-link">
+            <a href="{% url 'skills:class_detail' teaching_class.slug %}" class="back-link" data-aos="fade-right" data-aos-delay="50" data-aos-duration="500">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
                 Back to Class
             </a>
-            <h1>Manage Schedule</h1>
-            <p class="header-subtitle">{{ teaching_class.title }}</p>
+            <h1 data-aos="fade-up" data-aos-delay="100" data-aos-duration="500">Manage Schedule</h1>
+            <p class="header-subtitle" data-aos="fade-up" data-aos-delay="150" data-aos-duration="500">{{ teaching_class.title }}</p>
         </div>
     </div>
 
     <div class="schedule-content">
         <!-- Create New Time Slot Form -->
-        <div class="schedule-card create-form-card">
-            <div class="card-header">
+        <div class="schedule-card create-form-card" data-aos="fade-up" data-aos-duration="500">
+            <div class="card-header" data-aos="fade-down" data-aos-delay="50" data-aos-duration="500">
                 <h2>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -78,8 +78,8 @@
         </div>
 
         <!-- Upcoming Time Slots -->
-        <div class="schedule-section">
-            <div class="section-header">
+        <div class="schedule-section" data-aos="fade-up" data-aos-duration="500">
+            <div class="section-header" data-aos="fade-down" data-aos-delay="50" data-aos-duration="500">
                 <h2>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -91,7 +91,7 @@
             {% if upcoming_slots %}
             <div class="slots-grid">
                 {% for slot in upcoming_slots %}
-                <div class="slot-card upcoming">
+                <div class="slot-card upcoming" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 50 %}" data-aos-duration="500">
                     <div class="slot-card-header">
                         <div class="slot-time-info">
                             <div class="slot-date">{{ slot.start_time|date:"M d, Y" }}</div>
@@ -216,7 +216,7 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="empty-state">
+            <div class="empty-state" data-aos="zoom-in" data-aos-duration="500">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
@@ -227,8 +227,8 @@
 
         <!-- Past Time Slots -->
         {% if past_slots %}
-        <div class="schedule-section">
-            <div class="section-header">
+        <div class="schedule-section" data-aos="fade-up" data-aos-duration="500">
+            <div class="section-header" data-aos="fade-down" data-aos-delay="50" data-aos-duration="500">
                 <h2>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -239,7 +239,7 @@
             </div>
             <div class="slots-grid">
                 {% for slot in past_slots|slice:":10" %}
-                <div class="slot-card past">
+                <div class="slot-card past" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 50 %}" data-aos-duration="500">
                     <div class="slot-card-header">
                         <div class="slot-time-info">
                             <div class="slot-date">{{ slot.start_time|date:"M d, Y" }}</div>

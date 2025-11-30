@@ -21,6 +21,9 @@
         margin-bottom: 24px;
         max-width: 100%;
         box-sizing: border-box;
+        overflow: visible !important;
+        position: relative;
+        z-index: 10002 !important;
     }
 
     .communities-header h2 {
@@ -123,6 +126,7 @@
 
     .skill-filter-wrapper {
         position: relative;
+        z-index: 9999;
     }
 
     .skill-filter-button {
@@ -161,24 +165,61 @@
     }
 
     .skill-filter-dropdown {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
+        position: absolute !important;
+        top: calc(100% + 8px) !important;
+        right: 0 !important;
+        left: auto !important;
+        bottom: auto !important;
+        z-index: 10005 !important;
+        width: 500px;
+        max-width: 90vw;
+        max-height: 60vh;
+        overflow-y: auto;
+        display: none;
+        isolation: isolate;
+        transform: none !important;
         background: white;
         border: 1px solid #e6e8ee;
         border-radius: 8px;
         padding: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        z-index: 100;
-        min-width: 550px;
-        max-width: 650px;
-        max-height: 450px;
-        overflow-y: auto;
-        display: none;
     }
-
+    
     .skill-filter-dropdown.show {
-        display: block;
+        display: block !important;
+    }
+    
+    .skill-filter-wrapper {
+        position: relative !important;
+        z-index: 10001 !important;
+        isolation: isolate;
+    }
+    
+    .header-actions {
+        position: relative;
+        z-index: 10003 !important;
+        isolation: isolate;
+        overflow: visible !important;
+    }
+    
+    /* Ensure form doesn't clip dropdown */
+    #filterForm {
+        overflow: visible !important;
+        position: relative;
+        z-index: 10004 !important;
+    }
+    
+    /* Ensure dropdown is positioned correctly and can overflow */
+    .skill-filter-wrapper {
+        overflow: visible !important;
+    }
+    
+    .skill-filter-wrapper .skill-filter-dropdown {
+        position: absolute !important;
+        top: calc(100% + 8px) !important;
+        right: 0 !important;
+        left: auto !important;
+        overflow: visible !important;
     }
 
     .skill-filter-header {
@@ -244,8 +285,10 @@
 
     .skill-checkbox-list {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        max-height: 400px;
+        overflow-y: auto;
     }
 
     .skill-checkbox-item {
@@ -318,12 +361,18 @@
         gap: 20px;
         max-width: 100%;
         box-sizing: border-box;
+        position: relative;
+        z-index: 0;
+        isolation: isolate;
     }
 
     .communities-list {
         display: flex;
         flex-direction: column;
         gap: 16px;
+        position: relative;
+        z-index: 0;
+        isolation: isolate;
     }
 
     .layout-grid {
@@ -344,6 +393,11 @@
         border: 1px solid #e6e8ee;
         overflow: hidden;
         box-sizing: border-box;
+        position: relative;
+        z-index: 0;
+        isolation: isolate;
+        opacity: 1;
+        visibility: visible;
     }
 
     .community-card.list-view {
@@ -405,10 +459,12 @@
         transform: translateY(-4px);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
         border-color: var(--brand);
+        z-index: 0;
     }
 
     .community-card.list-view:hover {
         transform: translateX(4px);
+        z-index: 0;
     }
 
     .community-header {
@@ -680,10 +736,10 @@
         }
 
         .skill-filter-dropdown {
-            right: auto;
-            left: 0;
-            min-width: 100%;
-            max-width: 100%;
+            right: 0;
+            left: auto;
+            width: calc(100vw - 40px);
+            max-width: 500px;
         }
 
         .skill-checkbox-list {
@@ -726,13 +782,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle dropdown
     filterButton.addEventListener('click', function(e) {
         e.stopPropagation();
+        e.preventDefault();
+        
         filterDropdown.classList.toggle('show');
         filterButton.classList.toggle('active');
     });
     
     // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
-        if (!filterDropdown.contains(e.target) && e.target !== filterButton) {
+        if (!filterDropdown.contains(e.target) && 
+            e.target !== filterButton && 
+            !filterButton.contains(e.target)) {
             filterDropdown.classList.remove('show');
             filterButton.classList.remove('active');
         }
@@ -788,21 +848,58 @@ document.addEventListener('DOMContentLoaded', function() {
     function setLayout(layout) {
         localStorage.setItem('communityLayout', layout);
         
+        // Get cards before making changes
+        const cards = document.querySelectorAll('.community-card');
+        
+        // Remove AOS attributes temporarily to prevent animation interference
+        cards.forEach(card => {
+            card.removeAttribute('data-aos');
+            card.removeAttribute('data-aos-delay');
+            card.removeAttribute('data-aos-duration');
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            card.style.transform = 'none';
+        });
+        
+        // Remove AOS from container
+        communitiesContainer.removeAttribute('data-aos');
+        communitiesContainer.removeAttribute('data-aos-delay');
+        
         if (layout === 'grid') {
-            communitiesContainer.className = 'communities-grid layout-grid';
-            document.querySelectorAll('.community-card').forEach(card => {
+            // Remove list-view class first
+            cards.forEach(card => {
                 card.classList.remove('list-view');
             });
+            
+            // Then change container class
+            communitiesContainer.className = 'communities-grid layout-grid';
+            
+            // Update button states
             gridBtn.classList.add('active');
             listBtn.classList.remove('active');
         } else {
+            // Change container class first
             communitiesContainer.className = 'communities-list layout-list';
-            document.querySelectorAll('.community-card').forEach(card => {
+            
+            // Then add list-view class
+            cards.forEach(card => {
                 card.classList.add('list-view');
             });
+            
+            // Update button states
             listBtn.classList.add('active');
             gridBtn.classList.remove('active');
         }
+        
+        // Force reflow and refresh AOS
+        void communitiesContainer.offsetHeight;
+        
+        // Re-add AOS attributes after a short delay
+        setTimeout(() => {
+            if (typeof AOS !== 'undefined') {
+                AOS.refresh();
+            }
+        }, 100);
     }
     
     // Set initial layout (only on desktop - mobile always shows grid/cards)
@@ -917,7 +1014,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% if communities %}
     <div id="communitiesContainer" class="communities-grid layout-grid" data-aos="fade-up" data-aos-delay="300">
         {% for c in communities %}
-        <a href="{% url 'communities:community_detail' c.pk %}" class="community-card" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 50 %}">
+        <a href="{% url 'communities:community_detail' c.pk %}" class="community-card" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 50 %}" data-aos-duration="500">
             <div class="community-header">
                 <div class="community-avatar">
                     {{ c.name|first|upper }}

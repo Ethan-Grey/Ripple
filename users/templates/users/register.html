@@ -1049,7 +1049,7 @@
   </div>
 
   <script>
-    // Function to show captcha popup with speech
+    // Function to show captcha popup
     function showCaptchaPopup(message) {
       const popup = document.getElementById('captchaPopup');
       const messageEl = document.getElementById('captchaPopupMessage');
@@ -1061,36 +1061,15 @@
       // Show the popup
       popup.classList.add('active');
       
-      // Speak the message using Web Speech API
-      if ('speechSynthesis' in window) {
-        // Cancel any ongoing speech
-        window.speechSynthesis.cancel();
-        
-        const utterance = new SpeechSynthesisUtterance(message || 'Please complete the reCAPTCHA verification to continue.');
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
-        
-        // Speak the message
-        window.speechSynthesis.speak(utterance);
-      }
-      
       // Close popup when button is clicked
       button.onclick = function() {
         popup.classList.remove('active');
-        // Stop speech if still speaking
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-        }
       };
       
       // Close popup when clicking outside
       popup.onclick = function(e) {
         if (e.target === popup) {
           popup.classList.remove('active');
-          if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-          }
         }
       };
     }

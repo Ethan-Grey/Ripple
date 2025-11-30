@@ -158,7 +158,9 @@ def home(request):
             student=user,
             status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING],
             time_slot__start_time__gte=timezone.now(),
-            time_slot__start_time__lte=seven_days_from_now
+            time_slot__start_time__lte=seven_days_from_now,
+            time_slot__isnull=False,
+            time_slot__teaching_class__isnull=False
         ).select_related(
             'time_slot', 
             'time_slot__teaching_class',
@@ -209,7 +211,9 @@ def home(request):
                 'upcoming_teaching_sessions': ClassBooking.objects.filter(
                     time_slot__teaching_class__teacher=user,
                     status__in=[ClassBooking.CONFIRMED, ClassBooking.PENDING],
-                    time_slot__start_time__gte=timezone.now()
+                    time_slot__start_time__gte=timezone.now(),
+                    time_slot__isnull=False,
+                    time_slot__teaching_class__isnull=False
                 ).select_related(
                     'time_slot',
                     'time_slot__teaching_class',

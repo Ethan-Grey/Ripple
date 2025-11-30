@@ -214,7 +214,7 @@
       <h2 class="section-title">Lessons & Topics</h2>
       <div class="topics-grid">
         {% for t in cls.topics.all %}
-          <span class="topic-pill" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 50 %}">{{ t.name }}</span>
+          <span class="topic-pill" data-aos="zoom-in" data-aos-delay="{% widthratio forloop.counter0 1 50 %}" data-aos-duration="500">{{ t.name }}</span>
         {% endfor %}
       </div>
     </section>
@@ -269,7 +269,7 @@
       
       <div class="reviews-list">
         {% for r in cls.reviews.all %}
-          <div class="review-card" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 100 %}">
+          <div class="review-card" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter0 1 100 %}" data-aos-duration="500">
             <div class="review-header">
               <div class="reviewer-info">
                 <div class="reviewer-avatar">{% user_avatar r.reviewer size='small' %}</div>
