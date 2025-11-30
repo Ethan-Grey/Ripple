@@ -1,0 +1,84 @@
+warning: in the working copy of 'skills/templates/skills/classes_list.html', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/skills/templates/skills/classes_list.html b/skills/templates/skills/classes_list.html[m
+[1mindex 4a0a521..ce0653d 100644[m
+[1m--- a/skills/templates/skills/classes_list.html[m
+[1m+++ b/skills/templates/skills/classes_list.html[m
+[36m@@ -165,16 +165,36 @@[m
+ [m
+ /* Filter Dropdown */[m
+ .dropdown {[m
+[31m-    position: relative;[m
+[32m+[m[32m    position: relative !important;[m
+     z-index: 10001 !important;[m
+     isolation: isolate;[m
+ }[m
+ [m
+[31m-.dropdown-menu {[m
+[32m+[m[32m/* Remove Bootstrap's default dropdown arrow */[m
+[32m+[m[32m#filterDropdown::after,[m
+[32m+[m[32m#filterDropdown::before {[m
+[32m+[m[32m    display: none !important;[m
+[32m+[m[32m    content: none !important;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m/* Ensure only our SVG arrow is visible */[m
+[32m+[m[32m#filterDropdown .bi-chevron-down,[m
+[32m+[m[32m#filterDropdown .bi-caret-down {[m
+[32m+[m[32m    display: none !important;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m.dropdown-menu,[m
+[32m+[m[32m.dropdown-menu.show,[m
+[32m+[m[32m.dropdown-menu[data-bs-popper] {[m
+     z-index: 10002 !important;[m
+     position: absolute !important;[m
+     isolation: isolate;[m
+     transform: none !important;[m
+[32m+[m[32m    top: calc(100% + 8px) !important;[m
+[32m+[m[32m    right: 0 !important;[m
+[32m+[m[32m    left: auto !important;[m
+[32m+[m[32m    margin-top: 0 !important;[m
+[32m+[m[32m    margin-right: 0 !important;[m
+ }[m
+ [m
+ .filter-dropdown-menu {[m
+[36m@@ -186,6 +206,11 @@[m
+     position: absolute !important;[m
+     isolation: isolate;[m
+     transform: none !important;[m
+[32m+[m[32m    top: calc(100% + 8px) !important;[m
+[32m+[m[32m    right: 0 !important;[m
+[32m+[m[32m    left: auto !important;[m
+[32m+[m[32m    margin-top: 0 !important;[m
+[32m+[m[32m    margin-right: 0 !important;[m
+ }[m
+ [m
+ .dropdown-toggle {[m
+[36m@@ -193,6 +218,17 @@[m
+     position: relative;[m
+ }[m
+ [m
+[32m+[m[32m/* Arrow flip animation for filter dropdown */[m
+[32m+[m[32m.dropdown-toggle[aria-expanded="true"] svg {[m
+[32m+[m[32m    transform: rotate(180deg);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m.dropdown-toggle svg {[m
+[32m+[m[32m    transition: transform 0.2s ease;[m
+[32m+[m[32m    display: inline-block;[m
+[32m+[m[32m    vertical-align: middle;[m
+[32m+[m[32m}[m
+[32m+[m
+ .filter-dropdown-menu form {[m
+     padding: 12px;[m
+ }[m
+[36m@@ -847,6 +883,9 @@[m
+           <button class="action-btn dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border: 2px solid #e5e7eb;">[m
+             <i class="bi bi-funnel"></i>[m
+             Filters[m
+[32m+[m[32m            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-left: 4px;">[m
+[32m+[m[32m              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>[m
+[32m+[m[32m            </svg>[m
+             {% if request.GET.difficulty or request.GET.max_price or request.GET.max_duration or request.GET.tradeable or request.GET.topic or request.GET.sort %}[m
+               <span class="filter-badge">●</span>[m
+             {% endif %}[m

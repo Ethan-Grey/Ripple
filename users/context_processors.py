@@ -1,6 +1,6 @@
 # users/context_processors.py
 from django.conf import settings
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Avg
 
 def recaptcha_site_key(request):
     """
@@ -52,46 +52,32 @@ def sidebar_data(request):
         if request.user.is_authenticated:
             user = request.user
             
-            # Recent communities (user's communities, limit 5)
+            # Recently joined communities (user's communities, ordered by most recently created, limit 3)
             try:
                 sidebar_info['recent_communities'] = list(Community.objects.filter(
                     members=user
-                ).order_by('-created_at')[:5])
+                ).order_by('-created_at')[:3])
             except Exception:
                 sidebar_info['recent_communities'] = []
             
-            # Trending classes (most enrollments in last 7 days, limit 5)
+            # Top 3 classes (by rating and enrollment count)
             try:
-                seven_days_ago = timezone.now() - timedelta(days=7)
-                # Get recent enrollments first
-                recent_enrollment_ids = list(ClassEnrollment.objects.filter(
-                    created_at__gte=seven_days_ago,
-                    status='active'
-                ).values_list('teaching_class_id', flat=True))
-                
-                if recent_enrollment_ids:
-                    # Count enrollments per class
-                    class_counts = Counter(recent_enrollment_ids)
-                    
-                    # Get top 5 class IDs
-                    top_class_ids = [class_id for class_id, count in class_counts.most_common(5)]
-                    
-                    # Get the classes
-                    trending_classes = TeachingClass.objects.filter(
-                        id__in=top_class_ids,
-                        is_published=True
-                    ).order_by('-created_at')[:5]
-                    sidebar_info['trending_classes'] = list(trending_classes)
-                else:
-                    # No recent enrollments, just get recent published classes
-                    sidebar_info['trending_classes'] = list(TeachingClass.objects.filter(
-                        is_published=True
-                    ).order_by('-created_at')[:5])
+                top_classes = TeachingClass.objects.filter(
+                    is_published=True
+                ).annotate(
+                    avg_rating=Avg('reviews__rating'),
+                    enrollment_count=Count('enrollments', filter=Q(enrollments__status='active'))
+                ).order_by(
+                    '-avg_rating',
+                    '-enrollment_count',
+                    '-created_at'
+                )[:3]
+                sidebar_info['trending_classes'] = list(top_classes)
             except Exception:
                 # Fallback: just get recent published classes
                 sidebar_info['trending_classes'] = list(TeachingClass.objects.filter(
                     is_published=True
-                ).order_by('-created_at')[:5])
+                ).order_by('-created_at')[:3])
             
             # Quick stats
             try:
@@ -113,38 +99,24 @@ def sidebar_data(request):
             except Exception:
                 sidebar_info['sidebar_stats'] = {}
         else:
-            # For non-authenticated users, show trending classes
+            # For non-authenticated users, show top 3 classes
             try:
-                seven_days_ago = timezone.now() - timedelta(days=7)
-                # Get recent enrollments first
-                recent_enrollment_ids = list(ClassEnrollment.objects.filter(
-                    created_at__gte=seven_days_ago,
-                    status='active'
-                ).values_list('teaching_class_id', flat=True))
-                
-                if recent_enrollment_ids:
-                    # Count enrollments per class
-                    class_counts = Counter(recent_enrollment_ids)
-                    
-                    # Get top 5 class IDs
-                    top_class_ids = [class_id for class_id, count in class_counts.most_common(5)]
-                    
-                    # Get the classes
-                    trending_classes = TeachingClass.objects.filter(
-                        id__in=top_class_ids,
-                        is_published=True
-                    ).order_by('-created_at')[:5]
-                    sidebar_info['trending_classes'] = list(trending_classes)
-                else:
-                    # No recent enrollments, just get recent published classes
-                    sidebar_info['trending_classes'] = list(TeachingClass.objects.filter(
-                        is_published=True
-                    ).order_by('-created_at')[:5])
+                top_classes = TeachingClass.objects.filter(
+                    is_published=True
+                ).annotate(
+                    avg_rating=Avg('reviews__rating'),
+                    enrollment_count=Count('enrollments', filter=Q(enrollments__status='active'))
+                ).order_by(
+                    '-avg_rating',
+                    '-enrollment_count',
+                    '-created_at'
+                )[:3]
+                sidebar_info['trending_classes'] = list(top_classes)
             except Exception:
                 # Fallback: just get recent published classes
                 sidebar_info['trending_classes'] = list(TeachingClass.objects.filter(
                     is_published=True
-                ).order_by('-created_at')[:5])
+                ).order_by('-created_at')[:3])
         
         return sidebar_info
     except Exception as e:

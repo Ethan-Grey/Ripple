@@ -165,16 +165,36 @@
 
 /* Filter Dropdown */
 .dropdown {
-    position: relative;
+    position: relative !important;
     z-index: 10001 !important;
     isolation: isolate;
 }
 
-.dropdown-menu {
+/* Remove Bootstrap's default dropdown arrow */
+#filterDropdown::after,
+#filterDropdown::before {
+    display: none !important;
+    content: none !important;
+}
+
+/* Ensure only our SVG arrow is visible */
+#filterDropdown .bi-chevron-down,
+#filterDropdown .bi-caret-down {
+    display: none !important;
+}
+
+.dropdown-menu,
+.dropdown-menu.show,
+.dropdown-menu[data-bs-popper] {
     z-index: 10002 !important;
     position: absolute !important;
     isolation: isolate;
     transform: none !important;
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
+    left: auto !important;
+    margin-top: 0 !important;
+    margin-right: 0 !important;
 }
 
 .filter-dropdown-menu {
@@ -186,11 +206,27 @@
     position: absolute !important;
     isolation: isolate;
     transform: none !important;
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
+    left: auto !important;
+    margin-top: 0 !important;
+    margin-right: 0 !important;
 }
 
 .dropdown-toggle {
     z-index: 10001 !important;
     position: relative;
+}
+
+/* Arrow flip animation for filter dropdown */
+.dropdown-toggle[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+}
+
+.dropdown-toggle svg {
+    transition: transform 0.2s ease;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .filter-dropdown-menu form {
@@ -847,6 +883,9 @@
           <button class="action-btn dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border: 2px solid #e5e7eb;">
             <i class="bi bi-funnel"></i>
             Filters
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; margin-left: 4px;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
             {% if request.GET.difficulty or request.GET.max_price or request.GET.max_duration or request.GET.tradeable or request.GET.topic or request.GET.sort %}
               <span class="filter-badge">●</span>
             {% endif %}

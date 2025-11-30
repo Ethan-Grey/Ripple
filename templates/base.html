@@ -584,6 +584,9 @@
 
         .nav {
             padding: 16px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
         }
         
         .nav-item,
@@ -599,7 +602,10 @@
             display: flex;
             align-items: center;
             padding: 12px 20px;
-            margin: 4px 12px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            margin-left: 12px;
+            margin-right: 12px;
             border-radius: 10px;
             transition: all 0.2s ease;
             text-decoration: none;
@@ -618,6 +624,10 @@
             transform: translateX(4px);
             width: calc(100% - 24px);
             box-sizing: border-box;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            margin-left: 12px;
+            margin-right: 12px;
         }
 
         .nav-item.active,
@@ -627,7 +637,10 @@
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
             width: calc(100% - 24px) !important;
             box-sizing: border-box;
-            margin: 4px 12px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            margin-left: 12px;
+            margin-right: 12px;
         }
 
         .nav-item.active::before {
@@ -701,8 +714,13 @@
             overflow: hidden;
             transition: max-height 0.3s ease, opacity 0.2s ease;
             margin: 0;
-            padding: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            padding-left: 0;
+            padding-right: 0;
             width: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .nav-section-content.collapsed {
@@ -719,13 +737,25 @@
             padding: 0;
         }
 
-        /* Ensure nav items inside section content have same width as main nav */
+        /* Ensure nav items inside section content have same width and spacing as main nav */
         .nav-section-content .nav-item,
         .nav-section-content .nav-item.active,
         .nav-section-content .nav-item:hover {
             width: calc(100% - 24px);
             box-sizing: border-box;
-            margin: 4px 12px;
+            margin-top: 8px !important;
+            margin-bottom: 8px !important;
+            margin-left: 12px !important;
+            margin-right: 12px !important;
+        }
+        
+        /* Ensure first and last items in section content have consistent spacing */
+        .nav-section-content .nav-item:first-child {
+            margin-top: 8px !important;
+        }
+        
+        .nav-section-content .nav-item:last-child {
+            margin-bottom: 8px !important;
         }
 
         .nav-divider {
@@ -1400,9 +1430,9 @@
                 </a>
 
                 {% if user.is_authenticated and recent_communities %}
-                    <hr class="nav-divider" role="separator" aria-label="Recent communities section">
+                    <hr class="nav-divider" role="separator" aria-label="Recently joined communities section">
                     <div class="nav-section-label" data-section="recent">
-                        <span>RECENT</span>
+                        <span>RECENTLY JOINED</span>
                         <i class="bi bi-chevron-down section-chevron"></i>
                     </div>
                     <div class="nav-section-content" data-content="recent">
@@ -1416,9 +1446,9 @@
                 {% endif %}
 
                 {% if trending_classes %}
-                    <hr class="nav-divider" role="separator" aria-label="Trending classes section">
+                    <hr class="nav-divider" role="separator" aria-label="Top classes section">
                     <div class="nav-section-label" data-section="trending">
-                        <span>TRENDING</span>
+                        <span>TOP CLASSES</span>
                         <i class="bi bi-chevron-down section-chevron"></i>
                     </div>
                     <div class="nav-section-content" data-content="trending">
@@ -1428,6 +1458,44 @@
                                 <span class="nav-text">{{ class.title|truncatewords:4 }}</span>
                             </a>
                         {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if user.is_staff %}
+                    <hr class="nav-divider" role="separator" aria-label="Admin section">
+                   <div class="nav-section-label" data-section="admin">
+                        <span>ADMIN</span>
+                        <i class="bi bi-chevron-down section-chevron"></i>
+                    </div>
+                    <div class="nav-section-content" data-content="admin">
+                        <a class="nav-item" href="{% url 'core:admin_reports' %}" style="background:#dc2626;color:#ffffff" aria-label="Review reported content">
+                            <i class="bi bi-exclamation-triangle nav-icon" aria-hidden="true"></i>
+                            <span class="nav-text">Reports Review</span>
+                        </a>
+                        <a class="nav-item" href="{% url 'skill_admin:skill_review' %}" style="background:#f59e0b;color:#92400e" aria-label="Review teacher applications">
+                            <i class="bi bi-clipboard-check nav-icon" aria-hidden="true"></i>
+                            <span class="nav-text">Admin Review</span>
+                        </a>
+                        <a class="nav-item admin-verifications" href="{% url 'users:admin_user_verifications' %}" aria-label="Review user verifications">
+                            <i class="bi bi-shield-check nav-icon" aria-hidden="true"></i>
+                            <span class="nav-text">User Verifications</span>
+                        </a>
+                        <a class="nav-item admin-classes" href="{% url 'users:admin_user_classes' %}" aria-label="Manage user classes">
+                            <i class="bi bi-easel3 nav-icon" aria-hidden="true"></i>
+                            <span class="nav-text">User Classes</span>
+                        </a>
+                        <a class="nav-item admin-skills" href="{% url 'users:admin_user_skills' %}" aria-label="Manage user skills">
+                            <i class="bi bi-gear nav-icon" aria-hidden="true"></i>
+                            <span class="nav-text">User Skills</span>
+                        </a>
+                        <a class="nav-item admin-communities" href="{% url 'communities:admin_community_requests' %}" aria-label="Review community requests">
+                            <i class="bi bi-inbox nav-icon" aria-hidden="true"></i>
+                            <span class="nav-text">Community Requests</span>
+                        </a>
+                        <a class="nav-item admin-django" href="{% url 'core:custom_admin' %}" aria-label="Access admin panel">
+                            <i class="bi bi-speedometer2 nav-icon" aria-hidden="true"></i>
+                            <span class="nav-text">Admin Panel</span>
+                        </a>
                     </div>
                 {% endif %}
 
@@ -1516,44 +1584,6 @@
                         <span class="nav-text">Report Content</span>
                     </a>
                 </div>
-
-                {% if user.is_staff %}
-                    <hr class="nav-divider" role="separator" aria-label="Admin section">
-                   <div class="nav-section-label" data-section="admin">
-                        <span>ADMIN</span>
-                        <i class="bi bi-chevron-down section-chevron"></i>
-                    </div>
-                    <div class="nav-section-content" data-content="admin">
-                        <a class="nav-item" href="{% url 'core:admin_reports' %}" style="background:#dc2626;color:#ffffff" aria-label="Review reported content">
-                            <i class="bi bi-exclamation-triangle nav-icon" aria-hidden="true"></i>
-                            <span class="nav-text">Reports Review</span>
-                        </a>
-                        <a class="nav-item" href="{% url 'skill_admin:skill_review' %}" style="background:#f59e0b;color:#92400e" aria-label="Review teacher applications">
-                            <i class="bi bi-clipboard-check nav-icon" aria-hidden="true"></i>
-                            <span class="nav-text">Admin Review</span>
-                        </a>
-                        <a class="nav-item admin-verifications" href="{% url 'users:admin_user_verifications' %}" aria-label="Review user verifications">
-                            <i class="bi bi-shield-check nav-icon" aria-hidden="true"></i>
-                            <span class="nav-text">User Verifications</span>
-                        </a>
-                        <a class="nav-item admin-classes" href="{% url 'users:admin_user_classes' %}" aria-label="Manage user classes">
-                            <i class="bi bi-easel3 nav-icon" aria-hidden="true"></i>
-                            <span class="nav-text">User Classes</span>
-                        </a>
-                        <a class="nav-item admin-skills" href="{% url 'users:admin_user_skills' %}" aria-label="Manage user skills">
-                            <i class="bi bi-gear nav-icon" aria-hidden="true"></i>
-                            <span class="nav-text">User Skills</span>
-                        </a>
-                        <a class="nav-item admin-communities" href="{% url 'communities:admin_community_requests' %}" aria-label="Review community requests">
-                            <i class="bi bi-inbox nav-icon" aria-hidden="true"></i>
-                            <span class="nav-text">Community Requests</span>
-                        </a>
-                        <a class="nav-item admin-django" href="{% url 'core:custom_admin' %}" aria-label="Access admin panel">
-                            <i class="bi bi-speedometer2 nav-icon" aria-hidden="true"></i>
-                            <span class="nav-text">Admin Panel</span>
-                        </a>
-                    </div>
-                {% endif %}
 
                 {% if user.is_authenticated and sidebar_stats %}
                     <hr class="nav-divider" role="separator" aria-label="Stats section">
